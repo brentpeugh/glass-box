@@ -1,0 +1,319 @@
+{
+  "_note": "Reproduced by the generator to PROVE the authored story is recoverable from the raw rows. The artifact does NOT load this file; it recomputes metrics and findings live from facts.",
+  "metric_panel": {
+    "company": {
+      "arr": [
+        28000000.2,
+        29300000.02,
+        30700000.15,
+        32400000.1,
+        34000000.02,
+        35799999.83,
+        37900000.09,
+        40400000.16
+      ],
+      "qoq_growth": [
+        null,
+        0.0464,
+        0.0478,
+        0.0554,
+        0.0494,
+        0.0529,
+        0.0587,
+        0.066
+      ],
+      "magic_number": [
+        null,
+        0.8125,
+        0.7778,
+        0.8095,
+        0.5714,
+        0.4737,
+        0.4286,
+        0.4098
+      ],
+      "cac_payback_mo": [
+        null,
+        12.227,
+        12.2607,
+        11.4566,
+        12.5825,
+        18.8684,
+        24.821,
+        21.1419
+      ],
+      "rule_of_40": [
+        null,
+        null,
+        null,
+        null,
+        53.7227,
+        43.9357,
+        35.0728,
+        26.924
+      ],
+      "gross_margin": [
+        79.0,
+        78.5,
+        78.0,
+        77.5,
+        77.0,
+        76.5,
+        76.0,
+        75.5
+      ],
+      "nrr_latest": 105.6804,
+      "grr_latest": 85.8615,
+      "ent_share": [
+        42.8571,
+        44.3686,
+        46.5798,
+        49.0741,
+        51.7647,
+        54.7486,
+        57.7836,
+        60.8911
+      ],
+      "top10_share": [
+        11.2221,
+        12.0909,
+        12.2069,
+        13.1052,
+        13.6778,
+        13.6451,
+        13.7222,
+        14.5106
+      ]
+    },
+    "segment": {
+      "SMB": {
+        "arr": [
+          7000000.08,
+          6899999.95,
+          6700000.13,
+          6500000.07,
+          6200000.11,
+          5899999.92,
+          5600000.09,
+          5300000.05
+        ],
+        "win_rate": [
+          46.3636,
+          48.7179,
+          36.5854,
+          47.6923,
+          38.2353,
+          34.2657,
+          38.6667,
+          37.1795
+        ],
+        "nrr_latest": 80.1646,
+        "grr_latest": 76.5608
+      },
+      "Mid-Market": {
+        "arr": [
+          9000000.15,
+          9400000.08,
+          9700000.03,
+          10000000.04,
+          10199999.97,
+          10299999.94,
+          10400000.05,
+          10500000.12
+        ],
+        "win_rate": [
+          31.5789,
+          28.7129,
+          34.9057,
+          25.8929,
+          28.8136,
+          28.2258,
+          20.155,
+          21.4815
+        ],
+        "nrr_latest": 97.6717,
+        "grr_latest": 85.6489
+      },
+      "Enterprise": {
+        "arr": [
+          11999999.97,
+          12999999.99,
+          14299999.99,
+          15899999.99,
+          17599999.94,
+          19599999.97,
+          21899999.95,
+          24599999.99
+        ],
+        "win_rate": [
+          42.8571,
+          36.6667,
+          54.8387,
+          30.303,
+          40.0,
+          27.7778,
+          44.7368,
+          25.0
+        ],
+        "nrr_latest": 121.1483,
+        "grr_latest": 89.7973
+      }
+    }
+  },
+  "findings": [
+    {
+      "type": "trend",
+      "metric": "cac_payback_mo",
+      "scope": "company",
+      "value": 2.12,
+      "basis": "linear slope over 7 quarters (t=3.6, +129% over window)",
+      "direction": "bad",
+      "salience": 1.0,
+      "provenance": "company cac_payback_mo time series",
+      "detail": "company cac_payback_mo: rising 129% over window (t-stat 3.6)"
+    },
+    {
+      "type": "benchmark_breach",
+      "metric": "cac_payback_mo",
+      "scope": "company",
+      "value": 21.14,
+      "basis": "benchmark 12.0",
+      "direction": "bad",
+      "salience": 0.881,
+      "provenance": "company 25Q4; threshold 12.0",
+      "detail": "CAC Payback (months) 21.1 breaches benchmark 12.0"
+    },
+    {
+      "type": "concentration",
+      "metric": "ent_share",
+      "scope": "company",
+      "value": 60.89,
+      "basis": "share rose from 43%",
+      "direction": "neutral",
+      "salience": 0.789,
+      "provenance": "Enterprise ARR / total ARR across quarters",
+      "detail": "Enterprise now 61% of ARR (up from 43%) \u2014 strength or single-segment dependence"
+    },
+    {
+      "type": "benchmark_breach",
+      "metric": "magic_number",
+      "scope": "company",
+      "value": 0.41,
+      "basis": "benchmark 0.75",
+      "direction": "bad",
+      "salience": 0.727,
+      "provenance": "company 25Q4; threshold 0.75",
+      "detail": "SaaS Magic Number 0.4 breaches benchmark 0.75"
+    },
+    {
+      "type": "cross_segment_divergence",
+      "metric": "nrr",
+      "scope": "segment",
+      "value": 40.98,
+      "basis": "spread across 3 segments",
+      "direction": "neutral",
+      "salience": 0.683,
+      "provenance": "segment cohort NRR 24Q4->25Q4",
+      "detail": "NRR spread 41pts: Enterprise 121% vs SMB 80%"
+    },
+    {
+      "type": "benchmark_breach",
+      "metric": "rule_of_40",
+      "scope": "company",
+      "value": 26.92,
+      "basis": "benchmark 40.0",
+      "direction": "bad",
+      "salience": 0.663,
+      "provenance": "company 25Q4; threshold 40.0",
+      "detail": "Rule of 40 26.9 breaches benchmark 40.0"
+    },
+    {
+      "type": "acceleration",
+      "metric": "qoq_growth",
+      "scope": "company",
+      "value": 6.6,
+      "basis": "QoQ growth accelerating (+0.28pp/q)",
+      "direction": "good",
+      "salience": 0.598,
+      "provenance": "company total ARR QoQ growth across quarters",
+      "detail": "Topline accelerating: QoQ growth rose to 6.6% (slope +0.28pp/q) \u2014 Enterprise-led"
+    },
+    {
+      "type": "trend",
+      "metric": "magic_number",
+      "scope": "company",
+      "value": -0.08,
+      "basis": "linear slope over 7 quarters (t=-6.3, -56% over window)",
+      "direction": "bad",
+      "salience": 0.564,
+      "provenance": "company magic_number time series",
+      "detail": "company magic_number: declining 56% over window (t-stat -6.3)"
+    },
+    {
+      "type": "benchmark_breach",
+      "metric": "grr",
+      "scope": "company",
+      "value": 85.86,
+      "basis": "benchmark 90.0",
+      "direction": "bad",
+      "salience": 0.523,
+      "provenance": "company 25Q4; threshold 90.0",
+      "detail": "Gross Revenue Retention 85.9 breaches benchmark 90.0"
+    },
+    {
+      "type": "trend",
+      "metric": "rule_of_40",
+      "scope": "company",
+      "value": -8.93,
+      "basis": "linear slope over 4 quarters (t=-34.4, -50% over window)",
+      "direction": "bad",
+      "salience": 0.502,
+      "provenance": "company rule_of_40 time series",
+      "detail": "company rule_of_40: declining 50% over window (t-stat -34.4)"
+    },
+    {
+      "type": "masking",
+      "metric": "nrr",
+      "scope": "company+segment",
+      "value": 80.16,
+      "basis": "blended 106% passes; SMB underwater",
+      "direction": "bad",
+      "salience": 0.491,
+      "provenance": "blended NRR vs SMB segment NRR (cohort 24Q4->25Q4)",
+      "detail": "Blended NRR 106% looks healthy but masks SMB at 80% (13% of ARR) \u2014 aggregate conceals composition"
+    },
+    {
+      "type": "trend",
+      "metric": "win_rate",
+      "scope": "Mid-Market",
+      "value": -1.55,
+      "basis": "linear slope over 8 quarters (t=-3.0, -33% over window)",
+      "direction": "bad",
+      "salience": 0.331,
+      "provenance": "Mid-Market win_rate time series",
+      "detail": "Mid-Market win_rate: declining 33% over window (t-stat -3.0)"
+    },
+    {
+      "type": "trend",
+      "metric": "arr",
+      "scope": "SMB",
+      "value": -251190.48,
+      "basis": "linear slope over 8 quarters (t=-18.1, -25% over window)",
+      "direction": "bad",
+      "salience": 0.246,
+      "provenance": "SMB arr time series",
+      "detail": "SMB arr: declining 25% over window (t-stat -18.1)"
+    },
+    {
+      "type": "trend",
+      "metric": "arr",
+      "scope": "Mid-Market",
+      "value": 208333.33,
+      "basis": "linear slope over 8 quarters (t=9.0, +16% over window)",
+      "direction": "good",
+      "salience": 0.158,
+      "provenance": "Mid-Market arr time series",
+      "detail": "Mid-Market arr: rising 16% over window (t-stat 9.0)"
+    }
+  ]
+}
