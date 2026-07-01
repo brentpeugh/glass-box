@@ -257,13 +257,23 @@ function Block({ block, catalog, onPick }) {
   </div>);
 }
 function Section({ section, catalog, onPick }) {
-  // group consecutive compact blocks into a strip
-  const groups = []; let strip = [];
-  for (const b of section.blocks) { if (b.emphasis === "compact") strip.push(b); else { if (strip.length) { groups.push({ strip }); strip = []; } groups.push({ block: b }); } }
-  if (strip.length) groups.push({ strip });
+  // Build explicit rows: hero + strips span full; consecutive standard charts pair
+  // two-up; a lone trailing standard fills its row (never orphans a half-empty row).
+  const rows = []; let std = [], strip = [];
+  const flushStrip = () => { if (strip.length) { rows.push({ t: "strip", blocks: strip }); strip = []; } };
+  const flushStd = () => { while (std.length) rows.push(std.length >= 2 ? { t: "pair", blocks: [std.shift(), std.shift()] } : { t: "full", block: std.shift() }); };
+  for (const b of section.blocks) {
+    if (b.emphasis === "compact") { flushStd(); strip.push(b); }
+    else if (b.emphasis === "hero") { flushStrip(); flushStd(); rows.push({ t: "full", block: b }); }
+    else { flushStrip(); std.push(b); }
+  }
+  flushStrip(); flushStd();
+  const render = (b, j) => <Block key={j} block={b} catalog={catalog} onPick={onPick} />;
   return (<section className="sec">
     <div className="sec-head"><span className="sec-t">{section.heading}</span></div>
-    {groups.map((g, i) => g.strip ? <div key={i} className="strip">{g.strip.map((b, j) => <Block key={j} block={b} catalog={catalog} onPick={onPick} />)}</div> : <Block key={i} block={g.block} catalog={catalog} onPick={onPick} />)}
+    {rows.map((r, i) => r.t === "pair" ? <div key={i} className="row pair">{r.blocks.map(render)}</div>
+      : r.t === "strip" ? <div key={i} className="row strip">{r.blocks.map(render)}</div>
+      : <div key={i} className="row full">{render(r.block, 0)}</div>)}
   </section>);
 }
 

@@ -146,3 +146,27 @@
 .ans-intent b{color:var(--ink);}
 .ans.declined{border-left:3px solid var(--ember);}
 .ans-decline{font-size:13px;color:#8A2A20;font-style:italic;}
+
+/* ===== LAYOUT PASS — governed 8px grid (base --u), full-width field ===== */
+.caliper{ --u:8px; --field:1440px; --gap:24px; --pad:32px; }
+/* content field: generous framing margins are structural, not wasted (Silence over Noise) */
+.stage{ max-width:var(--field); margin:0 auto; padding:0 var(--pad) 48px; }
+.honesty{ padding-left:var(--pad); padding-right:var(--pad); }
+.sec{ margin:56px 0 0; }               /* 7u rhythm between sections */
+.sec:first-of-type{ margin-top:24px; }
+.sec-head{ margin:0 0 24px; }
+/* the grid: standard blocks pair two-up; hero + strips span the row */
+/* the grid: standard blocks pair two-up; hero + strips span the row */
+.row{ margin-bottom:var(--gap); }
+.row:last-child{ margin-bottom:0; }
+.row.pair{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--gap); align-items:start; }
+.row.full,.row.pair>*{ min-width:0; }
+.block{ margin:0; }                    /* the grid owns spacing now */
+/* calm charts: fit the cell, cap height so a full-span chart can't balloon */
+.block svg,.ans svg{ width:100%; height:auto; display:block; max-height:320px; }
+/* callout strip: even row of compact metrics across the full width */
+.row.strip{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:var(--gap); }
+.strip .block>div:not(.frame){ padding:16px; }
+/* asked rail sits in the field, bridges pair two-up too */
+.bridges{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--gap); }
+@media(max-width:900px){ .row.pair,.row.strip,.bridges{ grid-template-columns:1fr; } }
