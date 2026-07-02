@@ -218,12 +218,12 @@ const elig = (k, t) => (SLOT_ELIG[k] || []).includes(t);
 const DIM = { full: { w: 1360, h: 264 }, pair: { w: 676, h: 236 }, major: { w: 1000, h: 264 } };
 
 function packRows(blocks, kindOf) {
-  // instrument layout: hero, then a KPI strip of all callouts, then charts as 2-across tiles.
-  const hero = [], callouts = [], charts = [];
-  for (const b of blocks) { const k = kindOf(b); if (elig(k, "hero")) hero.push(b); else if (k === "callout") callouts.push(b); else charts.push(b); }
+  // Callouts are hoisted to the deterministic top scorecard, so sections carry only the
+  // hero finding and charts. Charts tile two-across; a solo chart spans the full width.
+  const hero = [], charts = [];
+  for (const b of blocks) { const k = kindOf(b); if (elig(k, "hero")) hero.push(b); else if (k !== "callout") charts.push(b); }
   const rows = [];
   for (const h of hero) rows.push({ t: "hero", blocks: [h] });
-  if (callouts.length) rows.push({ t: "kpi", blocks: callouts });
   for (let i = 0; i < charts.length; i += 2) rows.push(i + 1 < charts.length ? { t: "pair", blocks: [charts[i], charts[i + 1]] } : { t: "solo", blocks: [charts[i]] });
   return rows;
 }
@@ -323,13 +323,13 @@ function Block({ block, catalog, onPick, dim }) {
 }
 function Section({ section, catalog, onPick }) {
   const rows = packRows(section.blocks, (b) => catalog[b.widget]?.kind);
+  if (!rows.length) return null;
   const cell = (b, dim, cls, key) => <div key={key} className={cls}><Block block={b} catalog={catalog} onPick={onPick} dim={dim} /></div>;
   const items = [];
   rows.forEach((r, i) => {
     if (r.t === "hero") items.push(cell(r.blocks[0], null, "g12", `h${i}`));
-    else if (r.t === "kpi") items.push(<div key={`k${i}`} className="g12 kpi">{r.blocks.map((b, j) => <Block key={j} block={b} catalog={catalog} onPick={onPick} dim={null} />)}</div>);
     else if (r.t === "pair") r.blocks.forEach((b, j) => items.push(cell(b, DIM.pair, "g6", `p${i}${j}`)));
-    else if (r.t === "solo") items.push(cell(r.blocks[0], DIM.pair, "g6", `o${i}`));
+    else if (r.t === "solo") items.push(cell(r.blocks[0], DIM.full, "g12", `o${i}`));
   });
   return (<section className="sec">
     <div className="sec-head"><span className="sec-t">{section.heading}</span></div>
@@ -459,6 +459,47 @@ function DebugPanel({ d }) {
   </div>);
 }
 
+// ===== deterministic scorecard: each role declares its headline metrics (production
+// shape — headline KPIs are a persona property in the semantic layer, never the model's
+// choice). Cells are two-mode: benchmarked metrics show ▲/▼ vs threshold; unbenchmarked
+// growth metrics show a trend direction. Every cell is engine-resolved and traceable. =====
+const KPI_SET = {
+  CFO: ["nrr", "grr", "gross_margin", "magic_number", "cac_payback", "rule_of_40"],
+  CRO: ["qoq_growth", "net_new_arr", "ent_share", "nrr", "magic_number", "cac_payback"],
+};
+function kpiDir(vals) { const a = vals[0], z = vals[vals.length - 1], rel = (z - a) / (Math.abs(a) || 1); return rel > 0.02 ? "rising" : rel < -0.02 ? "falling" : "flat"; }
+function resolveKpi(m) {
+  const L = "25Q4", S = ["24Q4", "25Q4"];
+  switch (m) {
+    case "nrr": return { mv: E.nrr(null, S[0], S[1]) };
+    case "grr": return { mv: E.grr(null, S[0], S[1]) };
+    case "gross_margin": return { mv: E.grossMargin(L) };
+    case "magic_number": return { mv: E.magicNumber(L) };
+    case "cac_payback": return { mv: E.cacPayback(L) };
+    case "rule_of_40": return { mv: E.ruleOf40(L) };
+    case "qoq_growth": { const s = E.QUARTERS.slice(1).map((q) => E.qoqGrowth(q)); return { mv: s[s.length - 1], disp: `${(s[s.length - 1].value * 100).toFixed(1)}%`, trend: kpiDir(s.map((x) => x.value)) }; }
+    case "net_new_arr": { const s = E.QUARTERS.slice(1).map((q) => E.netNewArr(q)).filter(Boolean); return { mv: s[s.length - 1], trend: kpiDir(s.map((x) => x.value)) }; }
+    case "ent_share": { const s = E.QUARTERS.map((q) => E.entShare(q)); return { mv: s[s.length - 1], trend: kpiDir(s.map((x) => x.value)) }; }
+    default: return null;
+  }
+}
+function kpiThr(b, unit) { return unit === "ratio" ? `${b.thr}x` : unit === "months" ? `${b.thr}mo` : unit === "percent" ? `${b.thr}%` : `${b.thr}`; }
+function KpiCell({ res, onPick }) {
+  const mv = res.mv, b = mv.basis;
+  const disp = res.disp || fmtMV(mv);
+  const tone = b ? ((b.good === "above" ? mv.value >= b.thr : mv.value <= b.thr) ? "good" : "bad") : "";
+  return (<button className="kcell" onClick={() => onPick({ node: mv })}>
+    <span className="kcell-v">{disp}</span>
+    <span className="kcell-l">{mv.label}{mv.epistemic === "proxy" && <span className="proxy">proxy</span>}</span>
+    {b ? <span className={`kcell-b ${tone}`}>{mv.value < b.thr ? "▼" : "▲"} vs {kpiThr(b, mv.unit)}</span>
+      : res.trend ? <span className="kcell-b trend">{res.trend === "rising" ? "▲" : res.trend === "falling" ? "▼" : "—"} {res.trend}</span> : null}
+  </button>);
+}
+function Scorecard({ role, onPick }) {
+  const set = KPI_SET[role] || KPI_SET.CFO;
+  return (<div className="scorecard">{set.map((m, i) => { const res = resolveKpi(m); return res ? <KpiCell key={i} res={res} onPick={onPick} /> : null; })}</div>);
+}
+
 function AppInner() {
   const catalog = useMemo(() => buildCatalog(), []);
   const [role, setRole] = useState(null);
@@ -526,7 +567,7 @@ function AppInner() {
       <main className="stage">
         <QueryBar onAsk={handleQuery} busy={queries.some((q) => q.status === "loading")} />
         {queries.length > 0 && <div className="asked"><div className="asked-h">Asked — answers computed by the engine, placed here by rule</div>{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={setPicked} />)}</div>}
-        {state.loading ? <div className="loading">…</div> : state.spec.sections.map((s, i) => <Section key={i} section={s} catalog={catalog} onPick={setPicked} />)}
+        {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} />{state.spec.sections.map((s, i) => <Section key={i} section={s} catalog={catalog} onPick={setPicked} />)}</>}
       </main>
 
       <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
