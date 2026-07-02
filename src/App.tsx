@@ -94,7 +94,7 @@ function Combo({ bars, line, benchmark, good, onPick, fmtL, fmtR, w = 620, h = 2
     {ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={yL(tv)} y2={yL(tv)} className="wf-grid" /><text x={padL - 8} y={yL(tv) + 3} className="wf-axis" textAnchor="end">{fmtL(tv)}</text></g>))}
     {rticks.map((tv, i) => (<text key={i} x={W - padR + 8} y={yR(tv) + 3} className="wf-axis r" textAnchor="start">{fmtR(tv)}</text>))}
     {bars.map((b, i) => (<rect key={i} x={x(i) - bw / 2} y={yL(b.value)} width={bw} height={padT + plotH - yL(b.value)} className="co-bar" onClick={() => onPick(b.mv)} />))}
-    <line x1={padL} x2={W - padR} y1={yR(benchmark)} y2={yR(benchmark)} className="ln-bench" /><text x={W - padR - 4} y={yR(benchmark) - 6} className="ln-bench-lab" textAnchor="end">magic benchmark {fmtR(benchmark)}</text>
+    <line x1={padL} x2={W - padR} y1={yR(benchmark)} y2={yR(benchmark)} className="ln-bench" /><text x={padL + 4} y={yR(benchmark) + 13} className="ln-bench-lab" textAnchor="start">benchmark {fmtR(benchmark)}</text>
     <path d={path} className="ln-path" />
     {line.map((p, i) => { const br = good === "above" ? p.value < benchmark : p.value > benchmark; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={yR(p.value)} r="5" className={br ? "ln-dot bad" : "ln-dot good"} /></g>); })}
     {bars.map((b, i) => (<text key={i} x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{b.q}</text>))}
@@ -163,13 +163,11 @@ function FindingCard({ finding, onPick }) {
   if (!schema) return null;                 // no bespoke fallback — unknown type simply doesn't render
   const sides = schema.sides(finding);
   const pick = () => onPick({ node: finding, isFinding: true });
-  return (<div className="fcard">
-    <div className="fcard-relation">
-      <FindingSide side={sides[0]} onPick={pick} />
-      <span className="fcard-verb">{schema.verb}</span>
-      <FindingSide side={sides[1]} onPick={pick} />
-    </div>
-    <button className="inspect" onClick={pick}>▸ inspect provenance</button>
+  return (<div className="fband">
+    <FindingSide side={sides[0]} onPick={pick} />
+    <span className="fband-verb">{schema.verb}</span>
+    <FindingSide side={sides[1]} onPick={pick} />
+    <button className="fband-inspect" onClick={pick}>inspect provenance ›</button>
   </div>);
 }
 
