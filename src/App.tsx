@@ -75,15 +75,15 @@ function TraceDrawer({ picked, onClose }) {
 }
 
 // ================= chart primitives (renderer; owns all scales) =================
-function Waterfall({ c }) {
+function Waterfall({ c, w = 440, h = 260 }) {
   const steps = [{ k: "Beginning", t: "anchor", v: c.beginning }, { k: "Expansion", t: "up", v: c.expansionGain }, { k: "Contraction", t: "down", v: c.contractionLoss }, { k: "Churn", t: "down", v: c.churnLoss }, { k: "Ending", t: "anchor", v: c.ending }];
-  const W = 440, H = 260, padL = 50, padR = 14, padB = 42, padT = 16; const plotW = W - padL - padR, plotH = H - padT - padB;
+  const W = w, H = h, padL = 50, padR = 14, padB = 42, padT = 16; const plotW = W - padL - padR, plotH = H - padT - padB;
   const domainMax = (c.beginning + c.expansionGain) * 1.08; const y = (v) => padT + plotH - (v / domainMax) * plotH; const bw = (plotW / steps.length) * 0.6, gap = plotW / steps.length;
   let run = 0; const bars = []; steps.forEach((s, i) => { const x = padL + gap * i + (gap - bw) / 2; let top, bot; if (s.t === "anchor") { top = s.v; bot = 0; run = s.v; } else if (s.t === "up") { bot = run; top = run + s.v; run = top; } else { top = run; bot = run - s.v; run = bot; } bars.push({ ...s, x, yTop: y(Math.max(top, bot)), h: Math.abs(y(top) - y(bot)), cy: y(run) }); });
   return (<svg viewBox={`0 0 ${W} ${H}`} className="wf">{Array.from({ length: 5 }, (_, i) => (domainMax / 4) * i).map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bars.map((b, i) => (<g key={i}>{i > 0 && <line x1={bars[i - 1].x + bw} x2={b.x} y1={bars[i - 1].cy} y2={bars[i - 1].cy} className="wf-conn" />}<rect x={b.x} y={b.yTop} width={bw} height={Math.max(b.h, 1)} className={`wf-bar wf-${b.t}`} /><text x={b.x + bw / 2} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{b.k}</text><text x={b.x + bw / 2} y={H - padB + 28} className="wf-xval" textAnchor="middle">{b.t === "anchor" ? fmtM(b.v) : (b.t === "up" ? "+" : "−") + fmtM(b.v).slice(1)}</text></g>))}</svg>);
 }
-function Combo({ bars, line, benchmark, good, onPick, fmtL, fmtR }) {
-  const W = 620, H = 260, padL = 54, padR = 50, padB = 36, padT = 18; const plotW = W - padL - padR, plotH = H - padT - padB;
+function Combo({ bars, line, benchmark, good, onPick, fmtL, fmtR, w = 620, h = 260 }) {
+  const W = w, H = h, padL = 54, padR = 50, padB = 36, padT = 18; const plotW = W - padL - padR, plotH = H - padT - padB;
   const maxBar = Math.max(...bars.map((b) => b.value)) * 1.12;
   const maxLine = Math.max(...line.map((p) => p.value), benchmark) * 1.18;
   const yL = (v) => padT + plotH - (v / maxBar) * plotH, yR = (v) => padT + plotH - (v / maxLine) * plotH;
@@ -94,15 +94,15 @@ function Combo({ bars, line, benchmark, good, onPick, fmtL, fmtR }) {
     {ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={yL(tv)} y2={yL(tv)} className="wf-grid" /><text x={padL - 8} y={yL(tv) + 3} className="wf-axis" textAnchor="end">{fmtL(tv)}</text></g>))}
     {rticks.map((tv, i) => (<text key={i} x={W - padR + 8} y={yR(tv) + 3} className="wf-axis r" textAnchor="start">{fmtR(tv)}</text>))}
     {bars.map((b, i) => (<rect key={i} x={x(i) - bw / 2} y={yL(b.value)} width={bw} height={padT + plotH - yL(b.value)} className="co-bar" onClick={() => onPick(b.mv)} />))}
-    <line x1={padL} x2={W - padR} y1={yR(benchmark)} y2={yR(benchmark)} className="ln-bench" /><text x={padL + 2} y={yR(benchmark) - 5} className="ln-bench-lab" textAnchor="start">magic benchmark {fmtR(benchmark)}</text>
+    <line x1={padL} x2={W - padR} y1={yR(benchmark)} y2={yR(benchmark)} className="ln-bench" /><text x={W - padR - 4} y={yR(benchmark) - 6} className="ln-bench-lab" textAnchor="end">magic benchmark {fmtR(benchmark)}</text>
     <path d={path} className="ln-path" />
     {line.map((p, i) => { const br = good === "above" ? p.value < benchmark : p.value > benchmark; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={yR(p.value)} r="5" className={br ? "ln-dot bad" : "ln-dot good"} /></g>); })}
     {bars.map((b, i) => (<text key={i} x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{b.q}</text>))}
     <text x={padL - 8} y={padT - 5} className="wf-axis" textAnchor="end">S&M $</text><text x={W - padR + 8} y={padT - 5} className="wf-axis r" textAnchor="start">magic</text>
   </svg>);
 }
-function StackedArea({ quarters, series, onPick }) {
-  const W = 620, H = 270, padL = 52, padR = 14, padB = 34, padT = 12; const plotW = W - padL - padR, plotH = H - padT - padB;
+function StackedArea({ quarters, series, onPick, w = 620, h = 270 }) {
+  const W = w, H = h, padL = 52, padR = 14, padB = 34, padT = 12; const plotW = W - padL - padR, plotH = H - padT - padB;
   const totals = quarters.map((_, i) => series.reduce((s, se) => s + se.points[i].value, 0));
   const maxY = Math.max(...totals) * 1.06; const x = (i) => padL + (plotW * i) / (quarters.length - 1), y = (v) => padT + plotH - (v / maxY) * plotH;
   const ticks = Array.from({ length: 4 }, (_, i) => (maxY / 3) * i);
@@ -111,8 +111,8 @@ function StackedArea({ quarters, series, onPick }) {
   return (<div><div className="legend">{series.slice().reverse().map((se) => (<button key={se.seg} className="chip" onClick={() => onPick(se.points[se.points.length - 1].mv)}><span className="sw" style={{ background: se.color }} />{se.seg}</button>))}</div>
     <svg viewBox={`0 0 ${W} ${H}`} className="ln">{ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bands.map((b, i) => (<polygon key={i} points={b.poly} fill={b.color} className="area" />))}{quarters.map((q, i) => (<text key={i} x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{q}</text>))}</svg></div>);
 }
-function LineChart({ series, benchmark, good, onPick, fmt }) {
-  const W = 620, H = 230, padL = 46, padR = 16, padB = 34, padT = 14; const plotW = W - padL - padR, plotH = H - padT - padB;
+function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
+  const W = w, H = h, padL = 46, padR = 16, padB = 34, padT = 14; const plotW = W - padL - padR, plotH = H - padT - padB;
   const vals = series.map((p) => p.value).concat(benchmark != null ? [benchmark] : []); const lo = Math.min(...vals), hi = Math.max(...vals);
   const pad = (hi - lo) * 0.18 || 0.1; const dMin = Math.min(lo - pad, benchmark != null ? benchmark - pad : Infinity), dMax = Math.max(hi + pad, benchmark != null ? benchmark + pad : -Infinity);
   const x = (i) => padL + (plotW * i) / (series.length - 1); const y = (v) => padT + plotH - ((v - dMin) / (dMax - dMin)) * plotH;
@@ -201,14 +201,51 @@ function buildCatalog() {
   };
 }
 
-function Widget({ id, catalog, onPick }) {
-  const w = catalog[id]; if (!w) return null; const d = w.data;
+// ===== row grammar: widgets declare eligible templates; a deterministic packer fills
+// rows so every row is complete (no dead space). The model chooses widgets; layout is
+// by rule. Variation is generative — different widget mixes pack into different rows —
+// while every result is organized. =====
+const SLOT_ELIG = {
+  finding_card: ["hero"],
+  combo: ["full", "pair", "major"],
+  stacked_area: ["full", "pair", "major"],
+  line: ["full", "pair", "major"],
+  waterfall: ["pair", "full"],
+  callout: ["strip", "minor"],
+};
+const elig = (k, t) => (SLOT_ELIG[k] || []).includes(t);
+// viewBox dimensions per slot — wide/short when a chart spans, squarer when paired
+const DIM = { full: { w: 1360, h: 300 }, pair: { w: 660, h: 340 }, major: { w: 900, h: 344 } };
+
+function packRows(blocks, kindOf) {
+  const rows = [], n = blocks.length; let i = 0;
+  const k = (j) => (j >= 0 && j < n ? kindOf(blocks[j]) : null);
+  while (i < n) {
+    const kind = k(i);
+    if (elig(kind, "hero")) { rows.push({ t: "hero", blocks: [blocks[i]] }); i++; continue; }
+    if (kind === "callout") {
+      let j = i; while (j < n && k(j) === "callout") j++;
+      const run = blocks.slice(i, j);
+      if (run.length <= 2 && j < n && elig(k(j), "major")) { rows.push({ t: "split", major: blocks[j], minor: run }); i = j + 1; }
+      else { for (let s = 0; s < run.length; s += 4) rows.push({ t: "strip", blocks: run.slice(s, s + 4) }); i = j; }
+      continue;
+    }
+    const nk = k(i + 1);
+    if (nk && nk !== "callout" && !elig(nk, "hero") && elig(kind, "pair") && elig(nk, "pair")) { rows.push({ t: "pair", blocks: [blocks[i], blocks[i + 1]] }); i += 2; continue; }
+    if (nk === "callout" && elig(kind, "major")) { let j = i + 1; while (j < n && k(j) === "callout" && j - (i + 1) < 3) j++; rows.push({ t: "split", major: blocks[i], minor: blocks.slice(i + 1, j) }); i = j; continue; }
+    rows.push({ t: elig(kind, "full") ? "full" : "full", blocks: [blocks[i]] }); i++;
+  }
+  return rows;
+}
+
+function Widget({ id, catalog, onPick, dim }) {
+  const w = catalog[id]; if (!w) return null; const d = w.data; const D = dim || {};
   if (w.kind === "finding_card") return <FindingCard finding={d.finding} onPick={onPick} />;
   if (w.kind === "callout") return <Callout mv={d.mv} onPick={(mv) => onPick({ node: mv })} />;
-  if (w.kind === "combo") return <Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} />;
-  if (w.kind === "line") return <LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} />;
-  if (w.kind === "stacked_area") return <StackedArea quarters={E.QUARTERS} series={d.series} onPick={(mv) => onPick({ node: mv })} />;
-  if (w.kind === "waterfall") return (<div><div className="bridge-h"><button className="bridge-trace" onClick={() => onPick({ node: d.mv })}>{d.title} ▸ trace</button><span className={d.bridge.nrr >= 100 ? "good" : "bad"}>NRR {d.bridge.nrr.toFixed(0)}%</span></div><Waterfall c={d.bridge} /></div>);
+  if (w.kind === "combo") return <Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} />;
+  if (w.kind === "line") return <LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} />;
+  if (w.kind === "stacked_area") return <StackedArea quarters={E.QUARTERS} series={d.series} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} />;
+  if (w.kind === "waterfall") return (<div><div className="bridge-h"><button className="bridge-trace" onClick={() => onPick({ node: d.mv })}>{d.title} ▸ trace</button><span className={d.bridge.nrr >= 100 ? "good" : "bad"}>NRR {d.bridge.nrr.toFixed(0)}%</span></div><Waterfall c={d.bridge} w={D.w} h={D.h} /></div>);
   return null;
 }
 
@@ -280,31 +317,26 @@ const FALLBACK = {
 };
 
 // ================= composition rendering =================
-function Block({ block, catalog, onPick }) {
+function Block({ block, catalog, onPick, dim }) {
   const hasFrame = block.headline || block.soWhat;
   return (<div className={`block emph-${block.emphasis}`}>
     {hasFrame && <div className="frame"><span className="frame-tick">curated</span>{block.headline && <span className="frame-h">{block.headline}</span>}{block.soWhat && <span className="frame-sw">{block.soWhat}</span>}</div>}
-    <Widget id={block.widget} catalog={catalog} onPick={onPick} />
+    <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={dim} />
   </div>);
 }
 function Section({ section, catalog, onPick }) {
-  // Build explicit rows: hero + strips span full; consecutive standard charts pair
-  // two-up; a lone trailing standard fills its row (never orphans a half-empty row).
-  const rows = []; let std = [], strip = [];
-  const flushStrip = () => { if (strip.length) { rows.push({ t: "strip", blocks: strip }); strip = []; } };
-  const flushStd = () => { while (std.length) rows.push(std.length >= 2 ? { t: "pair", blocks: [std.shift(), std.shift()] } : { t: "full", block: std.shift() }); };
-  for (const b of section.blocks) {
-    if (b.emphasis === "compact") { flushStd(); strip.push(b); }
-    else if (b.emphasis === "hero") { flushStrip(); flushStd(); rows.push({ t: "full", block: b }); }
-    else { flushStrip(); std.push(b); }
-  }
-  flushStrip(); flushStd();
-  const render = (b, j) => <Block key={j} block={b} catalog={catalog} onPick={onPick} />;
+  const rows = packRows(section.blocks, (b) => catalog[b.widget]?.kind);
+  const cell = (b, dim, key) => <Block key={key} block={b} catalog={catalog} onPick={onPick} dim={dim} />;
   return (<section className="sec">
     <div className="sec-head"><span className="sec-t">{section.heading}</span></div>
-    {rows.map((r, i) => r.t === "pair" ? <div key={i} className="row pair">{r.blocks.map(render)}</div>
-      : r.t === "strip" ? <div key={i} className="row strip">{r.blocks.map(render)}</div>
-      : <div key={i} className="row full">{render(r.block, 0)}</div>)}
+    {rows.map((r, i) => {
+      if (r.t === "hero") return <div key={i} className="row hero">{cell(r.blocks[0], null, 0)}</div>;
+      if (r.t === "full") return <div key={i} className="row full">{cell(r.blocks[0], DIM.full, 0)}</div>;
+      if (r.t === "pair") return <div key={i} className="row pair">{r.blocks.map((b, j) => cell(b, DIM.pair, j))}</div>;
+      if (r.t === "strip") return <div key={i} className="row strip">{r.blocks.map((b, j) => cell(b, null, j))}</div>;
+      if (r.t === "split") return <div key={i} className="row split"><div className="split-major">{cell(r.major, DIM.major, 0)}</div><div className="split-minor">{r.minor.map((b, j) => cell(b, null, j))}</div></div>;
+      return null;
+    })}
   </section>);
 }
 
