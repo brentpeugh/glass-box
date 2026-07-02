@@ -178,9 +178,9 @@ function buildCatalog() {
   const Q1 = E.QUARTERS.slice(1);
   const masking = E.detectMasking("24Q4", "25Q4");
   const segSeries = [
-    { seg: "SMB", color: "#B23A2E", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("SMB", q).value, mv: E.segArr("SMB", q) })) },
-    { seg: "Mid-Market", color: "#9A7B4F", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Mid-Market", q).value, mv: E.segArr("Mid-Market", q) })) },
-    { seg: "Enterprise", color: "#1A1D21", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Enterprise", q).value, mv: E.segArr("Enterprise", q) })) },
+    { seg: "SMB", color: "#B07C51", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("SMB", q).value, mv: E.segArr("SMB", q) })) },
+    { seg: "Mid-Market", color: "#9AA1A8", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Mid-Market", q).value, mv: E.segArr("Mid-Market", q) })) },
+    { seg: "Enterprise", color: "#39424B", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Enterprise", q).value, mv: E.segArr("Enterprise", q) })) },
   ];
   const smBars = Q1.map((q) => ({ q, value: E.smTotal(q).value, mv: E.smTotal(q) }));
   const magicLine = Q1.map((q) => ({ q, value: E.magicNumber(q).value, mv: E.magicNumber(q) }));
@@ -215,26 +215,16 @@ const SLOT_ELIG = {
 };
 const elig = (k, t) => (SLOT_ELIG[k] || []).includes(t);
 // viewBox dimensions per slot — wide/short when a chart spans, squarer when paired
-const DIM = { full: { w: 1360, h: 300 }, pair: { w: 676, h: 360 }, major: { w: 1026, h: 360 } };
+const DIM = { full: { w: 1360, h: 264 }, pair: { w: 676, h: 236 }, major: { w: 1000, h: 264 } };
 
 function packRows(blocks, kindOf) {
-  const rows = [], n = blocks.length; let i = 0;
-  const k = (j) => (j >= 0 && j < n ? kindOf(blocks[j]) : null);
-  while (i < n) {
-    const kind = k(i);
-    if (elig(kind, "hero")) { rows.push({ t: "hero", blocks: [blocks[i]] }); i++; continue; }
-    if (kind === "callout") {
-      let j = i; while (j < n && k(j) === "callout") j++;
-      const run = blocks.slice(i, j);
-      if (run.length <= 2 && j < n && elig(k(j), "major")) { rows.push({ t: "split", major: blocks[j], minor: run }); i = j + 1; }
-      else { for (let s = 0; s < run.length; s += 4) rows.push({ t: "strip", blocks: run.slice(s, s + 4) }); i = j; }
-      continue;
-    }
-    const nk = k(i + 1);
-    if (nk && nk !== "callout" && !elig(nk, "hero") && elig(kind, "pair") && elig(nk, "pair")) { rows.push({ t: "pair", blocks: [blocks[i], blocks[i + 1]] }); i += 2; continue; }
-    if (nk === "callout" && elig(kind, "major")) { let j = i + 1; while (j < n && k(j) === "callout" && j - (i + 1) < 3) j++; rows.push({ t: "split", major: blocks[i], minor: blocks.slice(i + 1, j) }); i = j; continue; }
-    rows.push({ t: elig(kind, "full") ? "full" : "full", blocks: [blocks[i]] }); i++;
-  }
+  // instrument layout: hero, then a KPI strip of all callouts, then charts as 2-across tiles.
+  const hero = [], callouts = [], charts = [];
+  for (const b of blocks) { const k = kindOf(b); if (elig(k, "hero")) hero.push(b); else if (k === "callout") callouts.push(b); else charts.push(b); }
+  const rows = [];
+  for (const h of hero) rows.push({ t: "hero", blocks: [h] });
+  if (callouts.length) rows.push({ t: "kpi", blocks: callouts });
+  for (let i = 0; i < charts.length; i += 2) rows.push(i + 1 < charts.length ? { t: "pair", blocks: [charts[i], charts[i + 1]] } : { t: "solo", blocks: [charts[i]] });
   return rows;
 }
 
@@ -337,13 +327,9 @@ function Section({ section, catalog, onPick }) {
   const items = [];
   rows.forEach((r, i) => {
     if (r.t === "hero") items.push(cell(r.blocks[0], null, "g12", `h${i}`));
-    else if (r.t === "full") items.push(cell(r.blocks[0], DIM.full, "g12", `f${i}`));
+    else if (r.t === "kpi") items.push(<div key={`k${i}`} className="g12 kpi">{r.blocks.map((b, j) => <Block key={j} block={b} catalog={catalog} onPick={onPick} dim={null} />)}</div>);
     else if (r.t === "pair") r.blocks.forEach((b, j) => items.push(cell(b, DIM.pair, "g6", `p${i}${j}`)));
-    else if (r.t === "strip") r.blocks.forEach((b, j) => items.push(cell(b, null, "g3", `s${i}${j}`)));
-    else if (r.t === "split") {
-      items.push(cell(r.major, DIM.major, "g9", `m${i}`));
-      items.push(<div key={`n${i}`} className="g3 split-minor">{r.minor.map((b, j) => <Block key={j} block={b} catalog={catalog} onPick={onPick} dim={null} />)}</div>);
-    }
+    else if (r.t === "solo") items.push(cell(r.blocks[0], DIM.pair, "g6", `o${i}`));
   });
   return (<section className="sec">
     <div className="sec-head"><span className="sec-t">{section.heading}</span></div>
