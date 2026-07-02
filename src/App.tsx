@@ -130,15 +130,46 @@ function Callout({ mv, onPick }) {
   const arrow = mv.value < b.thr ? "▼" : "▲"; const thrFmt = mv.unit === "ratio" ? `${b.thr}x` : mv.unit === "months" ? `${b.thr}mo` : mv.unit === "percent" ? `${b.thr}%` : `${b.thr}`;
   return (<button className={`callout ${breached ? "bad" : "good"}`} onClick={() => onPick(mv)}><span className="co-v">{fmtMV(mv)}</span><span className="co-l">{mv.label}{mv.epistemic === "proxy" && <span className="proxy">proxy</span>}</span><span className="co-basis">{arrow} vs {thrFmt}</span></button>);
 }
-function MaskingCard({ finding, onPick }) {
-  const blended = E.store.get(finding.blendedId), worst = E.store.get(finding.worstId);
-  return (<div className="mask">
-    <div className="verdict">
-      <button className="metric good" onClick={() => onPick({ node: finding, isFinding: true })}><span className="metric-v">{fmtPct(blended.value)}</span><span className="metric-l">Blended NRR</span><span className="metric-badge good">clears 100%</span></button>
-      <span className="conceals">conceals</span>
-      <button className="metric bad" onClick={() => onPick({ node: finding, isFinding: true })}><span className="metric-v">{fmtPct(worst.value)}</span><span className="metric-l">{finding.worstSeg} NRR</span><span className="metric-badge bad">underwater · {finding.wShare.toFixed(0)}% of ARR</span></button>
+// Presentation registry: each finding TYPE declares how it renders as a card. A generic
+// FindingCard draws any of them — adding a finding type is a registry entry here, not a
+// new component. This is the production shape (typed findings → declared presentation →
+// one renderer) at demo scale. The relationship verb belongs to the finding type because
+// the detector's job *is* to detect that relationship (masking = concealment).
+const FINDING_PRESENTATION = {
+  masking: {
+    verb: "conceals",
+    sides: (f) => [
+      { mv: E.store.get(f.blendedId), badge: "clears benchmark" },
+      { mv: E.store.get(f.worstId), badge: `underwater · ${f.wShare.toFixed(0)}% of ARR` },
+    ],
+  },
+  // future: divergence:{ verb:"diverges from", sides:… }, concentration:{ … } — no new component
+};
+function toneOf(mv) {
+  if (!mv.basis) return "neutral";
+  const clears = mv.basis.good === "above" ? mv.value >= mv.basis.thr : mv.value <= mv.basis.thr;
+  return clears ? "good" : "bad";
+}
+function FindingSide({ side, onPick }) {
+  const tone = toneOf(side.mv);
+  return (<button className={`fside ${tone}`} onClick={onPick}>
+    <span className="fside-v">{fmtMV(side.mv)}</span>
+    <span className="fside-l">{side.mv.label}</span>
+    <span className={`fside-badge ${tone}`}>{side.badge}</span>
+  </button>);
+}
+function FindingCard({ finding, onPick }) {
+  const schema = FINDING_PRESENTATION[finding.type];
+  if (!schema) return null;                 // no bespoke fallback — unknown type simply doesn't render
+  const sides = schema.sides(finding);
+  const pick = () => onPick({ node: finding, isFinding: true });
+  return (<div className="fcard">
+    <div className="fcard-relation">
+      <FindingSide side={sides[0]} onPick={pick} />
+      <span className="fcard-verb">{schema.verb}</span>
+      <FindingSide side={sides[1]} onPick={pick} />
     </div>
-    <button className="inspect" onClick={() => onPick({ node: finding, isFinding: true })}>▸ inspect provenance</button>
+    <button className="inspect" onClick={pick}>▸ inspect provenance</button>
   </div>);
 }
 
@@ -172,7 +203,7 @@ function buildCatalog() {
 
 function Widget({ id, catalog, onPick }) {
   const w = catalog[id]; if (!w) return null; const d = w.data;
-  if (w.kind === "finding_card") return <MaskingCard finding={d.finding} onPick={onPick} />;
+  if (w.kind === "finding_card") return <FindingCard finding={d.finding} onPick={onPick} />;
   if (w.kind === "callout") return <Callout mv={d.mv} onPick={(mv) => onPick({ node: mv })} />;
   if (w.kind === "combo") return <Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} />;
   if (w.kind === "line") return <LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} />;

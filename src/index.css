@@ -17,14 +17,15 @@
 .sec-t{font-family:'Archivo',sans-serif;font-weight:600;font-size:18px;letter-spacing:.01em;}
 .sec-s{font-size:12px;color:var(--muted);font-style:italic;}
 .card{background:var(--panel);border:1px solid var(--rule);border-top:3px solid var(--ink);padding:24px 24px 8px;}
-.verdict{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
-.metric{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:none;border:none;border-left:3px solid;padding:4px 0 4px 14px;cursor:pointer;text-align:left;font-family:inherit;transition:transform .12s;}
-.metric:hover{transform:translateX(2px);} .metric.good{border-color:var(--verdant);} .metric.bad{border-color:var(--ember);}
-.metric-v{font-family:'Archivo',sans-serif;font-weight:700;font-size:44px;line-height:.95;letter-spacing:-.02em;}
-.metric.good .metric-v{color:var(--verdant);} .metric.bad .metric-v{color:var(--ember);}
-.metric-l{font-size:13px;color:var(--muted);} .metric-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.04em;padding:2px 6px;margin-top:3px;}
-.metric-badge.good{background:var(--verdant-bg);color:var(--verdant);} .metric-badge.bad{background:var(--ember-bg);color:var(--ember);}
-.conceals{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
+/* finding card (generic, schema-driven): distributes across the hero's width */
+.fcard-relation{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:32px;padding:6px 0 4px;}
+.fcard-verb{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:center;}
+.fside{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:none;border:none;border-left:3px solid;padding:4px 0 4px 16px;cursor:pointer;text-align:left;font-family:inherit;transition:transform .12s;min-width:0;}
+.fside:hover{transform:translateX(2px);} .fside.good{border-color:var(--verdant);} .fside.bad{border-color:var(--ember);} .fside.neutral{border-color:var(--rule);}
+.fside-v{font-family:'Archivo',sans-serif;font-weight:700;font-size:46px;line-height:.95;letter-spacing:-.02em;}
+.fside.good .fside-v{color:var(--verdant);} .fside.bad .fside-v{color:var(--ember);}
+.fside-l{font-size:13px;color:var(--muted);} .fside-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.04em;padding:2px 6px;margin-top:3px;align-self:flex-start;}
+.fside-badge.good{background:var(--verdant-bg);color:var(--verdant);} .fside-badge.bad{background:var(--ember-bg);color:var(--ember);}
 .readout{font-size:15px;line-height:1.6;max-width:62ch;color:#2C3137;margin:22px 0 14px;}
 .inspect{background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--brass);cursor:pointer;padding:8px 0;letter-spacing:.03em;} .inspect:hover{color:var(--ink);}
 .trace{max-height:0;overflow:hidden;transition:max-height .4s ease;} .trace.open{max-height:2400px;}
@@ -63,7 +64,7 @@
 .co-v{font-family:'Archivo',sans-serif;font-weight:700;font-size:30px;letter-spacing:-.01em;} .callout.bad .co-v{color:var(--ember);} .callout.good .co-v{color:var(--verdant);}
 .co-l{font-size:12.5px;color:var(--ink);font-weight:500;} .co-basis{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);}
 .linecard{margin-top:16px;}
-@media(max-width:780px){.bridges,.strip{grid-template-columns:1fr;}.metric-v{font-size:38px;}.hdr-sub{display:none;}}
+@media(max-width:780px){.bridges,.strip{grid-template-columns:1fr;}.fside-v{font-size:38px;}.hdr-sub{display:none;}}
 @media(prefers-reduced-motion:reduce){.wf-bar,.live-dot{animation:none;}.trace{transition:none;}}
 
 .wf-axis.r{fill:var(--muted);}
@@ -99,11 +100,8 @@
 .frame-h{font-family:'Archivo',sans-serif;font-weight:600;font-size:16px;}
 .frame-sw{font-size:13px;color:var(--muted);font-style:italic;flex:1;min-width:220px;}
 .emph-hero .frame-h{font-size:19px;}
-.emph-hero>.mask,.emph-hero>div,.block>.mask{}
-.mask{background:var(--panel);border:1px solid var(--rule);border-top:3px solid var(--ink);padding:22px 22px 10px;}
 .emph-standard>div>svg,.block svg{background:var(--panel);}
 .block>div:not(.frame){background:var(--panel);border:1px solid var(--rule);padding:14px;}
-.block .mask{border:1px solid var(--rule);}
 .strip{display:flex;flex-wrap:wrap;gap:14px;}
 .strip .block{flex:1;min-width:170px;margin:0;}
 .strip .block>div:not(.frame){padding:0;border:none;background:none;}
@@ -164,9 +162,13 @@
 .block{ margin:0; }                    /* the grid owns spacing now */
 /* calm charts: fit the cell, cap height so a full-span chart can't balloon */
 .block svg,.ans svg{ width:100%; height:auto; display:block; max-height:320px; }
-/* callout strip: even row of compact metrics across the full width */
-.row.strip{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:var(--gap); }
+/* callout strip: fixed-width cards, wrap, left-aligned — a lone callout stays compact */
+.row.strip{ display:flex; flex-wrap:wrap; gap:var(--gap); }
+.row.strip>.block{ flex:0 0 220px; }
 .strip .block>div:not(.frame){ padding:16px; }
 /* asked rail sits in the field, bridges pair two-up too */
 .bridges{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--gap); }
 @media(max-width:900px){ .row.pair,.row.strip,.bridges{ grid-template-columns:1fr; } }
+
+/* finding card container: primary/hero treatment */
+.block>div.fcard{border-top:3px solid var(--ink);padding:24px;}
