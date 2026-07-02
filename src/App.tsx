@@ -158,34 +158,16 @@ function FindingSide({ side, onPick }) {
     <span className={`fside-badge ${tone}`}>{side.badge}</span>
   </button>);
 }
-function MiniGap({ a, b, thr }) {
-  // honest position plot: two values as dots relative to the benchmark (no baseline, no truncation lie)
-  const W = 230, H = 52, padL = 10, padR = 10, y = 30;
-  const vals = [a.value, b.value, thr]; const lo = Math.min(...vals) - 6, hi = Math.max(...vals) + 6;
-  const x = (v) => padL + (W - padL - padR) * (v - lo) / (hi - lo);
-  return (<svg viewBox={`0 0 ${W} ${H}`} className="minigap">
-    <text x={padL} y={9} className="mg-cap">relative to benchmark</text>
-    <line x1={padL} x2={W - padR} y1={y} y2={y} className="mg-axis" />
-    <line x1={x(thr)} x2={x(thr)} y1={y - 8} y2={y + 8} className="mg-bench" />
-    <text x={x(thr)} y={y + 17} className="mg-lab" textAnchor="middle">{thr}%</text>
-    <circle cx={x(b.value)} cy={y} r="5" className="mg-dot bad" />
-    <circle cx={x(a.value)} cy={y} r="5" className="mg-dot good" />
-  </svg>);
-}
 function FindingCard({ finding, onPick }) {
   const schema = FINDING_PRESENTATION[finding.type];
   if (!schema) return null;                 // no bespoke fallback — unknown type simply doesn't render
   const sides = schema.sides(finding);
   const pick = () => onPick({ node: finding, isFinding: true });
-  const bothBench = sides[0].mv.basis && sides[1].mv.basis;
   return (<div className="fband">
     <FindingSide side={sides[0]} onPick={pick} />
     <span className="fband-verb">{schema.verb}</span>
     <FindingSide side={sides[1]} onPick={pick} />
-    <div className="fband-right">
-      {bothBench && <MiniGap a={sides[0].mv} b={sides[1].mv} thr={sides[0].mv.basis.thr} />}
-      <button className="fband-inspect" onClick={pick}>inspect provenance ›</button>
-    </div>
+    <button className="fband-inspect" onClick={pick}>inspect provenance ›</button>
   </div>);
 }
 
