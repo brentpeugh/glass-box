@@ -190,14 +190,14 @@ function buildCatalog() {
     bridge_smb: { kind: "waterfall", polarity: "bad", desc: "SMB retention bridge — churn and contraction outweigh expansion.", data: { bridge: E.cohortBridge("SMB", "24Q4", "25Q4"), title: "SMB retention bridge", mv: E.nrr("SMB", "24Q4", "25Q4") } },
     bridge_enterprise: { kind: "waterfall", polarity: "good", desc: "Enterprise retention bridge — the expansion engine; net retention well above 100%.", data: { bridge: E.cohortBridge("Enterprise", "24Q4", "25Q4"), title: "Enterprise retention bridge", mv: E.nrr("Enterprise", "24Q4", "25Q4") } },
     bridge_blended: { kind: "waterfall", polarity: "neutral", desc: "Company-wide retention bridge across all segments.", data: { bridge: E.cohortBridge(null, "24Q4", "25Q4"), title: "Blended retention bridge", mv: E.nrr(null, "24Q4", "25Q4") } },
-    efficiency_combo: { kind: "combo", polarity: "bad", desc: "Sales & marketing spend climbing while sales efficiency (magic number) falls through its benchmark.", data: { bars: smBars, line: magicLine, benchmark: E.BENCH.magic_number.threshold, good: E.BENCH.magic_number.good } },
-    magic_line: { kind: "line", polarity: "bad", desc: "Magic number trend crossing its 0.75 benchmark.", data: { series: magicLine, benchmark: E.BENCH.magic_number.threshold, good: "above", fmt: (v) => `${v.toFixed(2)}x` } },
-    accel_line: { kind: "line", polarity: "good", desc: "Quarter-over-quarter ARR growth accelerating.", data: { series: accelLine, benchmark: null, good: "above", fmt: (v) => `${v.toFixed(1)}%` } },
+    efficiency_combo: { kind: "combo", polarity: "bad", desc: "Sales & marketing spend climbing while sales efficiency (magic number) falls through its benchmark.", data: { title: "S&M spend vs magic number", bars: smBars, line: magicLine, benchmark: E.BENCH.magic_number.threshold, good: E.BENCH.magic_number.good } },
+    magic_line: { kind: "line", polarity: "bad", desc: "Magic number trend crossing its 0.75 benchmark.", data: { title: "SaaS magic number", series: magicLine, benchmark: E.BENCH.magic_number.threshold, good: "above", fmt: (v) => `${v.toFixed(2)}x` } },
+    accel_line: { kind: "line", polarity: "good", desc: "Quarter-over-quarter ARR growth accelerating.", data: { title: "Quarter-over-quarter ARR growth", series: accelLine, benchmark: null, good: "above", fmt: (v) => `${v.toFixed(1)}%` } },
     callout_magic: { kind: "callout", polarity: "bad", desc: "SaaS magic number vs benchmark.", data: { mv: E.magicNumber("25Q4") } },
     callout_cac: { kind: "callout", polarity: "bad", desc: "CAC payback (months) vs benchmark.", data: { mv: E.cacPayback("25Q4") } },
     callout_r40: { kind: "callout", polarity: "bad", desc: "Rule of 40 vs benchmark.", data: { mv: E.ruleOf40("25Q4") } },
     callout_grr: { kind: "callout", polarity: "bad", desc: "Gross revenue retention vs benchmark.", data: { mv: E.grr(null, "24Q4", "25Q4") } },
-    segment_stack: { kind: "stacked_area", polarity: "neutral", desc: "ARR by segment over time — topline growth and rising Enterprise concentration.", data: { series: segSeries } },
+    segment_stack: { kind: "stacked_area", polarity: "neutral", desc: "ARR by segment over time — topline growth and rising Enterprise concentration.", data: { title: "ARR by segment", series: segSeries } },
   };
 }
 
@@ -209,7 +209,7 @@ const SLOT_ELIG = {
   finding_card: ["hero"],
   combo: ["full", "pair", "major"],
   stacked_area: ["full", "pair", "major"],
-  line: ["full", "pair", "major"],
+  line: ["full", "major"],
   waterfall: ["pair", "full"],
   callout: ["strip", "minor"],
 };
@@ -238,14 +238,21 @@ function packRows(blocks, kindOf) {
   return rows;
 }
 
+function ChartHeader({ title, tag, tagTone, onTrace }) {
+  return (<div className="chart-h">
+    <button className="chart-title" onClick={onTrace || undefined}>{title}{onTrace && <span className="chart-trace"> ▸ trace</span>}</button>
+    {tag && <span className={`chart-tag ${tagTone || ""}`}>{tag}</span>}
+  </div>);
+}
 function Widget({ id, catalog, onPick, dim }) {
   const w = catalog[id]; if (!w) return null; const d = w.data; const D = dim || {};
+  const last = (arr) => arr[arr.length - 1].mv;
   if (w.kind === "finding_card") return <FindingCard finding={d.finding} onPick={onPick} />;
   if (w.kind === "callout") return <Callout mv={d.mv} onPick={(mv) => onPick({ node: mv })} />;
-  if (w.kind === "combo") return <Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} />;
-  if (w.kind === "line") return <LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} />;
-  if (w.kind === "stacked_area") return <StackedArea quarters={E.QUARTERS} series={d.series} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} />;
-  if (w.kind === "waterfall") return (<div><div className="bridge-h"><button className="bridge-trace" onClick={() => onPick({ node: d.mv })}>{d.title} ▸ trace</button><span className={d.bridge.nrr >= 100 ? "good" : "bad"}>NRR {d.bridge.nrr.toFixed(0)}%</span></div><Waterfall c={d.bridge} w={D.w} h={D.h} /></div>);
+  if (w.kind === "combo") return (<div><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.line) })} /><Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} /></div>);
+  if (w.kind === "line") return (<div><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.series) })} /><LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} /></div>);
+  if (w.kind === "stacked_area") return (<div><ChartHeader title={d.title} /><StackedArea quarters={E.QUARTERS} series={d.series} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} /></div>);
+  if (w.kind === "waterfall") return (<div><ChartHeader title={d.title} tag={`NRR ${d.bridge.nrr.toFixed(0)}%`} tagTone={d.bridge.nrr >= 100 ? "good" : "bad"} onTrace={() => onPick({ node: d.mv })} /><Waterfall c={d.bridge} w={D.w} h={D.h} /></div>);
   return null;
 }
 

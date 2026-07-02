@@ -175,3 +175,11 @@
 
 /* finding card container: primary/hero treatment */
 .block>div.fcard{border-top:3px solid var(--ink);padding:24px;}
+
+/* unified chart header (title + trace affordance + optional tag) */
+.chart-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;gap:12px;}
+.chart-title{background:none;border:none;font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;padding:0;text-align:left;}
+.chart-title:hover{color:var(--brass);}
+.chart-trace{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:400;color:var(--brass);letter-spacing:.03em;}
+.chart-tag{font-family:'IBM Plex Mono',monospace;font-size:13px;white-space:nowrap;}
+.chart-tag.good{color:var(--verdant);} .chart-tag.bad{color:var(--ember);}
