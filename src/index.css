@@ -18,7 +18,8 @@
 .sec-s{font-size:12px;color:var(--muted);font-style:italic;}
 .card{background:var(--panel);border:1px solid var(--rule);border-top:3px solid var(--ink);padding:24px 24px 8px;}
 /* finding card (generic, schema-driven): distributes across the hero's width */
-.fcard-relation{display:grid;grid-template-columns:auto auto auto;justify-content:center;align-items:center;gap:64px;padding:10px 0 6px;}
+.fcard-relation{display:grid;grid-template-columns:repeat(12,1fr);align-items:center;gap:var(--gap);padding:10px 0 6px;}
+.fcard-relation>.fside:nth-child(1){grid-column:1 / 5;} .fcard-relation>.fcard-verb{grid-column:5 / 7;} .fcard-relation>.fside:nth-child(3){grid-column:7 / 11;}
 .fcard-verb{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:center;}
 .fside{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:none;border:none;border-left:3px solid;padding:4px 0 4px 16px;cursor:pointer;text-align:left;font-family:inherit;transition:transform .12s;min-width:0;}
 .fside:hover{transform:translateX(2px);} .fside.good{border-color:var(--verdant);} .fside.bad{border-color:var(--ember);} .fside.neutral{border-color:var(--rule);}
@@ -155,23 +156,23 @@
 .sec-head{ margin:0 0 24px; }
 /* the grid: standard blocks pair two-up; hero + strips span the row */
 /* the grid: standard blocks pair two-up; hero + strips span the row */
-.row{ margin-bottom:var(--gap); }
-.row:last-child{ margin-bottom:0; }
-.row.pair{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--gap); align-items:start; }
-.row.split{ display:grid; grid-template-columns:2fr 1fr; gap:var(--gap); align-items:start; }
+/* ONE shared 12-column grid: every block spans an integer number of columns, so all
+   edges land on the same twelve lines and align across rows (Grid as Scripture). */
+.grid12{ display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:var(--gap); align-items:start; }
+.g12{ grid-column:1 / -1; min-width:0; }
+.g9{ grid-column:span 9; min-width:0; }
+.g6{ grid-column:span 6; min-width:0; }
+.g3{ grid-column:span 3; min-width:0; }
 .split-minor{ display:flex; flex-direction:column; gap:var(--gap); }
-.split-minor>.block{ width:100%; } .split-minor .callout{ width:100%; box-sizing:border-box; }
-.row.full,.row.pair>*{ min-width:0; }
+.split-minor .callout{ width:100%; box-sizing:border-box; }
 .block{ margin:0; }                    /* the grid owns spacing now */
 /* calm charts: fit the cell, cap height so a full-span chart can't balloon */
 .block svg,.ans svg{ width:100%; height:auto; display:block; }
 /* callout strip: fixed-width cards, wrap, left-aligned — a lone callout stays compact */
-.row.strip{ display:flex; flex-wrap:wrap; gap:var(--gap); }
-.row.strip>.block{ flex:0 0 220px; }
 .strip .block>div:not(.frame){ padding:16px; }
 /* asked rail sits in the field, bridges pair two-up too */
 .bridges{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--gap); }
-@media(max-width:900px){ .row.pair,.row.split,.bridges{ grid-template-columns:1fr; } .split-minor{ flex-direction:row; flex-wrap:wrap; } }
+@media(max-width:900px){ .grid12{ grid-template-columns:1fr; } .g12,.g9,.g6,.g3{ grid-column:1 / -1; } }
 
 /* finding card container: primary/hero treatment */
 .block>div.fcard{border-top:3px solid var(--ink);padding:24px;}
