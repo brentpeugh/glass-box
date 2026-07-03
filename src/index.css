@@ -51,9 +51,9 @@
 .wf-axis{font-family:'IBM Plex Mono',monospace;font-size:9px;fill:var(--muted);}
 .wf-xlab{font-family:'IBM Plex Sans',sans-serif;font-size:9.5px;fill:var(--ink);} .wf-xval{font-family:'IBM Plex Mono',monospace;font-size:9px;fill:var(--muted);}
 .wf-conn{stroke:var(--brass);stroke-width:1;stroke-dasharray:2 2;}
-.wf-anchor{fill:var(--slate-d);} .wf-up{fill:var(--verdant);} .wf-down{fill:var(--ember);}
+.wf-anchor{fill:var(--slate-d);shape-rendering:crispEdges;} .wf-up{fill:var(--verdant);shape-rendering:crispEdges;} .wf-down{fill:var(--ember);shape-rendering:crispEdges;}
 @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
-.ln-path{fill:none;stroke:var(--slate-d);stroke-width:1.75;} .ln-bench{stroke:var(--slate-l);stroke-width:1.25;stroke-dasharray:4 3;} .ln-bench-lab{font-family:"IBM Plex Mono",monospace;font-size:9px;fill:var(--muted);}
+.ln-path{fill:none;stroke:var(--slate-d);stroke-width:2;} .ln-bench{stroke:var(--slate-l);stroke-width:1.25;stroke-dasharray:4 3;} .ln-bench-lab{font-family:"IBM Plex Mono",monospace;font-size:9px;fill:var(--muted);}
 .ln-pt{cursor:pointer;} .ln-dot{stroke:#fff;stroke-width:1.5;} .ln-dot.good{fill:var(--verdant);} .ln-dot.bad{fill:var(--ember);}
 .ln-pt:hover .ln-dot{r:7;}
 .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px;}
@@ -66,7 +66,7 @@
 @media(prefers-reduced-motion:reduce){.wf-bar,.live-dot{animation:none;}.trace{transition:none;}}
 
 .wf-axis.r{fill:var(--muted);}
-.co-bar{fill:var(--slate);opacity:.9;cursor:pointer;transition:opacity .12s;} .co-bar:hover{opacity:1;}
+.co-bar{fill:var(--slate);shape-rendering:crispEdges;cursor:pointer;transition:fill .12s;} .co-bar:hover{fill:var(--slate-d);}
 .area{fill-opacity:.86;}
 .legend{display:flex;gap:16px;margin:0 0 8px 4px;flex-wrap:wrap;}
 .chip{display:flex;align-items:center;gap:6px;background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink);cursor:pointer;padding:2px 2px;}
@@ -241,3 +241,16 @@
 .wf-grid{ shape-rendering:crispEdges; }
 .wf-axis{ font-size:9px; }
 .legend{ display:flex; gap:14px; margin-bottom:2px; }
+
+/* ===== institutional data table ===== */
+.tpanel{ display:flex; flex-direction:column; gap:6px; }
+.dtable{ width:100%; }
+.dt-row{ display:grid; grid-template-columns:1.4fr 1fr 0.8fr 0.9fr 0.9fr; align-items:center; padding:7px 2px; border-bottom:1px solid #EDEFF1; }
+.dt-head{ font-family:'IBM Plex Sans',sans-serif; font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); border-bottom:1px solid var(--rule); padding-bottom:6px; }
+.dt-head span:not(:first-child){ text-align:right; justify-self:end; }
+.dt-seg{ font-family:'IBM Plex Sans',sans-serif; font-weight:500; font-size:13px; color:var(--ink); }
+.dt-num{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--ink); background:none; border:none; cursor:pointer; padding:0; justify-self:end; text-align:right; }
+button.dt-num:hover{ color:var(--brass); }
+.dt-num.good{ color:var(--verdant); } .dt-num.bad{ color:var(--ember); } .dt-num.dim{ color:var(--muted); cursor:default; }
+.dt-total{ border-top:1px solid var(--ink); border-bottom:none; margin-top:1px; }   /* summation line — institutional convention */
+.dt-total .dt-seg{ font-weight:700; } .dt-total .dt-num{ font-weight:600; }

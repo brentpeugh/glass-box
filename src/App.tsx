@@ -78,7 +78,7 @@ function TraceDrawer({ picked, onClose }) {
 function Waterfall({ c, w = 440, h = 260 }) {
   const steps = [{ k: "Beginning", t: "anchor", v: c.beginning }, { k: "Expansion", t: "up", v: c.expansionGain }, { k: "Contraction", t: "down", v: c.contractionLoss }, { k: "Churn", t: "down", v: c.churnLoss }, { k: "Ending", t: "anchor", v: c.ending }];
   const W = w, H = h, padL = 50, padR = 14, padB = 42, padT = 16; const plotW = W - padL - padR, plotH = H - padT - padB;
-  const domainMax = (c.beginning + c.expansionGain) * 1.08; const y = (v) => padT + plotH - (v / domainMax) * plotH; const bw = (plotW / steps.length) * 0.6, gap = plotW / steps.length;
+  const domainMax = (c.beginning + c.expansionGain) * 1.08; const y = (v) => padT + plotH - (v / domainMax) * plotH; const bw = (plotW / steps.length) * 0.64, gap = plotW / steps.length;
   let run = 0; const bars = []; steps.forEach((s, i) => { const x = padL + gap * i + (gap - bw) / 2; let top, bot; if (s.t === "anchor") { top = s.v; bot = 0; run = s.v; } else if (s.t === "up") { bot = run; top = run + s.v; run = top; } else { top = run; bot = run - s.v; run = bot; } bars.push({ ...s, x, yTop: y(Math.max(top, bot)), h: Math.abs(y(top) - y(bot)), cy: y(run) }); });
   return (<svg viewBox={`0 0 ${W} ${H}`} className="wf"><line x1={padL} y1={padT} x2={padL} y2={H - padB} className="ax" /><line x1={padL} y1={H - padB} x2={W - padR} y2={H - padB} className="ax" />{Array.from({ length: 5 }, (_, i) => (domainMax / 4) * i).map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bars.map((b, i) => (<g key={i}>{i > 0 && <line x1={bars[i - 1].x + bw} x2={b.x} y1={bars[i - 1].cy} y2={bars[i - 1].cy} className="wf-conn" />}<rect x={b.x} y={b.yTop} width={bw} height={Math.max(b.h, 1)} className={`wf-bar wf-${b.t}`} /><text x={b.x + bw / 2} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{b.k}</text><text x={b.x + bw / 2} y={H - padB + 28} className="wf-xval" textAnchor="middle">{b.t === "anchor" ? fmtM(b.v) : (b.t === "up" ? "+" : "−") + fmtM(b.v).slice(1)}</text></g>))}</svg>);
 }
@@ -87,7 +87,7 @@ function Combo({ bars, line, benchmark, good, onPick, fmtL, fmtR, w = 620, h = 2
   const maxBar = Math.max(...bars.map((b) => b.value)) * 1.12;
   const maxLine = Math.max(...line.map((p) => p.value), benchmark) * 1.18;
   const yL = (v) => padT + plotH - (v / maxBar) * plotH, yR = (v) => padT + plotH - (v / maxLine) * plotH;
-  const n = bars.length, slot = plotW / n, bw = slot * 0.46, x = (i) => padL + slot * i + slot / 2;
+  const n = bars.length, slot = plotW / n, bw = slot * 0.54, x = (i) => padL + slot * i + slot / 2;
   const ticks = Array.from({ length: 4 }, (_, i) => (maxBar / 3) * i), rticks = Array.from({ length: 4 }, (_, i) => (maxLine / 3) * i);
   const path = line.map((p, i) => `${i ? "L" : "M"}${x(i)},${yR(p.value)}`).join(" ");
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
@@ -122,7 +122,7 @@ function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
     {ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmt(tv)}</text></g>))}
     {benchmark != null && <><line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="ln-bench" /><text x={W - padR} y={y(benchmark) - 5} className="ln-bench-lab" textAnchor="end">benchmark {fmt(benchmark)}</text></>}
     <path d={path} className="ln-path" />
-    <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{series.map((p, i) => { const br = benchmark != null && (good === "above" ? p.value < benchmark : p.value > benchmark); return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={y(p.value)} r="5" className={benchmark == null ? "ln-dot neutral" : br ? "ln-dot bad" : "ln-dot good"} /><text x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{p.q}</text></g>); })}
+    <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{series.map((p, i) => { const br = benchmark != null && (good === "above" ? p.value < benchmark : p.value > benchmark); return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={y(p.value)} r="5" className={benchmark == null ? "ln-dot neutral" : br ? "ln-dot bad" : "ln-dot good"} />{i === series.length - 1 && <text x={x(i)} y={y(p.value) - 9} className="dlab" textAnchor="middle">{fmt(p.value)}</text>}<text x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{p.q}</text></g>); })}
   </svg>);
 }
 function Callout({ mv, onPick }) {
@@ -196,6 +196,7 @@ function buildCatalog() {
     callout_r40: { kind: "callout", polarity: "bad", desc: "Rule of 40 vs benchmark.", data: { mv: E.ruleOf40("25Q4") } },
     callout_grr: { kind: "callout", polarity: "bad", desc: "Gross revenue retention vs benchmark.", data: { mv: E.grr(null, "24Q4", "25Q4") } },
     segment_stack: { kind: "stacked_area", polarity: "neutral", desc: "ARR by segment over time — topline growth and rising Enterprise concentration.", data: { title: "ARR by segment", series: segSeries } },
+    segment_table: { kind: "table", polarity: "neutral", desc: "Per-segment ARR, share of ARR, NRR and GRR — the concentration and durability breakdown in one grid.", data: {} },
   };
 }
 
@@ -239,6 +240,21 @@ function Fill({ render }) {
   return <div ref={ref} className="cfill">{w > 1 && h > 1 ? render(w, h) : null}</div>;
 }
 
+function SegmentTable({ onPick }) {
+  const P = "24Q4", L = "25Q4";
+  const rows = E.SEGMENTS.map((seg) => ({ seg, arr: E.segArr(seg, L), nrr: E.nrr(seg, P, L), grr: E.grr(seg, P, L) }));
+  const total = rows.reduce((a, r) => a + r.arr.value, 0);
+  const bNrr = E.nrr(null, P, L), bGrr = E.grr(null, P, L);
+  const tone = (mv) => mv.basis ? ((mv.basis.good === "above" ? mv.value >= mv.basis.thr : mv.value <= mv.basis.thr) ? "good" : "bad") : "";
+  const num = (mv) => <button className={`dt-num ${tone(mv)}`} onClick={() => onPick({ node: mv })}>{fmtMV(mv)}</button>;
+  return (<div className="dtable">
+    <div className="dt-row dt-head"><span>Segment</span><span>ARR</span><span>% ARR</span><span>NRR</span><span>GRR</span></div>
+    {rows.map((r) => (<div key={r.seg} className="dt-row">
+      <span className="dt-seg">{r.seg}</span>{num(r.arr)}<span className="dt-num dim">{((r.arr.value / total) * 100).toFixed(0)}%</span>{num(r.nrr)}{num(r.grr)}
+    </div>))}
+    <div className="dt-row dt-total"><span className="dt-seg">Total</span><span className="dt-num">{fmtM(total)}</span><span className="dt-num dim">100%</span>{num(bNrr)}{num(bGrr)}</div>
+  </div>);
+}
 function Widget({ id, catalog, onPick, dim }) {
   const w = catalog[id]; if (!w) return null; const d = w.data;
   const last = (arr) => arr[arr.length - 1].mv;
@@ -247,6 +263,7 @@ function Widget({ id, catalog, onPick, dim }) {
   if (w.kind === "combo") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.line) })} /><Fill render={(cw, ch) => <Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "line") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.series) })} /><Fill render={(cw, ch) => <LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "stacked_area") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <StackedArea quarters={E.QUARTERS} series={d.series} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "table") return (<div className="tpanel"><ChartHeader title="Segment breakdown" /><SegmentTable onPick={onPick} /></div>);
   if (w.kind === "waterfall") return (<div className="cpanel"><ChartHeader title={d.title} tag={`NRR ${d.bridge.nrr.toFixed(0)}%`} tagTone={d.bridge.nrr >= 100 ? "good" : "bad"} onTrace={() => onPick({ node: d.mv })} /><Fill render={(cw, ch) => <Waterfall c={d.bridge} w={cw} h={ch} />} /></div>);
   return null;
 }
@@ -307,6 +324,9 @@ const FALLBACK = {
       { widget: "callout_cac", emphasis: "compact", headline: "", soWhat: "" },
       { widget: "callout_r40", emphasis: "compact", headline: "", soWhat: "" },
       { widget: "efficiency_combo", emphasis: "standard", headline: "Spending more to grow less", soWhat: "Sales spend is climbing while each dollar buys less growth." }] },
+    { heading: "Concentration", blocks: [
+      { widget: "segment_stack", emphasis: "standard", headline: "Enterprise concentration is rising", soWhat: "The base is tilting toward a few large accounts." },
+      { widget: "segment_table", emphasis: "standard", headline: "The segment breakdown", soWhat: "Retention and share, segment by segment." }] },
   ] },
   CRO: { sections: [
     { heading: "Growth", blocks: [
@@ -314,7 +334,8 @@ const FALLBACK = {
       { widget: "accel_line", emphasis: "standard", headline: "Momentum is building", soWhat: "Quarter-over-quarter growth is speeding up, not flattening." }] },
     { heading: "Expansion", blocks: [
       { widget: "bridge_enterprise", emphasis: "standard", headline: "The expansion engine", soWhat: "Existing Enterprise accounts keep growing well past what they started at." },
-      { widget: "callout_grr", emphasis: "compact", headline: "", soWhat: "" }] },
+      { widget: "callout_grr", emphasis: "compact", headline: "", soWhat: "" },
+      { widget: "segment_table", emphasis: "standard", headline: "The segment breakdown", soWhat: "Retention and share, segment by segment." }] },
   ] },
 };
 
@@ -336,9 +357,9 @@ const GROUP_ORDER = { CFO: ["retention", "efficiency", "growth"], CRO: ["growth"
 const METRIC_GROUP = {
   masking_card: "retention", bridge_smb: "retention", bridge_enterprise: "retention", bridge_blended: "retention", callout_grr: "retention",
   efficiency_combo: "efficiency", magic_line: "efficiency", callout_magic: "efficiency", callout_cac: "efficiency", callout_r40: "efficiency",
-  accel_line: "growth", segment_stack: "growth",
+  accel_line: "growth", segment_stack: "growth", segment_table: "growth",
 };
-const WIDE_CHART = new Set(["stacked_area"]);            // spans full; everything else tiles
+const WIDE_CHART = new Set(["stacked_area", "table"]);            // spans full; everything else tiles
 const TILE_CHART = new Set(["waterfall", "combo", "line"]);
 
 function GroupSection({ title, blocks, catalog, onPick }) {
