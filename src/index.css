@@ -346,8 +346,11 @@ html,body,#root{ height:100%; overflow:hidden; }
 /* ===== finding band dual-trend panel ===== */
 .block>div.fband{ gap:24px; }
 .fband-vals{ display:flex; align-items:center; gap:26px; flex:0 0 auto; }
-.fband-trend{ flex:1 1 auto; max-width:360px; height:60px; align-self:center; }
+.fband-trend{ flex:1 1 auto; max-width:680px; height:66px; align-self:center; }
 .mtrend{ width:100%; height:100%; display:block; }
 .mt-bench{ stroke:var(--muted); stroke-dasharray:2 2; opacity:.5; }
 .mt-ln{ fill:none; stroke:var(--slate-d); stroke-width:1.5; }
 .mt-ln.good{ stroke:var(--verdant); } .mt-ln.bad{ stroke:var(--ember); }
+.mt-dot{ stroke:var(--panel); stroke-width:1; } .mt-dot.good{ fill:var(--verdant); } .mt-dot.bad{ fill:var(--ember); }
+.mt-end{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; } .mt-end.good{ fill:var(--verdant); } .mt-end.bad{ fill:var(--ember); }
+.mt-bench-lab{ font-family:'IBM Plex Mono',monospace; font-size:8px; fill:var(--muted); }

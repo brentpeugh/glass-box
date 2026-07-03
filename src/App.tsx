@@ -158,22 +158,27 @@ function FindingSide({ side, onPick }) {
     <span className={`fside-badge ${tone}`}>{side.badge}</span>
   </button>);
 }
-function MiniTrend({ a, b, benchmark, w = 320, h = 66 }) {
-  const W = w, H = h, padT = 9, padB = 9, padL = 2, padR = 2;
+function MiniTrend({ a, b, benchmark, w, h }) {
+  const W = w, H = h, padT = 10, padB = 10, padL = 4, padR = 34;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const all = [...a, ...b, benchmark]; const lo = Math.min(...all) - 3, hi = Math.max(...all) + 3;
   const x = (i) => padL + (a.length > 1 ? (plotW * i) / (a.length - 1) : plotW / 2);
   const y = (v) => padT + plotH * (1 - (v - lo) / (hi - lo));
   const line = (s) => s.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
   const area = (s) => `${line(s)} L${x(s.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`;
-  return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend" preserveAspectRatio="none">
+  const dots = (s, tone) => s.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r={i === s.length - 1 ? 3 : 2} className={`mt-dot ${tone}`} />);
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
     <defs>
-      <linearGradient id="mt-good" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--verdant)" stopOpacity="0.20" /><stop offset="100%" stopColor="var(--verdant)" stopOpacity="0" /></linearGradient>
-      <linearGradient id="mt-bad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ember)" stopOpacity="0.20" /><stop offset="100%" stopColor="var(--ember)" stopOpacity="0" /></linearGradient>
+      <linearGradient id="mt-good" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--verdant)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--verdant)" stopOpacity="0" /></linearGradient>
+      <linearGradient id="mt-bad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ember)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--ember)" stopOpacity="0" /></linearGradient>
     </defs>
     <path d={area(a)} fill="url(#mt-good)" /><path d={area(b)} fill="url(#mt-bad)" />
-    <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" vectorEffect="non-scaling-stroke" />
-    <path d={line(a)} className="mt-ln good" vectorEffect="non-scaling-stroke" /><path d={line(b)} className="mt-ln bad" vectorEffect="non-scaling-stroke" />
+    <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" />
+    <text x={W - padR + 4} y={y(benchmark) + 3} className="mt-bench-lab">{benchmark}%</text>
+    <path d={line(a)} className="mt-ln good" /><path d={line(b)} className="mt-ln bad" />
+    {dots(a, "good")}{dots(b, "bad")}
+    <text x={x(a.length - 1) + 5} y={y(a[a.length - 1]) + 3} className="mt-end good">{a[a.length - 1].toFixed(0)}</text>
+    <text x={x(b.length - 1) + 5} y={y(b[b.length - 1]) + 3} className="mt-end bad">{b[b.length - 1].toFixed(0)}</text>
   </svg>);
 }
 function FindingCard({ finding, onPick }) {
@@ -196,7 +201,7 @@ function FindingCard({ finding, onPick }) {
       <span className="fband-verb">{schema.verb}</span>
       <FindingSide side={sides[1]} onPick={pick} />
     </div>
-    {trend && <div className="fband-trend"><MiniTrend a={trend.a} b={trend.b} benchmark={thr} /></div>}
+    {trend && <div className="fband-trend"><Fill render={(cw, ch) => <MiniTrend a={trend.a} b={trend.b} benchmark={thr} w={cw} h={ch} />} /></div>}
     <button className="fband-inspect" onClick={pick}>inspect provenance ›</button>
   </div>);
 }
@@ -464,6 +469,10 @@ const PARTITIONS = {
   band_trio_pair: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 2 }, { a: "half", c: [7, 13], r: [3, 4], w: 1 }] },
   grid_six: { rowsT: "1fr 1fr", regions: [{ a: "third", c: [1, 5], r: [1, 2], w: 2 }, { a: "third", c: [5, 9], r: [1, 2], w: 1 }, { a: "third", c: [9, 13], r: [1, 2], w: 1 }, { a: "third", c: [1, 5], r: [2, 3], w: 1 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
   split_table: { rowsT: "1fr", regions: [{ a: "half", c: [1, 8], r: [1, 2], w: 2 }, { a: "tall", c: [8, 13], r: [1, 2] }] },
+  band_solo: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 13], r: [2, 3], w: 2 }] },
+  band_pair: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }] },
+  band_trio: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
+  band_duo_table: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "tall", c: [7, 13], r: [2, 3] }] },
   pair: { rowsT: "1fr", regions: [{ a: "half", c: [1, 7], r: [1, 2], w: 2 }, { a: "half", c: [7, 13], r: [1, 2], w: 2 }] },
 };
 // each widget belongs to an analytical domain; each role prioritizes domains differently,
@@ -494,7 +503,7 @@ function fitScore(p, F, C, T) {
   const used = seatFinding + chartsSeated + tableSeated;
   const empty = cap.total - used;
   const dropped = Math.max(0, C - chartsSeated) + Math.max(0, F - seatFinding) + Math.max(0, T - tableSeated);
-  return used * 10 - empty * 4 - dropped * 2;
+  return used * 10 - empty * 7 - dropped * 2;
 }
 const ROLE_PARTITION_PREF = {
   CFO: ["band_lead_matrix", "band_pair_trio", "band_trio_trio"],
@@ -505,7 +514,7 @@ function selectPartition(F, C, T, role) {
   let best = "pair", bs = -Infinity;
   for (const [k, p] of Object.entries(PARTITIONS)) {
     let s = fitScore(p, F, C, T);
-    const pi = pref.indexOf(k); if (pi >= 0) s += (pref.length - pi) * 8;   // role preference bias
+    const pi = pref.indexOf(k); if (pi >= 0) s += (pref.length - pi) * 2;   // role preference bias
     if (s > bs) { bs = s; best = k; }
   }
   return best;
