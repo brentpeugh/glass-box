@@ -436,6 +436,18 @@ const PARTITIONS = {
   big_rail: { rowsT: "1fr 1fr", regions: [{ a: "large", c: [1, 8], r: [1, 3], w: 3, split: [{ a: "wide", c: [1, 8], r: [1, 2], w: 1 }, { a: "wide", c: [1, 8], r: [2, 3], w: 1 }] }, { a: "wide", c: [8, 13], r: [1, 2], w: 2 }, { a: "square", c: [8, 13], r: [2, 3], w: 1 }] },
   pair: { rowsT: "1fr", regions: [{ a: "wide", c: [1, 7], r: [1, 2], w: 2 }, { a: "wide", c: [7, 13], r: [1, 2], w: 2 }] },
 };
+// each widget belongs to an analytical domain; each role prioritizes domains differently,
+// so the same content arranges differently per role (CRO leads growth, CFO leads durability)
+const WIDGET_DOMAIN = {
+  masking_card: "retention", bridge_smb: "retention", bridge_enterprise: "retention", bridge_blended: "retention", hbar_nrr: "retention",
+  efficiency_combo: "efficiency", magic_line: "efficiency", metric_matrix: "efficiency", efficiency_bullets: "efficiency",
+  accel_line: "growth", segment_stack: "growth",
+  segment_table: "concentration",
+};
+const ROLE_DOMAIN_PRIORITY = {
+  CFO: ["efficiency", "retention", "concentration", "growth"],
+  CRO: ["growth", "retention", "concentration", "efficiency"],
+};
 const PANEL_BUDGET = 5;
 function partCapacity(p) {
   const band = p.regions.filter((r) => r.a === "band").length;
@@ -454,35 +466,48 @@ function fitScore(p, F, C, T) {
   const dropped = Math.max(0, C - chartsSeated) + Math.max(0, F - seatFinding) + Math.max(0, T - tableSeated);
   return used * 10 - empty * 4 - dropped * 2;
 }
-function selectPartition(F, C, T) {
+const ROLE_PARTITION_PREF = {
+  CFO: ["band_big_rail", "band_duo_table", "split_table"],   // dense, matrix/table-dominant lead
+  CRO: ["band_wide_pair", "band_trio", "band_duo_table"],    // wide lead a growth trend can command
+};
+function selectPartition(F, C, T, role) {
+  const pref = ROLE_PARTITION_PREF[role] || [];
   let best = "pair", bs = -Infinity;
-  for (const [k, p] of Object.entries(PARTITIONS)) { const s = fitScore(p, F, C, T); if (s > bs) { bs = s; best = k; } }
+  for (const [k, p] of Object.entries(PARTITIONS)) {
+    let s = fitScore(p, F, C, T);
+    const pi = pref.indexOf(k); if (pi >= 0) s += (pref.length - pi) * 4;   // role preference bias
+    if (s > bs) { bs = s; best = k; }
+  }
   return best;
 }
-// pick the chart whose weight best fits what the region wants (fixes light chart in a big slot)
-function pickChart(pool, want, aspect) {
+// pick the chart that best fits the region's weight; the LEAD region prefers the role's
+// top-priority domain (so the boards diverge in what leads), rest tie-break by domain.
+function pickChart(pool, want, aspect, drank, leadByDomain) {
   if (!pool.length) return null;
   let cands = pool.filter((c) => c.asp.includes(aspect));
   if (!cands.length) cands = pool.slice();
-  cands.sort((a, b) => Math.abs(a.w - want) - Math.abs(b.w - want) || b.w - a.w);
+  if (leadByDomain) cands.sort((a, b) => drank(a) - drank(b) || b.w - a.w);
+  else cands.sort((a, b) => Math.abs(a.w - want) - Math.abs(b.w - want) || drank(a) - drank(b) || b.w - a.w);
   const chosen = cands[0]; pool.splice(pool.indexOf(chosen), 1); return chosen;
 }
-function fillPartition(p, findings, charts, tables) {
+function fillPartition(p, findings, charts, tables, role) {
+  const prio = ROLE_DOMAIN_PRIORITY[role] || ROLE_DOMAIN_PRIORITY.CFO;
+  const drank = (c) => { const d = WIDGET_DOMAIN[c.b.widget]; const i = prio.indexOf(d); return i < 0 ? 99 : i; };
   const pool = charts.slice(0, PANEL_BUDGET).map((b) => ({ b, w: PANEL_WEIGHT[b._kind] || 2, asp: PANEL_ASPECTS[b._kind] || [] }));
   const fQ = [...findings], tQ = [...tables];
-  const placed = [];
+  const placed = []; let leadDone = false;
   for (const region of p.regions) {
     if (region.a === "band") { const b = fQ.shift() || tQ.shift(); if (b) placed.push({ region, block: b }); continue; }
     if (region.a === "tall") { const b = tQ.shift(); if (b) placed.push({ region, block: b }); continue; }
     if (!pool.length) continue;
     const want = region.w || 2;
     const heaviest = Math.max(...pool.map((c) => c.w));
-    // a heavy region with only light content left splits into a cluster of lighter panels
     if (want >= 3 && heaviest < 3 && region.split) {
-      for (const sub of region.split) { const pick = pickChart(pool, sub.w || 1, sub.a); if (pick) placed.push({ region: sub, block: pick.b }); }
+      for (const sub of region.split) { const pick = pickChart(pool, sub.w || 1, sub.a, drank, false); if (pick) placed.push({ region: sub, block: pick.b }); }
       continue;
     }
-    const pick = pickChart(pool, want, region.a);
+    const isLead = !leadDone; leadDone = true;
+    const pick = pickChart(pool, want, region.a, drank, isLead);
     if (pick) placed.push({ region, block: pick.b });
   }
   return placed;
@@ -494,8 +519,8 @@ function TemplateBoard({ spec, role, catalog, onPick }) {
   const findings = all.filter((b) => b._kind === "finding_card");
   const charts = all.filter((b) => CHART_KINDS.has(b._kind));
   const tables = all.filter((b) => b._kind === "table");
-  const p = PARTITIONS[selectPartition(findings.length, charts.length, tables.length)];
-  const placed = fillPartition(p, findings, charts, tables);
+  const p = PARTITIONS[selectPartition(findings.length, charts.length, tables.length, role)];
+  const placed = fillPartition(p, findings, charts, tables, role);
   return (<div className="partition" style={{ gridTemplateRows: p.rowsT }}>
     {placed.map((pl, i) => (
       <div key={i} className={`tb-panel asp-${pl.region.a}`} style={{ gridColumn: `${pl.region.c[0]} / ${pl.region.c[1]}`, gridRow: `${pl.region.r[0]} / ${pl.region.r[1]}` }}>
