@@ -158,15 +158,45 @@ function FindingSide({ side, onPick }) {
     <span className={`fside-badge ${tone}`}>{side.badge}</span>
   </button>);
 }
+function MiniTrend({ a, b, benchmark, w = 320, h = 66 }) {
+  const W = w, H = h, padT = 9, padB = 9, padL = 2, padR = 2;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const all = [...a, ...b, benchmark]; const lo = Math.min(...all) - 3, hi = Math.max(...all) + 3;
+  const x = (i) => padL + (a.length > 1 ? (plotW * i) / (a.length - 1) : plotW / 2);
+  const y = (v) => padT + plotH * (1 - (v - lo) / (hi - lo));
+  const line = (s) => s.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
+  const area = (s) => `${line(s)} L${x(s.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="mt-good" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--verdant)" stopOpacity="0.20" /><stop offset="100%" stopColor="var(--verdant)" stopOpacity="0" /></linearGradient>
+      <linearGradient id="mt-bad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ember)" stopOpacity="0.20" /><stop offset="100%" stopColor="var(--ember)" stopOpacity="0" /></linearGradient>
+    </defs>
+    <path d={area(a)} fill="url(#mt-good)" /><path d={area(b)} fill="url(#mt-bad)" />
+    <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" vectorEffect="non-scaling-stroke" />
+    <path d={line(a)} className="mt-ln good" vectorEffect="non-scaling-stroke" /><path d={line(b)} className="mt-ln bad" vectorEffect="non-scaling-stroke" />
+  </svg>);
+}
 function FindingCard({ finding, onPick }) {
   const schema = FINDING_PRESENTATION[finding.type];
-  if (!schema) return null;                 // no bespoke fallback — unknown type simply doesn't render
+  if (!schema) return null;
   const sides = schema.sides(finding);
   const pick = () => onPick({ node: finding, isFinding: true });
+  const thr = sides[0].mv.basis ? sides[0].mv.basis.thr : 100;
+  let trend = null;
+  if (finding.type === "masking" && finding.worstSeg) {
+    const qs = E.QUARTERS, safe = (fn) => { try { const r = fn(); return r && !isNaN(r.value) ? r.value : null; } catch { return null; } };
+    const idx = qs.map((_, i) => i).filter((i) => i >= 4);
+    const a = idx.map((i) => safe(() => E.nrr(null, qs[i - 4], qs[i]))).filter((v) => v != null);
+    const b = idx.map((i) => safe(() => E.nrr(finding.worstSeg, qs[i - 4], qs[i]))).filter((v) => v != null);
+    if (a.length > 1 && b.length > 1) trend = { a, b };
+  }
   return (<div className="fband">
-    <FindingSide side={sides[0]} onPick={pick} />
-    <span className="fband-verb">{schema.verb}</span>
-    <FindingSide side={sides[1]} onPick={pick} />
+    <div className="fband-vals">
+      <FindingSide side={sides[0]} onPick={pick} />
+      <span className="fband-verb">{schema.verb}</span>
+      <FindingSide side={sides[1]} onPick={pick} />
+    </div>
+    {trend && <div className="fband-trend"><MiniTrend a={trend.a} b={trend.b} benchmark={thr} /></div>}
     <button className="fband-inspect" onClick={pick}>inspect provenance ›</button>
   </div>);
 }
@@ -414,10 +444,10 @@ function Block({ block, catalog, onPick, dim }) {
 // panels to regions by aspect. A panel budget keeps every screen legible.
 const PANEL_ASPECTS = {
   finding_card: ["band"],
-  table: ["tall", "dom", "band"],
-  matrix: ["wide", "dom"],
-  combo: ["half", "wide", "third"],
-  line: ["wide", "half", "third"],
+  table: ["tall", "twothird", "half"],
+  matrix: ["twothird", "half"],
+  combo: ["half", "third"],
+  line: ["half", "twothird", "third"],
   stacked_area: ["half", "third"],
   waterfall: ["third", "half"],
   hbar: ["third", "half"],
@@ -425,13 +455,13 @@ const PANEL_ASPECTS = {
 };
 // information density a panel justifies (heavy grids earn a dominant region; trends are light)
 const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bullet: 2, line: 1, stacked_area: 1 };
-const CHART_ASPECTS = new Set(["dom", "wide", "half", "third"]);
+const CHART_ASPECTS = new Set(["twothird", "half", "third"]);
 // regions carry a weight `w` (space they want); a big region can `split` into lighter sub-regions
 const PARTITIONS = {
-  band_wide_trio: { rowsT: "auto 1.15fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 13], r: [2, 3], w: 3 }, { a: "third", c: [1, 5], r: [3, 4], w: 2 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_lead_trio: { rowsT: "auto 1.1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_dom_rail: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "dom", c: [1, 7], r: [2, 4], w: 3, split: [{ a: "half", c: [1, 7], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 1 }] }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }, { a: "tall", c: [7, 13], r: [3, 4] }] },
-  band_trio_pair: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 2 }, { a: "tall", c: [7, 13], r: [3, 4] }] },
+  band_pair_trio: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_lead_matrix: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 3], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_trio_trio: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_trio_pair: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 2 }, { a: "half", c: [7, 13], r: [3, 4], w: 1 }] },
   grid_six: { rowsT: "1fr 1fr", regions: [{ a: "third", c: [1, 5], r: [1, 2], w: 2 }, { a: "third", c: [5, 9], r: [1, 2], w: 1 }, { a: "third", c: [9, 13], r: [1, 2], w: 1 }, { a: "third", c: [1, 5], r: [2, 3], w: 1 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
   split_table: { rowsT: "1fr", regions: [{ a: "half", c: [1, 8], r: [1, 2], w: 2 }, { a: "tall", c: [8, 13], r: [1, 2] }] },
   pair: { rowsT: "1fr", regions: [{ a: "half", c: [1, 7], r: [1, 2], w: 2 }, { a: "half", c: [7, 13], r: [1, 2], w: 2 }] },
@@ -467,8 +497,8 @@ function fitScore(p, F, C, T) {
   return used * 10 - empty * 4 - dropped * 2;
 }
 const ROLE_PARTITION_PREF = {
-  CFO: ["band_wide_trio", "band_dom_rail", "band_trio_pair"],
-  CRO: ["band_lead_trio", "band_trio_pair", "band_wide_trio"],
+  CFO: ["band_lead_matrix", "band_pair_trio", "band_trio_trio"],
+  CRO: ["band_pair_trio", "band_trio_trio", "band_trio_pair"],
 };
 function selectPartition(F, C, T, role) {
   const pref = ROLE_PARTITION_PREF[role] || [];
