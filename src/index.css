@@ -47,7 +47,7 @@
 .bridge{background:var(--panel);border:1px solid var(--rule);padding:14px 14px 6px;}
 .bridge-h{display:flex;justify-content:space-between;font-size:13px;font-weight:500;margin-bottom:6px;}
 .bridge-h .good{color:var(--verdant);font-family:'IBM Plex Mono',monospace;} .bridge-h .bad{color:var(--ember);font-family:'IBM Plex Mono',monospace;}
-.wf,.ln{width:100%;height:auto;} .wf-grid{stroke:#EEF0F2;stroke-width:1;}
+.wf,.ln{width:100%;height:100%;} .wf-grid{stroke:#EDEFF1;stroke-width:1;}
 .wf-axis{font-family:'IBM Plex Mono',monospace;font-size:9px;fill:var(--muted);}
 .wf-xlab{font-family:'IBM Plex Sans',sans-serif;font-size:9.5px;fill:var(--ink);} .wf-xval{font-family:'IBM Plex Mono',monospace;font-size:9px;fill:var(--muted);}
 .wf-conn{stroke:var(--brass);stroke-width:1;stroke-dasharray:2 2;}
@@ -70,7 +70,7 @@
 .area{fill-opacity:.86;}
 .legend{display:flex;gap:16px;margin:0 0 8px 4px;flex-wrap:wrap;}
 .chip{display:flex;align-items:center;gap:6px;background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink);cursor:pointer;padding:2px 2px;}
-.chip:hover{text-decoration:underline;} .sw{width:11px;height:11px;display:inline-block;border-radius:2px;}
+.chip:hover{color:var(--brass);} .sw{width:10px;height:10px;display:inline-block;border-radius:0;}
 
 /* ---- entry screen ---- */
 .entry{max-width:760px;margin:0 auto;padding:13vh 24px 0;}
@@ -233,3 +233,11 @@
 .cfill svg{ width:100%; height:100%; display:block; }
 /* query-rail charts a touch shorter */
 .ans .cfill{ height:220px; }
+
+/* ===== institutional chart primitives ===== */
+.ax{ stroke:var(--rule); stroke-width:1; }
+.ax-tick{ stroke:var(--rule); stroke-width:1; }
+.dlab{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:500; fill:var(--slate-d); }
+.wf-grid{ shape-rendering:crispEdges; }
+.wf-axis{ font-size:9px; }
+.legend{ display:flex; gap:14px; margin-bottom:2px; }
