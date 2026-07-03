@@ -330,3 +330,15 @@ html,body,#root{ height:100%; overflow:hidden; }
 .mx-cell.v{ background:none; border:none; cursor:pointer; }
 .mx-cell.v:hover{ color:var(--brass); }
 .mx-cell.good{ color:var(--verdant); } .mx-cell.bad{ color:var(--ember); } .mx-cell.dim{ color:var(--rule); }
+
+/* ===== compact/dense chart internals ===== */
+.wf-axis,.wf-xlab{ font-size:8px; }
+.ln-bench-lab{ font-size:8px; }
+.dlab{ font-size:8.5px; }
+.chart-h{ margin-bottom:3px; }
+.chart-title{ font-size:12.5px; }
+.chart-tag{ font-size:11px; }
+.tb-panel{ padding:7px 9px; }
+.mx-cell{ font-size:10px; padding:4px 5px 4px 0; }
+.mx-lab{ font-size:10.5px; }
+.dt-num{ font-size:11.5px; } .dt-seg{ font-size:12px; }

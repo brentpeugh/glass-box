@@ -77,17 +77,17 @@ function TraceDrawer({ picked, onClose }) {
 // ================= chart primitives (renderer; owns all scales) =================
 function Waterfall({ c, w = 440, h = 260 }) {
   const steps = [{ k: "Beginning", t: "anchor", v: c.beginning }, { k: "Expansion", t: "up", v: c.expansionGain }, { k: "Contraction", t: "down", v: c.contractionLoss }, { k: "Churn", t: "down", v: c.churnLoss }, { k: "Ending", t: "anchor", v: c.ending }];
-  const W = w, H = h, padL = 50, padR = 14, padB = 42, padT = 16; const plotW = W - padL - padR, plotH = H - padT - padB;
-  const domainMax = (c.beginning + c.expansionGain) * 1.08; const y = (v) => padT + plotH - (v / domainMax) * plotH; const bw = (plotW / steps.length) * 0.64, gap = plotW / steps.length;
+  const W = w, H = h, padL = 40, padR = 14, padB = 42, padT = 16; const plotW = W - padL - padR, plotH = H - padT - padB;
+  const domainMax = (c.beginning + c.expansionGain) * 1.08; const y = (v) => padT + plotH - (v / domainMax) * plotH; const bw = (plotW / steps.length) * 0.44, gap = plotW / steps.length;
   let run = 0; const bars = []; steps.forEach((s, i) => { const x = padL + gap * i + (gap - bw) / 2; let top, bot; if (s.t === "anchor") { top = s.v; bot = 0; run = s.v; } else if (s.t === "up") { bot = run; top = run + s.v; run = top; } else { top = run; bot = run - s.v; run = bot; } bars.push({ ...s, x, yTop: y(Math.max(top, bot)), h: Math.abs(y(top) - y(bot)), cy: y(run) }); });
   return (<svg viewBox={`0 0 ${W} ${H}`} className="wf"><line x1={padL} y1={padT} x2={padL} y2={H - padB} className="ax" /><line x1={padL} y1={H - padB} x2={W - padR} y2={H - padB} className="ax" />{Array.from({ length: 5 }, (_, i) => (domainMax / 4) * i).map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bars.map((b, i) => (<g key={i}>{i > 0 && <line x1={bars[i - 1].x + bw} x2={b.x} y1={bars[i - 1].cy} y2={bars[i - 1].cy} className="wf-conn" />}<rect x={b.x} y={b.yTop} width={bw} height={Math.max(b.h, 1)} className={`wf-bar wf-${b.t}`} /><text x={b.x + bw / 2} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{b.k}</text><text x={b.x + bw / 2} y={H - padB + 28} className="wf-xval" textAnchor="middle">{b.t === "anchor" ? fmtM(b.v) : (b.t === "up" ? "+" : "−") + fmtM(b.v).slice(1)}</text></g>))}</svg>);
 }
 function Combo({ bars, line, benchmark, good, onPick, fmtL, fmtR, w = 620, h = 260 }) {
-  const W = w, H = h, padL = 54, padR = 50, padB = 36, padT = 18; const plotW = W - padL - padR, plotH = H - padT - padB;
+  const W = w, H = h, padL = 44, padR = 50, padB = 36, padT = 18; const plotW = W - padL - padR, plotH = H - padT - padB;
   const maxBar = Math.max(...bars.map((b) => b.value)) * 1.12;
   const maxLine = Math.max(...line.map((p) => p.value), benchmark) * 1.18;
   const yL = (v) => padT + plotH - (v / maxBar) * plotH, yR = (v) => padT + plotH - (v / maxLine) * plotH;
-  const n = bars.length, slot = plotW / n, bw = slot * 0.54, x = (i) => padL + slot * i + slot / 2;
+  const n = bars.length, slot = plotW / n, bw = slot * 0.42, x = (i) => padL + slot * i + slot / 2;
   const ticks = Array.from({ length: 4 }, (_, i) => (maxBar / 3) * i), rticks = Array.from({ length: 4 }, (_, i) => (maxLine / 3) * i);
   const path = line.map((p, i) => `${i ? "L" : "M"}${x(i)},${yR(p.value)}`).join(" ");
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
@@ -96,13 +96,13 @@ function Combo({ bars, line, benchmark, good, onPick, fmtL, fmtR, w = 620, h = 2
     <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{bars.map((b, i) => (<rect key={i} x={x(i) - bw / 2} y={yL(b.value)} width={bw} height={padT + plotH - yL(b.value)} className="co-bar" onClick={() => onPick(b.mv)} />))}
     <line x1={padL} x2={W - padR} y1={yR(benchmark)} y2={yR(benchmark)} className="ln-bench" /><text x={padL + 4} y={yR(benchmark) + 13} className="ln-bench-lab" textAnchor="start">benchmark {fmtR(benchmark)}</text>
     <path d={path} className="ln-path" />
-    {line.map((p, i) => { const br = good === "above" ? p.value < benchmark : p.value > benchmark; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={yR(p.value)} r="5" className={br ? "ln-dot bad" : "ln-dot good"} /></g>); })}
+    {line.map((p, i) => { const br = good === "above" ? p.value < benchmark : p.value > benchmark; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={yR(p.value)} r="3.5" className={br ? "ln-dot bad" : "ln-dot good"} /></g>); })}
     {bars.map((b, i) => (<text key={i} x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{b.q}</text>))}
     <text x={padL - 8} y={padT - 5} className="wf-axis" textAnchor="end">S&M $</text><text x={W - padR + 8} y={padT - 5} className="wf-axis r" textAnchor="start">magic</text><text x={x(line.length - 1)} y={yR(line[line.length - 1].value) - 9} className="dlab" textAnchor="middle">{fmtR(line[line.length - 1].value)}</text>
   </svg>);
 }
 function StackedArea({ quarters, series, onPick, w = 620, h = 270 }) {
-  const W = w, H = h, padL = 52, padR = 14, padB = 34, padT = 12; const plotW = W - padL - padR, plotH = H - padT - padB;
+  const W = w, H = h, padL = 42, padR = 14, padB = 34, padT = 12; const plotW = W - padL - padR, plotH = H - padT - padB;
   const totals = quarters.map((_, i) => series.reduce((s, se) => s + se.points[i].value, 0));
   const maxY = Math.max(...totals) * 1.06; const x = (i) => padL + (plotW * i) / (quarters.length - 1), y = (v) => padT + plotH - (v / maxY) * plotH;
   const ticks = Array.from({ length: 4 }, (_, i) => (maxY / 3) * i);
@@ -112,7 +112,7 @@ function StackedArea({ quarters, series, onPick, w = 620, h = 270 }) {
     <svg viewBox={`0 0 ${W} ${H}`} className="ln"><line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bands.map((b, i) => (<polygon key={i} points={b.poly} fill={b.color} className="area" />))}{quarters.map((q, i) => (<text key={i} x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{q}</text>))}</svg></div>);
 }
 function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
-  const W = w, H = h, padL = 46, padR = 16, padB = 34, padT = 14; const plotW = W - padL - padR, plotH = H - padT - padB;
+  const W = w, H = h, padL = 40, padR = 16, padB = 34, padT = 14; const plotW = W - padL - padR, plotH = H - padT - padB;
   const vals = series.map((p) => p.value).concat(benchmark != null ? [benchmark] : []); const lo = Math.min(...vals), hi = Math.max(...vals);
   const pad = (hi - lo) * 0.18 || 0.1; const dMin = Math.min(lo - pad, benchmark != null ? benchmark - pad : Infinity), dMax = Math.max(hi + pad, benchmark != null ? benchmark + pad : -Infinity);
   const x = (i) => padL + (plotW * i) / (series.length - 1); const y = (v) => padT + plotH - ((v - dMin) / (dMax - dMin)) * plotH;
@@ -122,7 +122,7 @@ function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
     {ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmt(tv)}</text></g>))}
     {benchmark != null && <><line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="ln-bench" /><text x={W - padR} y={y(benchmark) - 5} className="ln-bench-lab" textAnchor="end">benchmark {fmt(benchmark)}</text></>}
     <path d={path} className="ln-path" />
-    <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{series.map((p, i) => { const br = benchmark != null && (good === "above" ? p.value < benchmark : p.value > benchmark); return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={y(p.value)} r="5" className={benchmark == null ? "ln-dot neutral" : br ? "ln-dot bad" : "ln-dot good"} />{i === series.length - 1 && <text x={x(i)} y={y(p.value) - 9} className="dlab" textAnchor="middle">{fmt(p.value)}</text>}<text x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{p.q}</text></g>); })}
+    <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{series.map((p, i) => { const br = benchmark != null && (good === "above" ? p.value < benchmark : p.value > benchmark); return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={y(p.value)} r="3.5" className={benchmark == null ? "ln-dot neutral" : br ? "ln-dot bad" : "ln-dot good"} />{i === series.length - 1 && <text x={x(i)} y={y(p.value) - 9} className="dlab" textAnchor="middle">{fmt(p.value)}</text>}<text x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{p.q}</text></g>); })}
   </svg>);
 }
 function Callout({ mv, onPick }) {
@@ -414,27 +414,27 @@ function Block({ block, catalog, onPick, dim }) {
 // panels to regions by aspect. A panel budget keeps every screen legible.
 const PANEL_ASPECTS = {
   finding_card: ["band"],
-  table: ["large", "tall", "band"],
-  stacked_area: ["wide", "square"],
-  combo: ["large", "wide", "square"],
-  line: ["wide", "square"],
-  waterfall: ["square", "wide"],
-  hbar: ["wide", "square"],
-  bullet: ["wide", "square"],
-  matrix: ["large", "wide"],
+  table: ["tall", "dom", "band"],
+  matrix: ["wide", "dom"],
+  combo: ["half", "wide", "third"],
+  line: ["wide", "half", "third"],
+  stacked_area: ["half", "third"],
+  waterfall: ["third", "half"],
+  hbar: ["third", "half"],
+  bullet: ["third", "half"],
 };
-// how much space a panel's data justifies (heavy = earns a dominant region; light = a small one)
-const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 3, waterfall: 2, hbar: 2, bullet: 2, stacked_area: 1, line: 1 };
-const CHART_ASPECTS = new Set(["large", "wide", "square"]);
+// information density a panel justifies (heavy grids earn a dominant region; trends are light)
+const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bullet: 2, line: 1, stacked_area: 1 };
+const CHART_ASPECTS = new Set(["dom", "wide", "half", "third"]);
 // regions carry a weight `w` (space they want); a big region can `split` into lighter sub-regions
 const PARTITIONS = {
-  band_big_rail: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "large", c: [1, 9], r: [2, 4], w: 3, split: [{ a: "wide", c: [1, 9], r: [2, 3], w: 1 }, { a: "wide", c: [1, 9], r: [3, 4], w: 1 }] }, { a: "wide", c: [9, 13], r: [2, 3], w: 2 }, { a: "tall", c: [9, 13], r: [3, 4] }] },
-  band_duo_table: { rowsT: "auto 1fr auto", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 7], r: [2, 3], w: 2 }, { a: "wide", c: [7, 13], r: [2, 3], w: 2 }, { a: "band", c: [1, 13], r: [3, 4] }] },
-  band_wide_pair: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 13], r: [2, 3], w: 3 }, { a: "square", c: [1, 7], r: [3, 4], w: 1 }, { a: "square", c: [7, 13], r: [3, 4], w: 1 }] },
-  band_trio: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "square", c: [1, 5], r: [2, 3], w: 1 }, { a: "square", c: [5, 9], r: [2, 3], w: 1 }, { a: "square", c: [9, 13], r: [2, 3], w: 1 }] },
-  split_table: { rowsT: "1fr", regions: [{ a: "wide", c: [1, 8], r: [1, 2], w: 3 }, { a: "tall", c: [8, 13], r: [1, 2] }] },
-  big_rail: { rowsT: "1fr 1fr", regions: [{ a: "large", c: [1, 8], r: [1, 3], w: 3, split: [{ a: "wide", c: [1, 8], r: [1, 2], w: 1 }, { a: "wide", c: [1, 8], r: [2, 3], w: 1 }] }, { a: "wide", c: [8, 13], r: [1, 2], w: 2 }, { a: "square", c: [8, 13], r: [2, 3], w: 1 }] },
-  pair: { rowsT: "1fr", regions: [{ a: "wide", c: [1, 7], r: [1, 2], w: 2 }, { a: "wide", c: [7, 13], r: [1, 2], w: 2 }] },
+  band_wide_trio: { rowsT: "auto 1.15fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 13], r: [2, 3], w: 3 }, { a: "third", c: [1, 5], r: [3, 4], w: 2 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_lead_trio: { rowsT: "auto 1.1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_dom_rail: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "dom", c: [1, 7], r: [2, 4], w: 3, split: [{ a: "half", c: [1, 7], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 1 }] }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }, { a: "tall", c: [7, 13], r: [3, 4] }] },
+  band_trio_pair: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 2 }, { a: "tall", c: [7, 13], r: [3, 4] }] },
+  grid_six: { rowsT: "1fr 1fr", regions: [{ a: "third", c: [1, 5], r: [1, 2], w: 2 }, { a: "third", c: [5, 9], r: [1, 2], w: 1 }, { a: "third", c: [9, 13], r: [1, 2], w: 1 }, { a: "third", c: [1, 5], r: [2, 3], w: 1 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
+  split_table: { rowsT: "1fr", regions: [{ a: "half", c: [1, 8], r: [1, 2], w: 2 }, { a: "tall", c: [8, 13], r: [1, 2] }] },
+  pair: { rowsT: "1fr", regions: [{ a: "half", c: [1, 7], r: [1, 2], w: 2 }, { a: "half", c: [7, 13], r: [1, 2], w: 2 }] },
 };
 // each widget belongs to an analytical domain; each role prioritizes domains differently,
 // so the same content arranges differently per role (CRO leads growth, CFO leads durability)
@@ -448,7 +448,7 @@ const ROLE_DOMAIN_PRIORITY = {
   CFO: ["efficiency", "retention", "concentration", "growth"],
   CRO: ["growth", "retention", "concentration", "efficiency"],
 };
-const PANEL_BUDGET = 5;
+const PANEL_BUDGET = 6;
 function partCapacity(p) {
   const band = p.regions.filter((r) => r.a === "band").length;
   const tall = p.regions.filter((r) => r.a === "tall").length;
@@ -467,15 +467,15 @@ function fitScore(p, F, C, T) {
   return used * 10 - empty * 4 - dropped * 2;
 }
 const ROLE_PARTITION_PREF = {
-  CFO: ["band_big_rail", "band_duo_table", "split_table"],   // dense, matrix/table-dominant lead
-  CRO: ["band_wide_pair", "band_trio", "band_duo_table"],    // wide lead a growth trend can command
+  CFO: ["band_wide_trio", "band_dom_rail", "band_trio_pair"],
+  CRO: ["band_lead_trio", "band_trio_pair", "band_wide_trio"],
 };
 function selectPartition(F, C, T, role) {
   const pref = ROLE_PARTITION_PREF[role] || [];
   let best = "pair", bs = -Infinity;
   for (const [k, p] of Object.entries(PARTITIONS)) {
     let s = fitScore(p, F, C, T);
-    const pi = pref.indexOf(k); if (pi >= 0) s += (pref.length - pi) * 4;   // role preference bias
+    const pi = pref.indexOf(k); if (pi >= 0) s += (pref.length - pi) * 8;   // role preference bias
     if (s > bs) { bs = s; best = k; }
   }
   return best;
