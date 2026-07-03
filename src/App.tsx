@@ -198,6 +198,7 @@ function buildCatalog() {
     segment_stack: { kind: "stacked_area", polarity: "neutral", desc: "ARR by segment over time — topline growth and rising Enterprise concentration.", data: { title: "ARR by segment", series: segSeries } },
     segment_table: { kind: "table", polarity: "neutral", desc: "Per-segment ARR, share of ARR, NRR and GRR — the concentration and durability breakdown in one grid.", data: {} },
     hbar_nrr: { kind: "hbar", polarity: "bad", desc: "Net revenue retention ranked by segment against the 100% benchmark — shows the retention spread at a glance.", data: { title: "NRR by segment", benchmark: 100, fmt: (v) => `${v.toFixed(0)}%`, items: E.SEGMENTS.map((sg) => { const mv = E.nrr(sg, "24Q4", "25Q4"); return { label: sg, value: mv.value, mv, tone: mv.value >= 100 ? "good" : "bad" }; }) } },
+    metric_matrix: { kind: "matrix", polarity: "bad", desc: "Every efficiency and durability metric by quarter — the full time-series grid, tone-coded against benchmark. The densest single view of the trajectory.", data: {} },
     efficiency_bullets: { kind: "bullet", polarity: "bad", desc: "Capital-efficiency metrics (magic number, CAC payback, Rule of 40) against their benchmarks as bullet gauges.", data: { title: "Efficiency vs targets", items: (() => { const mag = E.magicNumber("25Q4"), cac = E.cacPayback("25Q4"), r40 = E.ruleOf40("25Q4"); return [{ label: "Magic #", mv: mag, value: mag.value, target: mag.basis.thr, good: mag.basis.good, max: 1.0, fmt: (v) => `${v.toFixed(2)}x` }, { label: "CAC (mo)", mv: cac, value: cac.value, target: cac.basis.thr, good: cac.basis.good, max: 30, fmt: (v) => `${v.toFixed(0)}mo` }, { label: "Rule of 40", mv: r40, value: r40.value, target: r40.basis.thr, good: r40.basis.good, max: 60, fmt: (v) => `${v.toFixed(0)}` }]; })() } },
   };
 }
@@ -275,6 +276,24 @@ function BulletPanel({ items, onPick, w = 420, h = 200 }) {
     })}
   </svg>);
 }
+function MetricMatrix({ onPick }) {
+  const qs = E.QUARTERS;
+  const safe = (fn) => { try { const r = fn(); return r && !isNaN(r.value) ? r : null; } catch { return null; } };
+  const metrics = [
+    { label: "Gross Margin", fmt: (v) => `${v.toFixed(0)}%`, get: (q) => safe(() => E.grossMargin(q)) },
+    { label: "Magic #", fmt: (v) => v.toFixed(2), get: (q) => safe(() => E.magicNumber(q)) },
+    { label: "CAC (mo)", fmt: (v) => v.toFixed(0), get: (q) => safe(() => E.cacPayback(q)) },
+    { label: "Rule of 40", fmt: (v) => v.toFixed(0), get: (q) => safe(() => E.ruleOf40(q)) },
+  ];
+  const tone = (mv) => mv && mv.basis ? ((mv.basis.good === "above" ? mv.value >= mv.basis.thr : mv.value <= mv.basis.thr) ? "good" : "bad") : "";
+  return (<div className="matrix">
+    <div className="mx-row mx-head"><span className="mx-lab" />{qs.map((q) => <span key={q} className="mx-cell">{q}</span>)}</div>
+    {metrics.map((m, i) => (<div key={i} className="mx-row">
+      <span className="mx-lab">{m.label}</span>
+      {qs.map((q) => { const mv = m.get(q); return mv ? <button key={q} className={`mx-cell v ${tone(mv)}`} onClick={() => onPick({ node: mv })}>{m.fmt(mv.value)}</button> : <span key={q} className="mx-cell dim">—</span>; })}
+    </div>))}
+  </div>);
+}
 function SegmentTable({ onPick }) {
   const P = "24Q4", L = "25Q4";
   const rows = E.SEGMENTS.map((seg) => ({ seg, arr: E.segArr(seg, L), nrr: E.nrr(seg, P, L), grr: E.grr(seg, P, L) }));
@@ -298,6 +317,7 @@ function Widget({ id, catalog, onPick, dim }) {
   if (w.kind === "combo") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.line) })} /><Fill render={(cw, ch) => <Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "line") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.series) })} /><Fill render={(cw, ch) => <LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "stacked_area") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <StackedArea quarters={E.QUARTERS} series={d.series} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "matrix") return (<div className="tpanel"><ChartHeader title="Metrics by quarter" /><MetricMatrix onPick={onPick} /></div>);
   if (w.kind === "hbar") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <HBar items={d.items} benchmark={d.benchmark} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "bullet") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <BulletPanel items={d.items} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "table") return (<div className="tpanel"><ChartHeader title="Segment breakdown" /><SegmentTable onPick={onPick} /></div>);
@@ -361,6 +381,7 @@ const FALLBACK = {
       { widget: "callout_cac", emphasis: "compact", headline: "", soWhat: "" },
       { widget: "callout_r40", emphasis: "compact", headline: "", soWhat: "" },
       { widget: "efficiency_combo", emphasis: "standard", headline: "Spending more to grow less", soWhat: "Sales spend is climbing while each dollar buys less growth." },
+      { widget: "metric_matrix", emphasis: "standard", headline: "The full trajectory", soWhat: "Every efficiency metric, every quarter — the deterioration is systemic." },
       { widget: "efficiency_bullets", emphasis: "standard", headline: "Efficiency vs targets", soWhat: "Every efficiency metric sits below its benchmark." }] },
     { heading: "Concentration", blocks: [
       { widget: "segment_stack", emphasis: "standard", headline: "Enterprise concentration is rising", soWhat: "The base is tilting toward a few large accounts." },
@@ -393,24 +414,27 @@ function Block({ block, catalog, onPick, dim }) {
 // panels to regions by aspect. A panel budget keeps every screen legible.
 const PANEL_ASPECTS = {
   finding_card: ["band"],
-  table: ["tall", "band"],
-  stacked_area: ["wide", "large"],
-  combo: ["wide", "square"],
+  table: ["large", "tall", "band"],
+  stacked_area: ["wide", "square"],
+  combo: ["large", "wide", "square"],
   line: ["wide", "square"],
   waterfall: ["square", "wide"],
   hbar: ["wide", "square"],
   bullet: ["wide", "square"],
+  matrix: ["large", "wide"],
 };
+// how much space a panel's data justifies (heavy = earns a dominant region; light = a small one)
+const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 3, waterfall: 2, hbar: 2, bullet: 2, stacked_area: 1, line: 1 };
 const CHART_ASPECTS = new Set(["large", "wide", "square"]);
-// regions on a 12-col grid; rowsT = row track sizes (auto = content, 1fr = fill viewport)
+// regions carry a weight `w` (space they want); a big region can `split` into lighter sub-regions
 const PARTITIONS = {
-  band_big_rail: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "large", c: [1, 9], r: [2, 4] }, { a: "wide", c: [9, 13], r: [2, 3] }, { a: "tall", c: [9, 13], r: [3, 4] }] },
-  band_duo_table: { rowsT: "auto 1fr auto", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 7], r: [2, 3] }, { a: "wide", c: [7, 13], r: [2, 3] }, { a: "band", c: [1, 13], r: [3, 4] }] },
-  band_wide_pair: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 13], r: [2, 3] }, { a: "square", c: [1, 7], r: [3, 4] }, { a: "square", c: [7, 13], r: [3, 4] }] },
-  band_trio: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "square", c: [1, 5], r: [2, 3] }, { a: "square", c: [5, 9], r: [2, 3] }, { a: "square", c: [9, 13], r: [2, 3] }] },
-  split_table: { rowsT: "1fr", regions: [{ a: "wide", c: [1, 8], r: [1, 2] }, { a: "tall", c: [8, 13], r: [1, 2] }] },
-  big_rail: { rowsT: "1fr 1fr", regions: [{ a: "large", c: [1, 8], r: [1, 3] }, { a: "wide", c: [8, 13], r: [1, 2] }, { a: "square", c: [8, 13], r: [2, 3] }] },
-  pair: { rowsT: "1fr", regions: [{ a: "wide", c: [1, 7], r: [1, 2] }, { a: "wide", c: [7, 13], r: [1, 2] }] },
+  band_big_rail: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "large", c: [1, 9], r: [2, 4], w: 3, split: [{ a: "wide", c: [1, 9], r: [2, 3], w: 1 }, { a: "wide", c: [1, 9], r: [3, 4], w: 1 }] }, { a: "wide", c: [9, 13], r: [2, 3], w: 2 }, { a: "tall", c: [9, 13], r: [3, 4] }] },
+  band_duo_table: { rowsT: "auto 1fr auto", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 7], r: [2, 3], w: 2 }, { a: "wide", c: [7, 13], r: [2, 3], w: 2 }, { a: "band", c: [1, 13], r: [3, 4] }] },
+  band_wide_pair: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 13], r: [2, 3], w: 3 }, { a: "square", c: [1, 7], r: [3, 4], w: 1 }, { a: "square", c: [7, 13], r: [3, 4], w: 1 }] },
+  band_trio: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "square", c: [1, 5], r: [2, 3], w: 1 }, { a: "square", c: [5, 9], r: [2, 3], w: 1 }, { a: "square", c: [9, 13], r: [2, 3], w: 1 }] },
+  split_table: { rowsT: "1fr", regions: [{ a: "wide", c: [1, 8], r: [1, 2], w: 3 }, { a: "tall", c: [8, 13], r: [1, 2] }] },
+  big_rail: { rowsT: "1fr 1fr", regions: [{ a: "large", c: [1, 8], r: [1, 3], w: 3, split: [{ a: "wide", c: [1, 8], r: [1, 2], w: 1 }, { a: "wide", c: [1, 8], r: [2, 3], w: 1 }] }, { a: "wide", c: [8, 13], r: [1, 2], w: 2 }, { a: "square", c: [8, 13], r: [2, 3], w: 1 }] },
+  pair: { rowsT: "1fr", regions: [{ a: "wide", c: [1, 7], r: [1, 2], w: 2 }, { a: "wide", c: [7, 13], r: [1, 2], w: 2 }] },
 };
 const PANEL_BUDGET = 5;
 function partCapacity(p) {
@@ -435,22 +459,35 @@ function selectPartition(F, C, T) {
   for (const [k, p] of Object.entries(PARTITIONS)) { const s = fitScore(p, F, C, T); if (s > bs) { bs = s; best = k; } }
   return best;
 }
-function fillPartition(p, findings, charts, tables) {
-  // rank by curation order (the model's salience judgment); cap to budget
-  const chartQ = charts.slice(0, PANEL_BUDGET);
-  const fQ = [...findings], tQ = [...tables], cQ = [...chartQ];
-  const asp = (b) => PANEL_ASPECTS[b._kind] || [];
-  return p.regions.map((region) => {
-    if (region.a === "band") { if (fQ.length) return { region, block: fQ.shift() }; if (tQ.length) return { region, block: tQ.shift() }; return null; }
-    if (region.a === "tall") { if (tQ.length) return { region, block: tQ.shift() }; return null; }
-    // chart region: prefer a chart whose aspect set includes this region's aspect
-    let idx = cQ.findIndex((b) => asp(b).includes(region.a));
-    if (idx < 0) idx = cQ.length ? 0 : -1;
-    if (idx >= 0) return { region, block: cQ.splice(idx, 1)[0] };
-    return null;
-  }).filter(Boolean);
+// pick the chart whose weight best fits what the region wants (fixes light chart in a big slot)
+function pickChart(pool, want, aspect) {
+  if (!pool.length) return null;
+  let cands = pool.filter((c) => c.asp.includes(aspect));
+  if (!cands.length) cands = pool.slice();
+  cands.sort((a, b) => Math.abs(a.w - want) - Math.abs(b.w - want) || b.w - a.w);
+  const chosen = cands[0]; pool.splice(pool.indexOf(chosen), 1); return chosen;
 }
-const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar", "bullet"]);
+function fillPartition(p, findings, charts, tables) {
+  const pool = charts.slice(0, PANEL_BUDGET).map((b) => ({ b, w: PANEL_WEIGHT[b._kind] || 2, asp: PANEL_ASPECTS[b._kind] || [] }));
+  const fQ = [...findings], tQ = [...tables];
+  const placed = [];
+  for (const region of p.regions) {
+    if (region.a === "band") { const b = fQ.shift() || tQ.shift(); if (b) placed.push({ region, block: b }); continue; }
+    if (region.a === "tall") { const b = tQ.shift(); if (b) placed.push({ region, block: b }); continue; }
+    if (!pool.length) continue;
+    const want = region.w || 2;
+    const heaviest = Math.max(...pool.map((c) => c.w));
+    // a heavy region with only light content left splits into a cluster of lighter panels
+    if (want >= 3 && heaviest < 3 && region.split) {
+      for (const sub of region.split) { const pick = pickChart(pool, sub.w || 1, sub.a); if (pick) placed.push({ region: sub, block: pick.b }); }
+      continue;
+    }
+    const pick = pickChart(pool, want, region.a);
+    if (pick) placed.push({ region, block: pick.b });
+  }
+  return placed;
+}
+const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar", "bullet", "matrix"]);
 function TemplateBoard({ spec, role, catalog, onPick }) {
   const kind = (id) => catalog[id]?.kind;
   const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]).map((b) => ({ ...b, _kind: kind(b.widget) }));
