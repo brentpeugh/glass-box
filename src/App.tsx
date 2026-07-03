@@ -316,17 +316,21 @@ function MetricMatrix({ onPick }) {
   const qs = E.QUARTERS;
   const safe = (fn) => { try { const r = fn(); return r && !isNaN(r.value) ? r : null; } catch { return null; } };
   const metrics = [
+    { label: "Blended NRR", fmt: (v) => `${v.toFixed(0)}%`, get: (q, i) => i >= 4 ? safe(() => E.nrr(null, qs[i - 4], q)) : null },
+    { label: "Blended GRR", fmt: (v) => `${v.toFixed(0)}%`, get: (q, i) => i >= 4 ? safe(() => E.grr(null, qs[i - 4], q)) : null },
     { label: "Gross Margin", fmt: (v) => `${v.toFixed(0)}%`, get: (q) => safe(() => E.grossMargin(q)) },
     { label: "Magic #", fmt: (v) => v.toFixed(2), get: (q) => safe(() => E.magicNumber(q)) },
     { label: "CAC (mo)", fmt: (v) => v.toFixed(0), get: (q) => safe(() => E.cacPayback(q)) },
     { label: "Rule of 40", fmt: (v) => v.toFixed(0), get: (q) => safe(() => E.ruleOf40(q)) },
+    { label: "Net New ARR", fmt: (v) => `$${(v / 1e6).toFixed(1)}M`, get: (q) => safe(() => E.netNewArr(q)) },
+    { label: "QoQ Growth", fmt: (v) => `${(v * 100).toFixed(1)}%`, get: (q) => safe(() => E.qoqGrowth(q)) },
   ];
   const tone = (mv) => mv && mv.basis ? ((mv.basis.good === "above" ? mv.value >= mv.basis.thr : mv.value <= mv.basis.thr) ? "good" : "bad") : "";
   return (<div className="matrix">
     <div className="mx-row mx-head"><span className="mx-lab" />{qs.map((q) => <span key={q} className="mx-cell">{q}</span>)}</div>
     {metrics.map((m, i) => (<div key={i} className="mx-row">
       <span className="mx-lab">{m.label}</span>
-      {qs.map((q) => { const mv = m.get(q); return mv ? <button key={q} className={`mx-cell v ${tone(mv)}`} onClick={() => onPick({ node: mv })}>{m.fmt(mv.value)}</button> : <span key={q} className="mx-cell dim">—</span>; })}
+      {qs.map((q, i) => { const mv = m.get(q, i); return mv ? <button key={q} className={`mx-cell v ${tone(mv)}`} onClick={() => onPick({ node: mv })}>{m.fmt(mv.value)}</button> : <span key={q} className="mx-cell dim">—</span>; })}
     </div>))}
   </div>);
 }
@@ -508,17 +512,29 @@ function fitScore(p, F, C, T) {
   const dropped = Math.max(0, C - chartsSeated) + Math.max(0, F - seatFinding) + Math.max(0, T - tableSeated);
   return used * 10 - empty * 7 - dropped * 2;
 }
-const ROLE_PARTITION_PREF = {
-  CFO: ["band_hero_row", "band_hero", "band_lead_matrix", "band_trio_pair"],
-  CRO: ["band_hero_row", "band_hero", "band_pair_trio", "band_trio_trio"],
+// Roles declare an INTENT (weighted preference over layout characters); partitions declare
+// their CHARACTER. The selector matches intent to character generically — adding a role is a
+// line of intent, adding a partition is a line of character, no per-role lists to maintain.
+const PARTITION_CHARACTER = {
+  band_lead_matrix: ["analytical"], band_hero: ["hero"], band_hero_row: ["hero", "dense"],
+  band_pair_trio: ["balanced", "dense"], band_trio_trio: ["grid", "dense"], band_trio_pair: ["grid"],
+  band_pair: ["compact"], band_trio: ["compact"], band_duo_table: ["analytical", "compact"], band_solo: ["compact"], grid_six: ["grid"], split_table: ["analytical"], pair: ["compact"],
+};
+const ROLE_INTENT = {
+  CFO: { analytical: 6, hero: 2, dense: 2, grid: 1 },
+  CRO: { hero: 6, dense: 2, balanced: 2, grid: 1 },
 };
 function selectPartition(F, C, T, role) {
-  const pref = ROLE_PARTITION_PREF[role] || [];
+  const intent = ROLE_INTENT[role] || {};
   let best = "pair", bs = -Infinity;
   for (const [k, p] of Object.entries(PARTITIONS)) {
+    const cp = partCapacity(p);
     let s = fitScore(p, F, C, T);
     if (p.asym) s += 14;
-    const pi = pref.indexOf(k); if (pi >= 0) s += (pref.length - pi) * 2;   // role preference bias
+    // intent only steers among partitions that actually fit the content (no empty chart regions),
+    // so it diverges full boards by role without ever selecting an oversized layout on thin content
+    const chartEmpty = Math.max(0, cp.chart - Math.min(C, cp.chart));
+    if (chartEmpty <= 1) for (const ch of (PARTITION_CHARACTER[k] || [])) s += (intent[ch] || 0) * 10;
     if (s > bs) { bs = s; best = k; }
   }
   return best;
