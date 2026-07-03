@@ -158,7 +158,7 @@ function FindingSide({ side, onPick }) {
     <span className={`fside-badge ${tone}`}>{side.badge}</span>
   </button>);
 }
-function MiniTrend({ a, b, benchmark, w, h }) {
+function MiniTrend({ a, b, benchmark, w = 680, h = 70 }) {
   const W = w, H = h, padT = 10, padB = 10, padL = 4, padR = 34;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const all = [...a, ...b, benchmark]; const lo = Math.min(...all) - 3, hi = Math.max(...all) + 3;
@@ -201,7 +201,7 @@ function FindingCard({ finding, onPick }) {
       <span className="fband-verb">{schema.verb}</span>
       <FindingSide side={sides[1]} onPick={pick} />
     </div>
-    {trend && <div className="fband-trend"><Fill render={(cw, ch) => <MiniTrend a={trend.a} b={trend.b} benchmark={thr} w={cw} h={ch} />} /></div>}
+    {trend && <div className="fband-trend"><MiniTrend a={trend.a} b={trend.b} benchmark={thr} /></div>}
     <button className="fband-inspect" onClick={pick}>inspect provenance ›</button>
   </div>);
 }
@@ -463,17 +463,17 @@ const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bul
 const CHART_ASPECTS = new Set(["twothird", "half", "third"]);
 // regions carry a weight `w` (space they want); a big region can `split` into lighter sub-regions
 const PARTITIONS = {
-  band_pair_trio: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_lead_matrix: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 3], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_trio_trio: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_trio_pair: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 2 }, { a: "half", c: [7, 13], r: [3, 4], w: 1 }] },
-  grid_six: { rowsT: "1fr 1fr", regions: [{ a: "third", c: [1, 5], r: [1, 2], w: 2 }, { a: "third", c: [5, 9], r: [1, 2], w: 1 }, { a: "third", c: [9, 13], r: [1, 2], w: 1 }, { a: "third", c: [1, 5], r: [2, 3], w: 1 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
-  split_table: { rowsT: "1fr", regions: [{ a: "half", c: [1, 8], r: [1, 2], w: 2 }, { a: "tall", c: [8, 13], r: [1, 2] }] },
-  band_solo: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 13], r: [2, 3], w: 2 }] },
-  band_pair: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }] },
-  band_trio: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
-  band_duo_table: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "tall", c: [7, 13], r: [2, 3] }] },
-  pair: { rowsT: "1fr", regions: [{ a: "half", c: [1, 7], r: [1, 2], w: 2 }, { a: "half", c: [7, 13], r: [1, 2], w: 2 }] },
+  band_pair_trio: { rowsT: "auto minmax(150px, 300px) minmax(150px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_lead_matrix: { rowsT: "auto minmax(150px, 300px) minmax(150px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 3], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_trio_trio: { rowsT: "auto minmax(150px, 300px) minmax(150px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_trio_pair: { rowsT: "auto minmax(150px, 300px) minmax(150px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 2 }, { a: "half", c: [7, 13], r: [3, 4], w: 1 }] },
+  grid_six: { rowsT: "minmax(150px, 300px) minmax(150px, 300px)", regions: [{ a: "third", c: [1, 5], r: [1, 2], w: 2 }, { a: "third", c: [5, 9], r: [1, 2], w: 1 }, { a: "third", c: [9, 13], r: [1, 2], w: 1 }, { a: "third", c: [1, 5], r: [2, 3], w: 1 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
+  split_table: { rowsT: "minmax(150px, 300px)", regions: [{ a: "half", c: [1, 8], r: [1, 2], w: 2 }, { a: "tall", c: [8, 13], r: [1, 2] }] },
+  band_solo: { rowsT: "auto minmax(150px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 13], r: [2, 3], w: 2 }] },
+  band_pair: { rowsT: "auto minmax(150px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }] },
+  band_trio: { rowsT: "auto minmax(150px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
+  band_duo_table: { rowsT: "auto minmax(150px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "tall", c: [7, 13], r: [2, 3] }] },
+  pair: { rowsT: "minmax(150px, 300px)", regions: [{ a: "half", c: [1, 7], r: [1, 2], w: 2 }, { a: "half", c: [7, 13], r: [1, 2], w: 2 }] },
 };
 // each widget belongs to an analytical domain; each role prioritizes domains differently,
 // so the same content arranges differently per role (CRO leads growth, CFO leads durability)
