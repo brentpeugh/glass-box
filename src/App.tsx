@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 
 import { createEngine } from "./engine-core";
 
@@ -221,15 +221,33 @@ function ChartHeader({ title, tag, tagTone, onTrace }) {
     {tag && <span className={`chart-tag ${tagTone || ""}`}>{tag}</span>}
   </div>);
 }
+// Charts fill their panel: measure the container, render the SVG to its exact box (both
+// dimensions). The chart is a tenant of a fixed-size panel, not the other way around —
+// this is what makes heights align across a row and is the basis for the template system.
+function useSize() {
+  const ref = useRef(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const ro = new ResizeObserver((es) => { const r = es[0].contentRect; setSize({ w: Math.round(r.width), h: Math.round(r.height) }); });
+    ro.observe(el); return () => ro.disconnect();
+  }, []);
+  return [ref, size];
+}
+function Fill({ render }) {
+  const [ref, { w, h }] = useSize();
+  return <div ref={ref} className="cfill">{w > 1 && h > 1 ? render(w, h) : null}</div>;
+}
+
 function Widget({ id, catalog, onPick, dim }) {
-  const w = catalog[id]; if (!w) return null; const d = w.data; const D = dim || {};
+  const w = catalog[id]; if (!w) return null; const d = w.data;
   const last = (arr) => arr[arr.length - 1].mv;
   if (w.kind === "finding_card") return <FindingCard finding={d.finding} onPick={onPick} />;
   if (w.kind === "callout") return <Callout mv={d.mv} onPick={(mv) => onPick({ node: mv })} />;
-  if (w.kind === "combo") return (<div><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.line) })} /><Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} /></div>);
-  if (w.kind === "line") return (<div><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.series) })} /><LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} /></div>);
-  if (w.kind === "stacked_area") return (<div><ChartHeader title={d.title} /><StackedArea quarters={E.QUARTERS} series={d.series} onPick={(mv) => onPick({ node: mv })} w={D.w} h={D.h} /></div>);
-  if (w.kind === "waterfall") return (<div><ChartHeader title={d.title} tag={`NRR ${d.bridge.nrr.toFixed(0)}%`} tagTone={d.bridge.nrr >= 100 ? "good" : "bad"} onTrace={() => onPick({ node: d.mv })} /><Waterfall c={d.bridge} w={D.w} h={D.h} /></div>);
+  if (w.kind === "combo") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.line) })} /><Fill render={(cw, ch) => <Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "line") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.series) })} /><Fill render={(cw, ch) => <LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "stacked_area") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <StackedArea quarters={E.QUARTERS} series={d.series} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "waterfall") return (<div className="cpanel"><ChartHeader title={d.title} tag={`NRR ${d.bridge.nrr.toFixed(0)}%`} tagTone={d.bridge.nrr >= 100 ? "good" : "bad"} onTrace={() => onPick({ node: d.mv })} /><Fill render={(cw, ch) => <Waterfall c={d.bridge} w={cw} h={ch} />} /></div>);
   return null;
 }
 
@@ -443,8 +461,8 @@ function QueryBar({ onAsk, busy }) {
 }
 function QueryWidget({ desc, onPick }) {
   if (desc.kind === "callout") return (<div className="strip"><div className="block"><Callout mv={desc.data.mv} onPick={(mv) => onPick({ node: mv })} /></div></div>);
-  if (desc.kind === "line") return (<div className="block"><LineChart series={desc.data.series} benchmark={desc.data.benchmark} good={desc.data.good} fmt={desc.data.fmt} onPick={(mv) => onPick({ node: mv })} /></div>);
-  if (desc.kind === "waterfall") return (<div className="block"><div className="bridge-h"><button className="bridge-trace" onClick={() => onPick({ node: desc.data.mv })}>{desc.data.title} ▸ trace</button><span className={desc.data.bridge.nrr >= 100 ? "good" : "bad"}>NRR {desc.data.bridge.nrr.toFixed(0)}%</span></div><Waterfall c={desc.data.bridge} /></div>);
+  if (desc.kind === "line") return (<div className="cpanel"><ChartHeader title={desc.data.title || "trend"} /><Fill render={(cw, ch) => <LineChart series={desc.data.series} benchmark={desc.data.benchmark} good={desc.data.good} fmt={desc.data.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (desc.kind === "waterfall") return (<div className="cpanel"><ChartHeader title={desc.data.title} tag={`NRR ${desc.data.bridge.nrr.toFixed(0)}%`} tagTone={desc.data.bridge.nrr >= 100 ? "good" : "bad"} onTrace={() => onPick({ node: desc.data.mv })} /><Fill render={(cw, ch) => <Waterfall c={desc.data.bridge} w={cw} h={ch} />} /></div>);
   return null;
 }
 function AnswerCard({ item, onPick }) {

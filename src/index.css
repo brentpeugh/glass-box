@@ -226,3 +226,10 @@
 .mg-lab{ font-family:'IBM Plex Mono',monospace; font-size:9px; fill:var(--muted); }
 .mg-cap{ font-family:'IBM Plex Mono',monospace; font-size:8.5px; fill:var(--muted); letter-spacing:.03em; }
 .mg-dot.good{ fill:var(--verdant); } .mg-dot.bad{ fill:var(--ember); } .mg-dot{ stroke:var(--panel); stroke-width:1.5; }
+
+/* ===== fill panels: chart is a tenant of a fixed-size box ===== */
+.cpanel{ display:flex; flex-direction:column; gap:6px; height:100%; }
+.cfill{ position:relative; width:100%; height:248px; min-width:0; }
+.cfill svg{ width:100%; height:100%; display:block; }
+/* query-rail charts a touch shorter */
+.ans .cfill{ height:220px; }
