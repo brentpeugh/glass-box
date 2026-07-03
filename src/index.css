@@ -354,3 +354,5 @@ html,body,#root{ height:100%; overflow:hidden; }
 .mt-dot{ stroke:var(--panel); stroke-width:1; } .mt-dot.good{ fill:var(--verdant); } .mt-dot.bad{ fill:var(--ember); }
 .mt-end{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; } .mt-end.good{ fill:var(--verdant); } .mt-end.bad{ fill:var(--ember); }
 .mt-bench-lab{ font-family:'IBM Plex Mono',monospace; font-size:8px; fill:var(--muted); }
+.mt-qlab{ font-family:'IBM Plex Mono',monospace; font-size:8px; fill:var(--muted); }
+.mt-dot{ cursor:default; }

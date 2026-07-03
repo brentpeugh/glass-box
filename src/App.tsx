@@ -158,15 +158,15 @@ function FindingSide({ side, onPick }) {
     <span className={`fside-badge ${tone}`}>{side.badge}</span>
   </button>);
 }
-function MiniTrend({ a, b, benchmark, w = 680, h = 70 }) {
-  const W = w, H = h, padT = 10, padB = 10, padL = 4, padR = 34;
+function MiniTrend({ a, b, benchmark, labels = [], w = 680, h = 78 }) {
+  const W = w, H = h, padT = 10, padB = 16, padL = 4, padR = 36;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const all = [...a, ...b, benchmark]; const lo = Math.min(...all) - 3, hi = Math.max(...all) + 3;
   const x = (i) => padL + (a.length > 1 ? (plotW * i) / (a.length - 1) : plotW / 2);
   const y = (v) => padT + plotH * (1 - (v - lo) / (hi - lo));
   const line = (s) => s.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
   const area = (s) => `${line(s)} L${x(s.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`;
-  const dots = (s, tone) => s.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r={i === s.length - 1 ? 3 : 2} className={`mt-dot ${tone}`} />);
+  const dots = (s, tone) => s.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r={i === s.length - 1 ? 3 : 2} className={`mt-dot ${tone}`}><title>{labels[i] || ""} · {v.toFixed(1)}%</title></circle>);
   return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
     <defs>
       <linearGradient id="mt-good" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--verdant)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--verdant)" stopOpacity="0" /></linearGradient>
@@ -179,6 +179,7 @@ function MiniTrend({ a, b, benchmark, w = 680, h = 70 }) {
     {dots(a, "good")}{dots(b, "bad")}
     <text x={x(a.length - 1) + 5} y={y(a[a.length - 1]) + 3} className="mt-end good">{a[a.length - 1].toFixed(0)}</text>
     <text x={x(b.length - 1) + 5} y={y(b[b.length - 1]) + 3} className="mt-end bad">{b[b.length - 1].toFixed(0)}</text>
+    {labels.length > 1 && <><text x={x(0)} y={H - 3} className="mt-qlab" textAnchor="start">{labels[0]}</text><text x={x(labels.length - 1)} y={H - 3} className="mt-qlab" textAnchor="end">{labels[labels.length - 1]}</text></>}
   </svg>);
 }
 function FindingCard({ finding, onPick }) {
@@ -193,7 +194,7 @@ function FindingCard({ finding, onPick }) {
     const idx = qs.map((_, i) => i).filter((i) => i >= 4);
     const a = idx.map((i) => safe(() => E.nrr(null, qs[i - 4], qs[i]))).filter((v) => v != null);
     const b = idx.map((i) => safe(() => E.nrr(finding.worstSeg, qs[i - 4], qs[i]))).filter((v) => v != null);
-    if (a.length > 1 && b.length > 1) trend = { a, b };
+    const labels = idx.map((i) => qs[i]); if (a.length > 1 && b.length > 1) trend = { a, b, labels };
   }
   return (<div className="fband">
     <div className="fband-vals">
@@ -201,7 +202,7 @@ function FindingCard({ finding, onPick }) {
       <span className="fband-verb">{schema.verb}</span>
       <FindingSide side={sides[1]} onPick={pick} />
     </div>
-    {trend && <div className="fband-trend"><MiniTrend a={trend.a} b={trend.b} benchmark={thr} /></div>}
+    {trend && <div className="fband-trend"><MiniTrend a={trend.a} b={trend.b} benchmark={thr} labels={trend.labels} /></div>}
     <button className="fband-inspect" onClick={pick}>inspect provenance ›</button>
   </div>);
 }
@@ -552,12 +553,21 @@ function fillPartition(p, findings, charts, tables, role) {
   return placed;
 }
 const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar", "bullet", "matrix"]);
+// the full analytical menu the engine can render (salience-ordered). The model frames the
+// lead finding; the board is filled from this ranked menu, so there is always surplus to
+// fill a dense partition — a well-built board every time, regardless of how much the model curated.
+const CHART_MENU = ["metric_matrix", "efficiency_combo", "bridge_smb", "bridge_enterprise", "accel_line", "segment_stack", "hbar_nrr", "magic_line", "efficiency_bullets"];
 function TemplateBoard({ spec, role, catalog, onPick }) {
   const kind = (id) => catalog[id]?.kind;
   const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]).map((b) => ({ ...b, _kind: kind(b.widget) }));
   const findings = all.filter((b) => b._kind === "finding_card");
-  const charts = all.filter((b) => CHART_KINDS.has(b._kind));
-  const tables = all.filter((b) => b._kind === "table");
+  // model-curated charts lead; the ranked menu tops up so the partition is always fully filled
+  const modelCharts = all.filter((b) => CHART_KINDS.has(b._kind));
+  const chosen = new Set(modelCharts.map((b) => b.widget));
+  const menuCharts = CHART_MENU.filter((id) => catalog[id] && CHART_KINDS.has(catalog[id].kind) && !chosen.has(id)).map((id) => ({ widget: id, _kind: catalog[id].kind }));
+  const charts = [...modelCharts, ...menuCharts];
+  const modelTables = all.filter((b) => b._kind === "table");
+  const tables = modelTables.length ? modelTables : (catalog["segment_table"] ? [{ widget: "segment_table", _kind: "table" }] : []);
   const p = PARTITIONS[selectPartition(findings.length, charts.length, tables.length, role)];
   const placed = fillPartition(p, findings, charts, tables, role);
   return (<div className="partition" style={{ gridTemplateRows: p.rowsT }}>
