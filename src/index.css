@@ -373,3 +373,11 @@ html,body,#root{ height:100%; overflow:hidden; }
 .mtrend{ max-height:64px; }
 /* ensure the grid can shrink to its allocation (flexbox trap) → no clip */
 .partition{ min-height:0; overflow:hidden; }
+
+/* ===== robust fit: every level can shrink to its allocation (no estimate, no clip) ===== */
+*{ box-sizing:border-box; }
+.stage{ padding-bottom:10px; }
+.tb-panel,.cpanel,.tpanel,.cfill,.split-minor{ min-height:0; }
+.tb-panel .cfill{ flex:1 1 auto; }
+/* dominant-plus-rail: the big panel's chart fills its taller region */
+.asp-twothird .cfill{ min-height:0; }

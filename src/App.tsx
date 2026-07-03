@@ -464,8 +464,10 @@ const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bul
 const CHART_ASPECTS = new Set(["twothird", "half", "third"]);
 // regions carry a weight `w` (space they want); a big region can `split` into lighter sub-regions
 const PARTITIONS = {
+  band_hero: { asym: true, rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 4], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_hero_row: { asym: true, rowsT: "auto minmax(0, 230px) minmax(0, 230px) minmax(0, 230px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 4], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }, { a: "third", c: [1, 5], r: [4, 5], w: 1 }, { a: "third", c: [5, 9], r: [4, 5], w: 1 }, { a: "third", c: [9, 13], r: [4, 5], w: 1 }] },
   band_pair_trio: { rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_lead_matrix: { rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 3], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_lead_matrix: { asym: true, rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 3], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
   band_trio_trio: { rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
   band_trio_pair: { rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 2 }, { a: "half", c: [7, 13], r: [3, 4], w: 1 }] },
   grid_six: { rowsT: "minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "third", c: [1, 5], r: [1, 2], w: 2 }, { a: "third", c: [5, 9], r: [1, 2], w: 1 }, { a: "third", c: [9, 13], r: [1, 2], w: 1 }, { a: "third", c: [1, 5], r: [2, 3], w: 1 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
@@ -507,14 +509,15 @@ function fitScore(p, F, C, T) {
   return used * 10 - empty * 7 - dropped * 2;
 }
 const ROLE_PARTITION_PREF = {
-  CFO: ["band_lead_matrix", "band_pair_trio", "band_trio_trio"],
-  CRO: ["band_pair_trio", "band_trio_trio", "band_trio_pair"],
+  CFO: ["band_hero_row", "band_hero", "band_lead_matrix", "band_trio_pair"],
+  CRO: ["band_hero_row", "band_hero", "band_pair_trio", "band_trio_trio"],
 };
 function selectPartition(F, C, T, role) {
   const pref = ROLE_PARTITION_PREF[role] || [];
   let best = "pair", bs = -Infinity;
   for (const [k, p] of Object.entries(PARTITIONS)) {
     let s = fitScore(p, F, C, T);
+    if (p.asym) s += 14;
     const pi = pref.indexOf(k); if (pi >= 0) s += (pref.length - pi) * 2;   // role preference bias
     if (s > bs) { bs = s; best = k; }
   }
@@ -537,7 +540,7 @@ function fillPartition(p, findings, charts, tables, role) {
   const fQ = [...findings], tQ = [...tables];
   const placed = []; let leadDone = false;
   for (const region of p.regions) {
-    if (region.a === "band") { const b = fQ.shift() || tQ.shift(); if (b) placed.push({ region, block: b }); continue; }
+    if (region.a === "band") { if (fQ.length) placed.push({ region, block: fQ.shift() }); continue; }
     if (region.a === "tall") { const b = tQ.shift(); if (b) placed.push({ region, block: b }); continue; }
     if (!pool.length) continue;
     const want = region.w || 2;
