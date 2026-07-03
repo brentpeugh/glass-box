@@ -254,3 +254,11 @@ button.dt-num:hover{ color:var(--brass); }
 .dt-num.good{ color:var(--verdant); } .dt-num.bad{ color:var(--ember); } .dt-num.dim{ color:var(--muted); cursor:default; }
 .dt-total{ border-top:1px solid var(--ink); border-bottom:none; margin-top:1px; }   /* summation line — institutional convention */
 .dt-total .dt-seg{ font-weight:700; } .dt-total .dt-num{ font-weight:600; }
+
+/* ===== template board: composed grid of fixed panels ===== */
+.tboard{ display:flex; flex-direction:column; gap:16px; }
+.tb-grid{ align-items:stretch; }
+.tb-panel{ background:var(--panel); border:1px solid var(--rule); padding:10px 12px; min-width:0; display:flex; flex-direction:column; }
+.tb-panel .cpanel,.tb-panel .tpanel{ height:100%; }
+.tb-panel .cfill{ height:232px; }
+.tb-finding{ }

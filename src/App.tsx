@@ -347,48 +347,47 @@ function Block({ block, catalog, onPick, dim }) {
     <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={dim} />
   </div>);
 }
-// Layout is deterministic and decoupled from the model's section chunking. Findings and
-// charts are bucketed into a few stable analytical GROUPS by a declared metric→group map
-// (production shape: a metric's group is semantic-layer metadata, not a model choice).
-// Group ORDER is role-weighted so the "leads with X" divergence is preserved. Within a
-// group, charts tile two-across densely; only the stacked area spans full.
-const GROUP_TITLE = { retention: "Retention & Durability", efficiency: "Efficiency & Capital", growth: "Growth & Concentration" };
-const GROUP_ORDER = { CFO: ["retention", "efficiency", "growth"], CRO: ["growth", "retention", "efficiency"] };
-const METRIC_GROUP = {
-  masking_card: "retention", bridge_smb: "retention", bridge_enterprise: "retention", bridge_blended: "retention", callout_grr: "retention",
-  efficiency_combo: "efficiency", magic_line: "efficiency", callout_magic: "efficiency", callout_cac: "efficiency", callout_r40: "efficiency",
-  accel_line: "growth", segment_stack: "growth", segment_table: "growth",
+// ===== template suite: a declared vocabulary of grid compositions. The board picks the
+// template whose slot shape fits the curated content, then fills typed slots (finding /
+// chart / table). Charts fill fixed-height panels, so rows align like a real BI grid.
+// (Selection is deterministic here; letting the model choose the template is the next step.)
+const TEMPLATES = {
+  finding_2up: { finding: true, slots: [["chart", 6], ["chart", 6]] },
+  finding_3up: { finding: true, slots: [["chart", 4], ["chart", 4], ["chart", 4]] },
+  finding_pair_table: { finding: true, slots: [["chart", 6], ["chart", 6], ["table", 12]] },
+  finding_grid_table: { finding: true, slots: [["chart", 6], ["chart", 6], ["chart", 6], ["chart", 6], ["table", 12]] },
+  finding_big_rail: { finding: true, slots: [["chart", 8], ["chart", 4]] },
+  chart_table: { finding: false, slots: [["chart", 7], ["table", 5]] },
+  grid_2x2: { finding: false, slots: [["chart", 6], ["chart", 6], ["chart", 6], ["chart", 6]] },
+  pair: { finding: false, slots: [["chart", 6], ["chart", 6]] },
 };
-const WIDE_CHART = new Set(["stacked_area", "table"]);            // spans full; everything else tiles
-const TILE_CHART = new Set(["waterfall", "combo", "line"]);
-
-function GroupSection({ title, blocks, catalog, onPick }) {
-  const kind = (b) => catalog[b.widget]?.kind;
-  const bl = blocks.filter((b) => kind(b) && kind(b) !== "callout");
-  const hero = bl.filter((b) => kind(b) === "finding_card");
-  const tiles = bl.filter((b) => TILE_CHART.has(kind(b)));
-  const wides = bl.filter((b) => WIDE_CHART.has(kind(b)));
-  if (!hero.length && !tiles.length && !wides.length) return null;
-  const items = [];
-  const put = (b, dim, cls, key) => items.push(<div key={key} className={cls}><Block block={b} catalog={catalog} onPick={onPick} dim={dim} /></div>);
-  hero.forEach((b, i) => put(b, null, "g12", `h${i}`));
-  for (let i = 0; i < tiles.length; i += 2) {
-    put(tiles[i], DIM.pair, "g6", `t${i}a`);
-    if (i + 1 < tiles.length) put(tiles[i + 1], DIM.pair, "g6", `t${i}b`);   // lone tile stays half — no billboard
-  }
-  wides.forEach((b, i) => put(b, DIM.full, "g12", `w${i}`));
-  return (<section className="sec">
-    <div className="sec-head"><span className="sec-t">{title}</span></div>
-    <div className="grid12">{items}</div>
-  </section>);
+function selectTemplate(F, C, T) {
+  const f = F > 0;
+  if (f && C >= 4 && T > 0) return "finding_grid_table";
+  if (f && C >= 2 && T > 0) return "finding_pair_table";
+  if (f && C >= 3) return "finding_3up";
+  if (f && C >= 2) return "finding_2up";
+  if (f && C >= 1) return "finding_big_rail";
+  if (C >= 1 && T > 0) return "chart_table";
+  if (C >= 4) return "grid_2x2";
+  return "pair";
 }
-function Board({ spec, role, catalog, onPick }) {
-  const all = spec.sections.flatMap((s) => s.blocks);
-  const order = GROUP_ORDER[role] || GROUP_ORDER.CFO;
-  return (<>{order.map((gid) => {
-    const gb = all.filter((b) => METRIC_GROUP[b.widget] === gid && catalog[b.widget]);
-    return gb.length ? <GroupSection key={gid} title={GROUP_TITLE[gid]} blocks={gb} catalog={catalog} onPick={onPick} /> : null;
-  })}</>);
+const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area"]);
+function TemplateBoard({ spec, role, catalog, onPick }) {
+  const kind = (id) => catalog[id]?.kind;
+  const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]);
+  const findings = all.filter((b) => kind(b.widget) === "finding_card");
+  const charts = all.filter((b) => CHART_KINDS.has(kind(b.widget)));
+  const tables = all.filter((b) => kind(b.widget) === "table");
+  const tpl = TEMPLATES[selectTemplate(findings.length, charts.length, tables.length)];
+  const cq = [...charts], tq = [...tables];
+  const panels = tpl.slots.map(([t, span]) => { const b = t === "table" ? tq.shift() : cq.shift(); return b ? { b, span } : null; }).filter(Boolean);
+  return (<div className="tboard">
+    {tpl.finding && findings[0] && <div className="tb-finding"><Block block={findings[0]} catalog={catalog} onPick={onPick} dim={null} /></div>}
+    <div className="grid12 tb-grid">
+      {panels.map((p, i) => <div key={i} className={`g${p.span} tb-panel`}><Widget id={p.b.widget} catalog={catalog} onPick={onPick} dim={null} /></div>)}
+    </div>
+  </div>);
 }
 
 function EntryScreen({ onEnter }) {
@@ -621,7 +620,7 @@ function AppInner() {
       <main className="stage">
         <QueryBar onAsk={handleQuery} busy={queries.some((q) => q.status === "loading")} />
         {queries.length > 0 && <div className="asked"><div className="asked-h">Asked — answers computed by the engine, placed here by rule</div>{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={setPicked} />)}</div>}
-        {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} /><Board spec={state.spec} role={role} catalog={catalog} onPick={setPicked} /></>}
+        {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} /></>}
       </main>
 
       <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
