@@ -197,6 +197,8 @@ function buildCatalog() {
     callout_grr: { kind: "callout", polarity: "bad", desc: "Gross revenue retention vs benchmark.", data: { mv: E.grr(null, "24Q4", "25Q4") } },
     segment_stack: { kind: "stacked_area", polarity: "neutral", desc: "ARR by segment over time — topline growth and rising Enterprise concentration.", data: { title: "ARR by segment", series: segSeries } },
     segment_table: { kind: "table", polarity: "neutral", desc: "Per-segment ARR, share of ARR, NRR and GRR — the concentration and durability breakdown in one grid.", data: {} },
+    hbar_nrr: { kind: "hbar", polarity: "bad", desc: "Net revenue retention ranked by segment against the 100% benchmark — shows the retention spread at a glance.", data: { title: "NRR by segment", benchmark: 100, fmt: (v) => `${v.toFixed(0)}%`, items: E.SEGMENTS.map((sg) => { const mv = E.nrr(sg, "24Q4", "25Q4"); return { label: sg, value: mv.value, mv, tone: mv.value >= 100 ? "good" : "bad" }; }) } },
+    efficiency_bullets: { kind: "bullet", polarity: "bad", desc: "Capital-efficiency metrics (magic number, CAC payback, Rule of 40) against their benchmarks as bullet gauges.", data: { title: "Efficiency vs targets", items: (() => { const mag = E.magicNumber("25Q4"), cac = E.cacPayback("25Q4"), r40 = E.ruleOf40("25Q4"); return [{ label: "Magic #", mv: mag, value: mag.value, target: mag.basis.thr, good: mag.basis.good, max: 1.0, fmt: (v) => `${v.toFixed(2)}x` }, { label: "CAC (mo)", mv: cac, value: cac.value, target: cac.basis.thr, good: cac.basis.good, max: 30, fmt: (v) => `${v.toFixed(0)}mo` }, { label: "Rule of 40", mv: r40, value: r40.value, target: r40.basis.thr, good: r40.basis.good, max: 60, fmt: (v) => `${v.toFixed(0)}` }]; })() } },
   };
 }
 
@@ -240,6 +242,39 @@ function Fill({ render }) {
   return <div ref={ref} className="cfill">{w > 1 && h > 1 ? render(w, h) : null}</div>;
 }
 
+function HBar({ items, benchmark, fmt, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, padL = 100, padR = 46, padT = 10, padB = 8;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const max = Math.max(...items.map((i) => i.value), benchmark || 0) * 1.14;
+  const gap = plotH / items.length, bh = Math.min(gap * 0.5, 26);
+  const x = (v) => padL + (v / max) * plotW;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
+    {benchmark != null && <><line x1={x(benchmark)} y1={padT} x2={x(benchmark)} y2={padT + plotH} className="ln-bench" /><text x={x(benchmark)} y={H - 1} className="ln-bench-lab" textAnchor="middle">{fmt(benchmark)}</text></>}
+    {items.map((it, i) => { const cy = padT + gap * i + gap / 2; return (<g key={i} className="ln-pt" onClick={() => onPick(it.mv)}>
+      <text x={padL - 8} y={cy + 4} className="wf-xlab" textAnchor="end">{it.label}</text>
+      <rect x={padL} y={cy - bh / 2} width={Math.max(x(it.value) - padL, 1)} height={bh} className={`hbar ${it.tone || ""}`} />
+      <text x={x(it.value) + 6} y={cy + 4} className="dlab" textAnchor="start">{fmt(it.value)}</text>
+    </g>); })}
+  </svg>);
+}
+function BulletPanel({ items, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, padL = 108, padR = 52, padT = 8, padB = 8;
+  const rowH = (H - padT - padB) / items.length;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
+    {items.map((it, i) => {
+      const cy = padT + rowH * i + rowH / 2, trackX = padL, trackW = W - padL - padR;
+      const x = (v) => trackX + (Math.min(v, it.max) / it.max) * trackW;
+      const clears = it.good === "above" ? it.value >= it.target : it.value <= it.target;
+      return (<g key={i} className="ln-pt" onClick={() => onPick(it.mv)}>
+        <text x={padL - 8} y={cy + 3} className="wf-xlab" textAnchor="end">{it.label}</text>
+        <rect x={trackX} y={cy - 7} width={trackW} height={14} className="bullet-track" />
+        <rect x={trackX} y={cy - 4} width={Math.max(x(it.value) - trackX, 1)} height={8} className={`bullet-bar ${clears ? "good" : "bad"}`} />
+        <line x1={x(it.target)} y1={cy - 9} x2={x(it.target)} y2={cy + 9} className="bullet-target" />
+        <text x={W - padR + 6} y={cy + 3} className="dlab" textAnchor="start">{it.fmt(it.value)}</text>
+      </g>);
+    })}
+  </svg>);
+}
 function SegmentTable({ onPick }) {
   const P = "24Q4", L = "25Q4";
   const rows = E.SEGMENTS.map((seg) => ({ seg, arr: E.segArr(seg, L), nrr: E.nrr(seg, P, L), grr: E.grr(seg, P, L) }));
@@ -263,6 +298,8 @@ function Widget({ id, catalog, onPick, dim }) {
   if (w.kind === "combo") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.line) })} /><Fill render={(cw, ch) => <Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "line") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.series) })} /><Fill render={(cw, ch) => <LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "stacked_area") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <StackedArea quarters={E.QUARTERS} series={d.series} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "hbar") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <HBar items={d.items} benchmark={d.benchmark} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "bullet") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <BulletPanel items={d.items} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "table") return (<div className="tpanel"><ChartHeader title="Segment breakdown" /><SegmentTable onPick={onPick} /></div>);
   if (w.kind === "waterfall") return (<div className="cpanel"><ChartHeader title={d.title} tag={`NRR ${d.bridge.nrr.toFixed(0)}%`} tagTone={d.bridge.nrr >= 100 ? "good" : "bad"} onTrace={() => onPick({ node: d.mv })} /><Fill render={(cw, ch) => <Waterfall c={d.bridge} w={cw} h={ch} />} /></div>);
   return null;
@@ -323,10 +360,12 @@ const FALLBACK = {
       { widget: "callout_magic", emphasis: "compact", headline: "", soWhat: "" },
       { widget: "callout_cac", emphasis: "compact", headline: "", soWhat: "" },
       { widget: "callout_r40", emphasis: "compact", headline: "", soWhat: "" },
-      { widget: "efficiency_combo", emphasis: "standard", headline: "Spending more to grow less", soWhat: "Sales spend is climbing while each dollar buys less growth." }] },
+      { widget: "efficiency_combo", emphasis: "standard", headline: "Spending more to grow less", soWhat: "Sales spend is climbing while each dollar buys less growth." },
+      { widget: "efficiency_bullets", emphasis: "standard", headline: "Efficiency vs targets", soWhat: "Every efficiency metric sits below its benchmark." }] },
     { heading: "Concentration", blocks: [
       { widget: "segment_stack", emphasis: "standard", headline: "Enterprise concentration is rising", soWhat: "The base is tilting toward a few large accounts." },
-      { widget: "segment_table", emphasis: "standard", headline: "The segment breakdown", soWhat: "Retention and share, segment by segment." }] },
+      { widget: "segment_table", emphasis: "standard", headline: "The segment breakdown", soWhat: "Retention and share, segment by segment." },
+      { widget: "hbar_nrr", emphasis: "standard", headline: "Retention spread", soWhat: "SMB sits far below the benchmark the others clear." }] },
   ] },
   CRO: { sections: [
     { heading: "Growth", blocks: [
@@ -359,6 +398,8 @@ const PANEL_ASPECTS = {
   combo: ["wide", "square"],
   line: ["wide", "square"],
   waterfall: ["square", "wide"],
+  hbar: ["wide", "square"],
+  bullet: ["wide", "square"],
 };
 const CHART_ASPECTS = new Set(["large", "wide", "square"]);
 // regions on a 12-col grid; rowsT = row track sizes (auto = content, 1fr = fill viewport)
@@ -409,7 +450,7 @@ function fillPartition(p, findings, charts, tables) {
     return null;
   }).filter(Boolean);
 }
-const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area"]);
+const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar", "bullet"]);
 function TemplateBoard({ spec, role, catalog, onPick }) {
   const kind = (id) => catalog[id]?.kind;
   const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]).map((b) => ({ ...b, _kind: kind(b.widget) }));

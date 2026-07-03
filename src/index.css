@@ -294,3 +294,28 @@ button.dt-num:hover{ color:var(--brass); }
 .tb-panel .cfill{ flex:1 1 auto; height:auto; min-height:0; }
 .tb-panel .tpanel{ height:100%; display:flex; flex-direction:column; }
 .tb-panel .dtable{ flex:1 1 auto; min-height:0; overflow-y:auto; }
+
+/* ===== contain to viewport: tighten vertical rhythm, harden no-scroll ===== */
+html,body,#root{ height:100%; overflow:hidden; }
+.caliper{ height:100vh; max-height:100vh; }
+.hdr{ padding:10px var(--pad); }
+.honesty{ padding-top:8px; padding-bottom:8px; }
+.stage{ gap:8px; padding:8px var(--pad) 8px; }
+.scorecard{ gap:10px; }
+.kcell{ padding:9px 12px; }
+.kcell-v{ font-size:21px; }
+.partition{ gap:10px; }
+.tb-panel{ padding:8px 11px; }
+.chart-h{ margin-bottom:4px; }
+/* compress the finding band */
+.block>div.fband{ padding:10px 16px; }
+.fband .fside-v{ font-size:25px; }
+.fband{ gap:28px; }
+
+/* ===== horizontal bar + bullet ===== */
+.hbar{ fill:var(--slate); shape-rendering:crispEdges; cursor:pointer; }
+.hbar.good{ fill:var(--verdant); } .hbar.bad{ fill:var(--ember); }
+.ln-pt:hover .hbar{ fill:var(--slate-d); }
+.bullet-track{ fill:#EDEFF1; }
+.bullet-bar{ shape-rendering:crispEdges; } .bullet-bar.good{ fill:var(--verdant); } .bullet-bar.bad{ fill:var(--ember); }
+.bullet-target{ stroke:var(--ink); stroke-width:2; }
