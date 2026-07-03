@@ -347,46 +347,84 @@ function Block({ block, catalog, onPick, dim }) {
     <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={dim} />
   </div>);
 }
-// ===== template suite: a declared vocabulary of grid compositions. The board picks the
-// template whose slot shape fits the curated content, then fills typed slots (finding /
-// chart / table). Charts fill fixed-height panels, so rows align like a real BI grid.
-// (Selection is deterministic here; letting the model choose the template is the next step.)
-const TEMPLATES = {
-  finding_2up: { finding: true, slots: [["chart", 6], ["chart", 6]] },
-  finding_3up: { finding: true, slots: [["chart", 4], ["chart", 4], ["chart", 4]] },
-  finding_pair_table: { finding: true, slots: [["chart", 6], ["chart", 6], ["table", 12]] },
-  finding_grid_table: { finding: true, slots: [["chart", 6], ["chart", 6], ["chart", 6], ["chart", 6], ["table", 12]] },
-  finding_big_rail: { finding: true, slots: [["chart", 8], ["chart", 4]] },
-  chart_table: { finding: false, slots: [["chart", 7], ["table", 5]] },
-  grid_2x2: { finding: false, slots: [["chart", 6], ["chart", 6], ["chart", 6], ["chart", 6]] },
-  pair: { finding: false, slots: [["chart", 6], ["chart", 6]] },
+// ===== aspect-based partition layout =====
+// Each panel declares the aspect SHAPES it reads well as (roster-proof: a new chart just
+// declares its aspects, no layout change). Partitions are region maps of a fixed canvas,
+// each region tagged with an aspect. Selection scores partitions for best fit; fill matches
+// panels to regions by aspect. A panel budget keeps every screen legible.
+const PANEL_ASPECTS = {
+  finding_card: ["band"],
+  table: ["tall", "band"],
+  stacked_area: ["wide", "large"],
+  combo: ["wide", "square"],
+  line: ["wide", "square"],
+  waterfall: ["square", "wide"],
 };
-function selectTemplate(F, C, T) {
-  const f = F > 0;
-  if (f && C >= 4 && T > 0) return "finding_grid_table";
-  if (f && C >= 2 && T > 0) return "finding_pair_table";
-  if (f && C >= 3) return "finding_3up";
-  if (f && C >= 2) return "finding_2up";
-  if (f && C >= 1) return "finding_big_rail";
-  if (C >= 1 && T > 0) return "chart_table";
-  if (C >= 4) return "grid_2x2";
-  return "pair";
+const CHART_ASPECTS = new Set(["large", "wide", "square"]);
+// regions on a 12-col grid; rowsT = row track sizes (auto = content, 1fr = fill viewport)
+const PARTITIONS = {
+  band_big_rail: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "large", c: [1, 9], r: [2, 4] }, { a: "wide", c: [9, 13], r: [2, 3] }, { a: "tall", c: [9, 13], r: [3, 4] }] },
+  band_duo_table: { rowsT: "auto 1fr auto", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 7], r: [2, 3] }, { a: "wide", c: [7, 13], r: [2, 3] }, { a: "band", c: [1, 13], r: [3, 4] }] },
+  band_wide_pair: { rowsT: "auto 1fr 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "wide", c: [1, 13], r: [2, 3] }, { a: "square", c: [1, 7], r: [3, 4] }, { a: "square", c: [7, 13], r: [3, 4] }] },
+  band_trio: { rowsT: "auto 1fr", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "square", c: [1, 5], r: [2, 3] }, { a: "square", c: [5, 9], r: [2, 3] }, { a: "square", c: [9, 13], r: [2, 3] }] },
+  split_table: { rowsT: "1fr", regions: [{ a: "wide", c: [1, 8], r: [1, 2] }, { a: "tall", c: [8, 13], r: [1, 2] }] },
+  big_rail: { rowsT: "1fr 1fr", regions: [{ a: "large", c: [1, 8], r: [1, 3] }, { a: "wide", c: [8, 13], r: [1, 2] }, { a: "square", c: [8, 13], r: [2, 3] }] },
+  pair: { rowsT: "1fr", regions: [{ a: "wide", c: [1, 7], r: [1, 2] }, { a: "wide", c: [7, 13], r: [1, 2] }] },
+};
+const PANEL_BUDGET = 5;
+function partCapacity(p) {
+  const band = p.regions.filter((r) => r.a === "band").length;
+  const tall = p.regions.filter((r) => r.a === "tall").length;
+  const chart = p.regions.filter((r) => CHART_ASPECTS.has(r.a)).length;
+  return { band, tall, chart, total: p.regions.length };
+}
+function fitScore(p, F, C, T) {
+  const cap = partCapacity(p);
+  const seatFinding = F > 0 && cap.band > 0 ? 1 : 0;
+  const chartsSeated = Math.min(C, cap.chart);
+  const bandLeft = cap.band - seatFinding;
+  const tableSeated = T > 0 && (cap.tall > 0 || bandLeft > 0) ? 1 : 0;
+  const used = seatFinding + chartsSeated + tableSeated;
+  const empty = cap.total - used;
+  const dropped = Math.max(0, C - chartsSeated) + Math.max(0, F - seatFinding) + Math.max(0, T - tableSeated);
+  return used * 10 - empty * 4 - dropped * 2;
+}
+function selectPartition(F, C, T) {
+  let best = "pair", bs = -Infinity;
+  for (const [k, p] of Object.entries(PARTITIONS)) { const s = fitScore(p, F, C, T); if (s > bs) { bs = s; best = k; } }
+  return best;
+}
+function fillPartition(p, findings, charts, tables) {
+  // rank by curation order (the model's salience judgment); cap to budget
+  const chartQ = charts.slice(0, PANEL_BUDGET);
+  const fQ = [...findings], tQ = [...tables], cQ = [...chartQ];
+  const asp = (b) => PANEL_ASPECTS[b._kind] || [];
+  return p.regions.map((region) => {
+    if (region.a === "band") { if (fQ.length) return { region, block: fQ.shift() }; if (tQ.length) return { region, block: tQ.shift() }; return null; }
+    if (region.a === "tall") { if (tQ.length) return { region, block: tQ.shift() }; return null; }
+    // chart region: prefer a chart whose aspect set includes this region's aspect
+    let idx = cQ.findIndex((b) => asp(b).includes(region.a));
+    if (idx < 0) idx = cQ.length ? 0 : -1;
+    if (idx >= 0) return { region, block: cQ.splice(idx, 1)[0] };
+    return null;
+  }).filter(Boolean);
 }
 const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area"]);
 function TemplateBoard({ spec, role, catalog, onPick }) {
   const kind = (id) => catalog[id]?.kind;
-  const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]);
-  const findings = all.filter((b) => kind(b.widget) === "finding_card");
-  const charts = all.filter((b) => CHART_KINDS.has(kind(b.widget)));
-  const tables = all.filter((b) => kind(b.widget) === "table");
-  const tpl = TEMPLATES[selectTemplate(findings.length, charts.length, tables.length)];
-  const cq = [...charts], tq = [...tables];
-  const panels = tpl.slots.map(([t, span]) => { const b = t === "table" ? tq.shift() : cq.shift(); return b ? { b, span } : null; }).filter(Boolean);
-  return (<div className="tboard">
-    {tpl.finding && findings[0] && <div className="tb-finding"><Block block={findings[0]} catalog={catalog} onPick={onPick} dim={null} /></div>}
-    <div className="grid12 tb-grid">
-      {panels.map((p, i) => <div key={i} className={`g${p.span} tb-panel`}><Widget id={p.b.widget} catalog={catalog} onPick={onPick} dim={null} /></div>)}
-    </div>
+  const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]).map((b) => ({ ...b, _kind: kind(b.widget) }));
+  const findings = all.filter((b) => b._kind === "finding_card");
+  const charts = all.filter((b) => CHART_KINDS.has(b._kind));
+  const tables = all.filter((b) => b._kind === "table");
+  const p = PARTITIONS[selectPartition(findings.length, charts.length, tables.length)];
+  const placed = fillPartition(p, findings, charts, tables);
+  return (<div className="partition" style={{ gridTemplateRows: p.rowsT }}>
+    {placed.map((pl, i) => (
+      <div key={i} className={`tb-panel asp-${pl.region.a}`} style={{ gridColumn: `${pl.region.c[0]} / ${pl.region.c[1]}`, gridRow: `${pl.region.r[0]} / ${pl.region.r[1]}` }}>
+        {pl.block._kind === "finding_card"
+          ? <Block block={pl.block} catalog={catalog} onPick={onPick} dim={null} />
+          : <Widget id={pl.block.widget} catalog={catalog} onPick={onPick} dim={null} />}
+      </div>))}
   </div>);
 }
 
@@ -553,6 +591,17 @@ function Scorecard({ role, onPick }) {
   return (<div className="scorecard">{set.map((m, i) => { const res = resolveKpi(m); return res ? <KpiCell key={i} res={res} onPick={onPick} /> : null; })}</div>);
 }
 
+function QueryModal({ queries, onAsk, onClose, onPick, busy }) {
+  return (<div className="qmodal-bg" onClick={onClose}>
+    <div className="qmodal" onClick={(e) => e.stopPropagation()}>
+      <div className="qmodal-h"><span className="qmodal-t">Interrogate the engine</span><button className="qmodal-x" onClick={onClose}>✕</button></div>
+      <QueryBar onAsk={onAsk} busy={busy} />
+      <div className="qmodal-note">Answers are computed by the engine and traceable — the model only interprets your question and narrates the result.</div>
+      <div className="qmodal-results">{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={onPick} />)}</div>
+    </div>
+  </div>);
+}
+
 function AppInner() {
   const catalog = useMemo(() => buildCatalog(), []);
   const [role, setRole] = useState(null);
@@ -561,6 +610,7 @@ function AppInner() {
   const [showDebug, setShowDebug] = useState(false);
   const [queries, setQueries] = useState([]);
   const cache = React.useRef({});
+  const [showQuery, setShowQuery] = useState(false);
   useEffect(() => { const h = (e) => { if (e.key === "`" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); setShowDebug((v) => !v); } }; window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, []);
 
   async function handleQuery(text) {
@@ -604,6 +654,7 @@ function AppInner() {
         <div className="hdr-l"><span className="hdr-mark">⟡ CALIPER</span><span className="hdr-sub">Caliper Systems · synthetic</span></div>
         <div className="hdr-r">
           {Object.keys(ROLES).map((k) => <button key={k} className={`lensbtn ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
+          <button className="recur" onClick={() => setShowQuery(true)} title="interrogate the engine">⌕</button>
           <button className="recur" onClick={() => { delete cache.current[role]; enter(role); }} title="re-curate">↻</button>
           <button className="recur" onClick={() => setShowDebug((v) => !v)} title="boundary inspector (or press `)">dbg</button>
         </div>
@@ -618,10 +669,10 @@ function AppInner() {
       {showDebug && <DebugPanel d={state.debug} />}
 
       <main className="stage">
-        <QueryBar onAsk={handleQuery} busy={queries.some((q) => q.status === "loading")} />
-        {queries.length > 0 && <div className="asked"><div className="asked-h">Asked — answers computed by the engine, placed here by rule</div>{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={setPicked} />)}</div>}
         {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} /></>}
       </main>
+
+      {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={setPicked} busy={queries.some((q) => q.status === "loading")} />}
 
       <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
     </div>

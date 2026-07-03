@@ -262,3 +262,35 @@ button.dt-num:hover{ color:var(--brass); }
 .tb-panel .cpanel,.tb-panel .tpanel{ height:100%; }
 .tb-panel .cfill{ height:232px; }
 .tb-finding{ }
+
+/* ===== fixed viewport: fill the screen, no scroll ===== */
+.caliper{ height:100vh; display:flex; flex-direction:column; overflow:hidden; padding:0; }
+.hdr,.honesty{ flex:0 0 auto; }
+.stage{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:12px; padding:12px var(--pad) 14px; max-width:none; margin:0; overflow:hidden; }
+.scorecard{ flex:0 0 auto; margin:0; }
+/* board fills remaining height; chart rows flex, table row sizes to content */
+.tboard{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:12px; }
+.tb-band{ flex:0 0 auto; }
+.tb-row{ min-width:0; }
+.tb-row-flex{ flex:1 1 0; min-height:120px; }
+.tb-row-auto{ flex:0 0 auto; }
+.tb-panel{ min-height:0; }
+.tb-panel .cpanel{ height:100%; display:flex; flex-direction:column; }
+.tb-panel .cfill{ flex:1 1 auto; height:auto; min-height:0; }
+/* ===== query modal (relocated off the top chrome) ===== */
+.qmodal-bg{ position:fixed; inset:0; background:rgba(20,24,28,.34); display:flex; align-items:flex-start; justify-content:center; padding-top:8vh; z-index:50; }
+.qmodal{ background:var(--panel); border:1px solid var(--rule); border-top:2px solid var(--slate-d); width:min(760px,92vw); max-height:80vh; display:flex; flex-direction:column; padding:18px 20px; box-shadow:0 12px 40px rgba(20,24,28,.18); }
+.qmodal-h{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.qmodal-t{ font-family:'Archivo',sans-serif; font-weight:600; font-size:15px; }
+.qmodal-x{ background:none; border:none; font-size:15px; cursor:pointer; color:var(--muted); }
+.qmodal-note{ font-size:11.5px; color:var(--muted); margin:8px 0 4px; }
+.qmodal-results{ overflow-y:auto; min-height:0; margin-top:8px; }
+
+/* ===== aspect partition grid ===== */
+.partition{ flex:1 1 auto; min-height:0; display:grid; gap:12px; grid-template-columns:repeat(12,1fr); }
+.tb-panel{ background:var(--panel); border:1px solid var(--rule); padding:10px 12px; min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
+.tb-panel.asp-band{ border:none; background:none; padding:0; overflow:visible; }
+.tb-panel .cpanel{ height:100%; display:flex; flex-direction:column; }
+.tb-panel .cfill{ flex:1 1 auto; height:auto; min-height:0; }
+.tb-panel .tpanel{ height:100%; display:flex; flex-direction:column; }
+.tb-panel .dtable{ flex:1 1 auto; min-height:0; overflow-y:auto; }
