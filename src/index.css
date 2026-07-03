@@ -217,3 +217,12 @@
 .fband-verb{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
 .fband-inspect{ margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--brass); background:none; border:none; cursor:pointer; padding:0; white-space:nowrap; }
 .fband-inspect:hover{ color:var(--ink); }
+
+/* featured-band right cluster: position plot fills the width with substance */
+.fband-right{ margin-left:auto; display:flex; align-items:center; gap:24px; }
+.minigap{ width:230px; height:52px; flex:0 0 auto; }
+.mg-axis{ stroke:var(--rule); stroke-width:1; }
+.mg-bench{ stroke:var(--muted); stroke-width:1; stroke-dasharray:2 2; }
+.mg-lab{ font-family:'IBM Plex Mono',monospace; font-size:9px; fill:var(--muted); }
+.mg-cap{ font-family:'IBM Plex Mono',monospace; font-size:8.5px; fill:var(--muted); letter-spacing:.03em; }
+.mg-dot.good{ fill:var(--verdant); } .mg-dot.bad{ fill:var(--ember); } .mg-dot{ stroke:var(--panel); stroke-width:1.5; }

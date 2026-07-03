@@ -215,17 +215,6 @@ const elig = (k, t) => (SLOT_ELIG[k] || []).includes(t);
 // viewBox dimensions per slot — wide/short when a chart spans, squarer when paired
 const DIM = { full: { w: 1360, h: 264 }, pair: { w: 676, h: 236 }, major: { w: 1000, h: 264 } };
 
-function packRows(blocks, kindOf) {
-  // Callouts are hoisted to the deterministic top scorecard, so sections carry only the
-  // hero finding and charts. Charts tile two-across; a solo chart spans the full width.
-  const hero = [], charts = [];
-  for (const b of blocks) { const k = kindOf(b); if (elig(k, "hero")) hero.push(b); else if (k !== "callout") charts.push(b); }
-  const rows = [];
-  for (const h of hero) rows.push({ t: "hero", blocks: [h] });
-  for (let i = 0; i < charts.length; i += 2) rows.push(i + 1 < charts.length ? { t: "pair", blocks: [charts[i], charts[i + 1]] } : { t: "solo", blocks: [charts[i]] });
-  return rows;
-}
-
 function ChartHeader({ title, tag, tagTone, onTrace }) {
   return (<div className="chart-h">
     <button className="chart-title" onClick={onTrace || undefined}>{title}{onTrace && <span className="chart-trace"> ▸ trace</span>}</button>
@@ -319,20 +308,48 @@ function Block({ block, catalog, onPick, dim }) {
     <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={dim} />
   </div>);
 }
-function Section({ section, catalog, onPick }) {
-  const rows = packRows(section.blocks, (b) => catalog[b.widget]?.kind);
-  if (!rows.length) return null;
-  const cell = (b, dim, cls, key) => <div key={key} className={cls}><Block block={b} catalog={catalog} onPick={onPick} dim={dim} /></div>;
+// Layout is deterministic and decoupled from the model's section chunking. Findings and
+// charts are bucketed into a few stable analytical GROUPS by a declared metric→group map
+// (production shape: a metric's group is semantic-layer metadata, not a model choice).
+// Group ORDER is role-weighted so the "leads with X" divergence is preserved. Within a
+// group, charts tile two-across densely; only the stacked area spans full.
+const GROUP_TITLE = { retention: "Retention & Durability", efficiency: "Efficiency & Capital", growth: "Growth & Concentration" };
+const GROUP_ORDER = { CFO: ["retention", "efficiency", "growth"], CRO: ["growth", "retention", "efficiency"] };
+const METRIC_GROUP = {
+  masking_card: "retention", bridge_smb: "retention", bridge_enterprise: "retention", bridge_blended: "retention", callout_grr: "retention",
+  efficiency_combo: "efficiency", magic_line: "efficiency", callout_magic: "efficiency", callout_cac: "efficiency", callout_r40: "efficiency",
+  accel_line: "growth", segment_stack: "growth",
+};
+const WIDE_CHART = new Set(["stacked_area"]);            // spans full; everything else tiles
+const TILE_CHART = new Set(["waterfall", "combo", "line"]);
+
+function GroupSection({ title, blocks, catalog, onPick }) {
+  const kind = (b) => catalog[b.widget]?.kind;
+  const bl = blocks.filter((b) => kind(b) && kind(b) !== "callout");
+  const hero = bl.filter((b) => kind(b) === "finding_card");
+  const tiles = bl.filter((b) => TILE_CHART.has(kind(b)));
+  const wides = bl.filter((b) => WIDE_CHART.has(kind(b)));
+  if (!hero.length && !tiles.length && !wides.length) return null;
   const items = [];
-  rows.forEach((r, i) => {
-    if (r.t === "hero") items.push(cell(r.blocks[0], null, "g12", `h${i}`));
-    else if (r.t === "pair") r.blocks.forEach((b, j) => items.push(cell(b, DIM.pair, "g6", `p${i}${j}`)));
-    else if (r.t === "solo") items.push(cell(r.blocks[0], DIM.full, "g12", `o${i}`));
-  });
+  const put = (b, dim, cls, key) => items.push(<div key={key} className={cls}><Block block={b} catalog={catalog} onPick={onPick} dim={dim} /></div>);
+  hero.forEach((b, i) => put(b, null, "g12", `h${i}`));
+  for (let i = 0; i < tiles.length; i += 2) {
+    put(tiles[i], DIM.pair, "g6", `t${i}a`);
+    if (i + 1 < tiles.length) put(tiles[i + 1], DIM.pair, "g6", `t${i}b`);   // lone tile stays half — no billboard
+  }
+  wides.forEach((b, i) => put(b, DIM.full, "g12", `w${i}`));
   return (<section className="sec">
-    <div className="sec-head"><span className="sec-t">{section.heading}</span></div>
+    <div className="sec-head"><span className="sec-t">{title}</span></div>
     <div className="grid12">{items}</div>
   </section>);
+}
+function Board({ spec, role, catalog, onPick }) {
+  const all = spec.sections.flatMap((s) => s.blocks);
+  const order = GROUP_ORDER[role] || GROUP_ORDER.CFO;
+  return (<>{order.map((gid) => {
+    const gb = all.filter((b) => METRIC_GROUP[b.widget] === gid && catalog[b.widget]);
+    return gb.length ? <GroupSection key={gid} title={GROUP_TITLE[gid]} blocks={gb} catalog={catalog} onPick={onPick} /> : null;
+  })}</>);
 }
 
 function EntryScreen({ onEnter }) {
@@ -565,7 +582,7 @@ function AppInner() {
       <main className="stage">
         <QueryBar onAsk={handleQuery} busy={queries.some((q) => q.status === "loading")} />
         {queries.length > 0 && <div className="asked"><div className="asked-h">Asked — answers computed by the engine, placed here by rule</div>{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={setPicked} />)}</div>}
-        {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} />{state.spec.sections.map((s, i) => <Section key={i} section={s} catalog={catalog} onPick={setPicked} />)}</>}
+        {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} /><Board spec={state.spec} role={role} catalog={catalog} onPick={setPicked} /></>}
       </main>
 
       <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
