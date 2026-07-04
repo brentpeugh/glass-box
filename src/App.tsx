@@ -24,53 +24,65 @@ const fmtPct = (v) => `${v.toFixed(1)}%`;
 function fmtMV(mv) { switch (mv.unit) { case "usd": return fmtM(mv.value); case "percent": return fmtPct(mv.value); case "ratio": return `${mv.value.toFixed(2)}x`; case "months": return `${mv.value.toFixed(0)} mo`; case "number": return `${mv.value.toFixed(0)}`; case "pp": return `${mv.value.toFixed(0)} pp`; default: return `${mv.value}`; } }
 
 // ================= trace =================
-function RowsLeaf({ leaf }) {
+function RowsLeaf({ leaf, parentVal }) {
   const r = useMemo(() => E.resolveLeaf(leaf.selector), [leaf]);
-  let body, stat, note;
+  let body, stat, note, recon;
   if (r.kind === "retention") {
-    const sample = [...r.churned.map((x) => ({ ...x, k: "ch" })), ...r.contracted.map((x) => ({ ...x, k: "co" }))].sort((a, b) => (b[r.sc] - b[r.ec]) - (a[r.sc] - a[r.ec])).slice(0, 6);
+    const movers = [...r.churned.map((x) => ({ ...x, k: "ch" })), ...r.contracted.map((x) => ({ ...x, k: "co" })), ...r.expanded.map((x) => ({ ...x, k: "ex" }))].sort((a, b) => (b[r.sc] - b[r.ec]) - (a[r.sc] - a[r.ec]));
+    const begin = r.churned.concat(r.contracted, r.expanded).reduce((s, x) => s + x[r.sc], 0);
     stat = (<><span><b>{r.n}</b> cohort rows</span><span className="dot ember" /><b>{r.churned.length}</b> churned<span className="dot ember2" /><b>{r.contracted.length}</b> contracted<span className="dot verdant" /><b>{r.expanded.length}</b> expanded</>);
-    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.sc.slice(4)}</th><th>{r.ec.slice(4)}</th><th>Δ</th></tr></thead><tbody>{sample.map((x) => (<tr key={x.customer_id}><td className="mono">{x.customer_id}</td><td className="mono">{fmtK(x[r.sc])}</td><td className="mono">{x[r.ec] === 0 ? "—" : fmtK(x[r.ec])}</td><td className="mono neg">−{fmtK(x[r.sc] - x[r.ec]).slice(1)}</td></tr>))}</tbody></table>);
-    note = `resolved live against the ${r.n} cohort rows — read from the data, not produced by a model`;
+    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.sc.slice(4)}</th><th>{r.ec.slice(4)}</th><th>Δ</th></tr></thead><tbody>{movers.map((x) => (<tr key={x.customer_id}><td className="mono">{x.customer_id}</td><td className="mono">{fmtK(x[r.sc])}</td><td className="mono">{x[r.ec] === 0 ? "—" : fmtK(x[r.ec])}</td><td className={`mono ${x[r.ec] >= x[r.sc] ? "pos" : "neg"}`}>{x[r.ec] >= x[r.sc] ? "+" : "−"}{fmtK(Math.abs(x[r.sc] - x[r.ec])).slice(1)}</td></tr>))}</tbody></table>);
+    note = `resolved live against all ${r.n} cohort rows — read from the data, not produced by a model`;
+    recon = <>{movers.length} accounts moved · the cohort's start and end ARR drive the ratio above</>;
   } else if (r.kind === "col_sum") {
-    stat = (<span><b>{r.n}</b> rows contribute · top 6</span>);
-    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.col.slice(4)} ARR</th></tr></thead><tbody>{r.rows.slice(0, 6).map((x) => (<tr key={x.id}><td className="mono">{x.id}</td><td className="mono">{fmtK(x.v)}</td></tr>))}</tbody></table>);
-    note = `summed live over ${r.n} rows`;
+    const sum = r.rows.reduce((s, x) => s + x.v, 0);
+    stat = (<span><b>{r.n}</b> rows contribute · full audit trail</span>);
+    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.col.slice(4)} ARR</th></tr></thead><tbody>{r.rows.map((x) => (<tr key={x.id}><td className="mono">{x.id}</td><td className="mono">{fmtK(x.v)}</td></tr>))}</tbody></table>);
+    note = `summed live over all ${r.n} rows`;
+    recon = <>Σ {r.n} rows = <b className="mono">{fmtK(sum)}</b> — reconciles to {parentVal ? fmtMV(parentVal) : "the value above"}</>;
   } else if (r.kind === "delta") {
-    stat = (<span><b>{r.n}</b> accounts with positive ARR change · top 6</span>);
-    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.from}</th><th>{r.to}</th><th>Δ</th></tr></thead><tbody>{r.rows.slice(0, 6).map((x) => (<tr key={x.id}><td className="mono">{x.id}</td><td className="mono">{x.a === 0 ? "new" : fmtK(x.a)}</td><td className="mono">{fmtK(x.b)}</td><td className="mono pos">+{fmtK(x.b - x.a).slice(1)}</td></tr>))}</tbody></table>);
+    const sum = r.rows.reduce((s, x) => s + (x.b - x.a), 0);
+    stat = (<span><b>{r.n}</b> accounts with positive ARR change · full audit trail</span>);
+    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.from}</th><th>{r.to}</th><th>Δ</th></tr></thead><tbody>{r.rows.map((x) => (<tr key={x.id}><td className="mono">{x.id}</td><td className="mono">{x.a === 0 ? "new" : fmtK(x.a)}</td><td className="mono">{fmtK(x.b)}</td><td className="mono pos">+{fmtK(x.b - x.a).slice(1)}</td></tr>))}</tbody></table>);
     note = `new logos + expansion, summed live`;
+    recon = <>Σ {r.n} positive deltas = <b className="mono">{fmtK(sum)}</b> — reconciles to {parentVal ? fmtMV(parentVal) : "the value above"}</>;
   } else {
-    stat = (<span><b>{r.rows.length}</b> opex rows · {r.field}</span>);
+    const sum = r.rows.reduce((s, o) => s + o[r.field], 0);
+    stat = (<span><b>{r.rows.length}</b> opex rows · {r.field} · full audit trail</span>);
     body = (<table className="rows-tbl"><thead><tr><th>segment</th><th>quarter</th><th>{r.field}</th></tr></thead><tbody>{r.rows.map((o, i) => (<tr key={i}><td className="mono">{o.segment}</td><td className="mono">{o.quarter}</td><td className="mono">{fmtK(o[r.field])}</td></tr>))}</tbody></table>);
     note = `operating expense at segment×quarter grain — its natural grain`;
+    recon = <>Σ {r.rows.length} rows = <b className="mono">{fmtK(sum)}</b> — reconciles to {parentVal ? fmtMV(parentVal) : "the value above"}</>;
   }
-  return (<div className="rows"><div className="rows-stat">{stat}</div>{body}<div className="anno">{note}</div></div>);
+  return (<div className="rows"><div className="rows-stat">{stat}</div><div className="rows-scroll">{body}</div>{recon && <div className="rows-recon">✓ {recon}</div>}<div className="anno">{note}</div></div>);
 }
 function TraceNode({ node, depth, isFinding }) {
   const kids = node.provenance?.inputs?.length;
   const [open, setOpen] = useState(depth < 2);
   const val = isFinding ? `${node.value.toFixed(0)} pp` : fmtMV(node);
+  const ptype = node.epistemic === "proxy" ? "MODELED" : (node.provenance?.inputs || []).some((i) => i.kind === "metric") ? "CALCULATED" : "EXTRACTED";
   return (
     <div className="node" style={{ marginLeft: depth ? 18 : 0 }}>
       <div className="node-head" onClick={() => kids && setOpen(!open)} role={kids ? "button" : undefined} tabIndex={kids ? 0 : undefined} onKeyDown={(e) => e.key === "Enter" && setOpen(!open)}>
         <span className="node-glyph">{kids ? (open ? "▾" : "▸") : "◆"}</span>
-        <span className="node-label">{node.label}{node.epistemic === "proxy" && <span className="proxy">proxy</span>}</span>
+        <span className={`ptype ${ptype.toLowerCase()}`}>{ptype}</span>
+        <span className="node-label">{node.label}</span>
         <span className="node-op">{node.provenance.op}</span>
         <span className="node-val mono">{val}</span>
       </div>
       {open && <div className="node-desc">{node.provenance.description}{node.note ? ` — ${node.note}` : ""}</div>}
-      {open && kids ? <div className="node-kids">{node.provenance.inputs.map((inp, i) => inp.kind === "metric" ? <TraceNode key={i} node={E.store.get(inp.id)} depth={depth + 1} /> : <RowsLeaf key={i} leaf={inp} />)}</div> : null}
+      {open && kids ? <div className="node-kids">{node.provenance.inputs.map((inp, i) => inp.kind === "metric" ? <TraceNode key={i} node={E.store.get(inp.id)} depth={depth + 1} /> : <RowsLeaf key={i} leaf={inp} parentVal={node} />)}</div> : null}
     </div>
   );
 }
 function TraceDrawer({ picked, onClose }) {
   if (!picked) return null;
+  const node = picked.node;
+  const ptype = picked.isFinding ? "FINDING" : node.epistemic === "proxy" ? "MODELED" : (node.provenance?.inputs || []).some((i) => i.kind === "metric") ? "CALCULATED" : "EXTRACTED";
   return (
-    <div className="drawer">
-      <div className="drawer-bar"><span className="drawer-t">PROVENANCE · trace to the rows</span><button className="drawer-x" onClick={onClose}>close ✕</button></div>
-      <div className="drawer-body"><div className="anno anno-top">Every value below is computed from the raw account rows. The arrangement was chosen by the model; these numbers were not.</div><TraceNode node={picked.node} depth={0} isFinding={picked.isFinding} /></div>
-    </div>
+    <aside className="drawer">
+      <div className="drawer-bar"><span className={`ptype ${ptype.toLowerCase()}`}>{ptype}</span><span className="drawer-t">{node.label}</span><button className="drawer-x" onClick={onClose}>✕</button></div>
+      <div className="drawer-body"><div className="anno anno-top">Every value decomposes into extracted or calculated values, all the way to the source rows. The model arranged this board — it did not produce these numbers.</div><TraceNode node={picked.node} depth={0} isFinding={picked.isFinding} /></div>
+    </aside>
   );
 }
 
@@ -838,13 +850,14 @@ function AppInner() {
 
       {showDebug && <DebugPanel d={state.debug} />}
 
-      <main className="stage">
-        {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} /></>}
-      </main>
+      <div className={`workarea ${picked ? "drawer-open" : ""}`}>
+        <main className="stage">
+          {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} /></>}
+        </main>
+        <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
+      </div>
 
       {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={setPicked} busy={queries.some((q) => q.status === "loading")} />}
-
-      <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
     </div>
   );
 }

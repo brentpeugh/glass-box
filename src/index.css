@@ -381,3 +381,21 @@ html,body,#root{ height:100%; overflow:hidden; }
 .tb-panel .cfill{ flex:1 1 auto; }
 /* dominant-plus-rail: the big panel's chart fills its taller region */
 .asp-twothird .cfill{ min-height:0; }
+
+/* ===== provenance drawer: compresses the board (not overlay) ===== */
+.workarea{ flex:1 1 auto; min-height:0; display:flex; }
+.workarea > .stage{ flex:1 1 auto; min-width:0; }
+.drawer{ position:static; flex:0 0 26%; min-width:0; max-width:26%; border-left:2px solid var(--slate-d); background:var(--panel); display:flex; flex-direction:column; overflow:hidden; box-shadow:none; }
+.drawer-bar{ flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:11px 14px; border-bottom:1px solid var(--rule); }
+.drawer-t{ font-family:'Archivo',sans-serif; font-weight:600; font-size:13.5px; flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.drawer-x{ background:none; border:none; cursor:pointer; color:var(--muted); font-size:14px; flex:0 0 auto; }
+.drawer-body{ flex:1 1 auto; min-height:0; overflow-y:auto; padding:12px 14px; }
+/* epistemic type badge — the headline of the thesis */
+.ptype{ font-family:'IBM Plex Mono',monospace; font-size:8.5px; font-weight:600; letter-spacing:.07em; padding:2px 6px; border:1px solid; white-space:nowrap; flex:0 0 auto; }
+.ptype.extracted{ color:var(--slate-d); border-color:var(--slate-l); }
+.ptype.calculated{ color:var(--brass); border-color:var(--brass); }
+.ptype.modeled{ color:var(--ember); border-color:var(--ember); background:rgba(168,72,60,.06); }
+.ptype.finding{ color:var(--ink); border-color:var(--ink); }
+.node-head{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+.rows-scroll{ overflow:visible; }
+.rows-recon{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--verdant); margin-top:6px; padding:5px 8px; background:rgba(63,115,87,.07); border-left:2px solid var(--verdant); }
