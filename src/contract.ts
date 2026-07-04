@@ -37,7 +37,7 @@
 // 0. SHARED PRIMITIVES
 // ============================================================================
 export type Grain = "company" | "segment" | "account";
-export type Unit = "usd" | "percent" | "ratio" | "months" | "count";
+export type Unit = "usd" | "percent" | "ratio" | "months" | "count" | "number";
 
 export interface Scope {
   grain: Grain;
@@ -67,11 +67,18 @@ export type ProvRef =
 
 /** Machine-resolvable row filter. Kept deliberately small; extend per fact as needed. */
 export interface RowSelector {
+  kind?: "col_sum" | "retention" | "delta" | "opex" | "opps";
   table?: "customers" | "opportunities" | "opex";
   seg?: string | null;         // segment filter (null/undefined = all)
   activeAt?: string;           // quarter at which the row must be non-zero (cohort gate)
   col?: string;                // the column being summed/measured, e.g. "arr_25Q4"
   quarter?: string;            // point-in-time filter (opex/opportunities)
+  startQ?: string;             // retention cohort start quarter
+  endQ?: string;               // retention cohort end quarter
+  from?: string;               // delta: prior quarter
+  to?: string;                 // delta: current quarter
+  field?: string;              // opex field being summed
+  q?: string;                  // opps close quarter
 }
 
 export interface Provenance {
@@ -96,6 +103,8 @@ export interface MetricValue {
   basis?: {                    // computed comparison context, itself sourced
     kind: "benchmark" | "prior_period" | "peer_median";
     ref: string | { metricId: string };       // config id, or another MetricValue
+    thr?: number;              // the threshold compared against (config)
+    good?: "above" | "below";  // which side of the threshold is favorable (config)
     delta?: number;            // value - reference (engine-computed)
   };
   epistemic: "deterministic" | "proxy";        // "proxy" => e.g. Rule of 40; carries note

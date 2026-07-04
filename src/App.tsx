@@ -46,8 +46,12 @@ function RowsLeaf({ leaf, parentVal }) {
     body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.from}</th><th>{r.to}</th><th>Δ</th></tr></thead><tbody>{r.rows.map((x) => (<tr key={x.id}><td className="mono">{x.id}</td><td className="mono">{x.a === 0 ? "new" : fmtK(x.a)}</td><td className="mono">{fmtK(x.b)}</td><td className="mono pos">+{fmtK(x.b - x.a).slice(1)}</td></tr>))}</tbody></table>);
     note = `new logos + expansion, summed live`;
     recon = <>Σ {r.n} positive deltas = <b className="mono">{fmtK(sum)}</b> — reconciles to {parentVal ? fmtMV(parentVal) : "the value above"}</>;
+  } else if (r.kind === "opps") {
+    stat = (<span><b>{r.won}</b> won / <b>{r.n}</b> closed deals · full audit trail</span>);
+    body = (<table className="rows-tbl"><thead><tr><th>deal</th><th>segment</th><th>stage</th></tr></thead><tbody>{r.rows.map((o, i) => (<tr key={i}><td className="mono">{o.opp_id}</td><td className="mono">{o.segment}</td><td className={`mono ${o.stage === "won" ? "pos" : "neg"}`}>{o.stage}</td></tr>))}</tbody></table>);
+    note = `closed opportunities, resolved live from the pipeline`;
+    recon = <>{r.won} won ÷ {r.n} closed = <b className="mono">{r.n ? (r.won / r.n * 100).toFixed(1) : "—"}%</b> — reconciles to the value above</>;
   } else {
-    const sum = r.rows.reduce((s, o) => s + o[r.field], 0);
     stat = (<span><b>{r.rows.length}</b> opex rows · {r.field} · full audit trail</span>);
     body = (<table className="rows-tbl"><thead><tr><th>segment</th><th>quarter</th><th>{r.field}</th></tr></thead><tbody>{r.rows.map((o, i) => (<tr key={i}><td className="mono">{o.segment}</td><td className="mono">{o.quarter}</td><td className="mono">{fmtK(o[r.field])}</td></tr>))}</tbody></table>);
     note = `operating expense at segment×quarter grain — its natural grain`;
@@ -411,15 +415,26 @@ async function curate(roleKey, catalog) {
   let parsed = null; try { parsed = JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch (e) { /* parsed stays null -> fallback */ }
   return { prompt, raw, parsed, ms: Date.now() - t0 };
 }
+// The model authors framing PROSE only — never numbers. Every number on the board comes from
+// the engine (via widgets/values). Any numeral in model-authored text is an attempt to author a
+// value, which the thesis forbids — so we strip it deterministically after generation. The prompt
+// asks; this enforces. (Same discipline as the WA validator: reject, don't trust.)
+const AUTHORED_NUM = /\$?\d[\d,.]*\s*(%|x|pp|mo|bps|[MK]\b)?/gi;
+function stripAuthoredNumbers(text) {
+  return String(text || "").replace(AUTHORED_NUM, "").replace(/\(\s*\)/g, "").replace(/\s{2,}/g, " ").replace(/\s+([.,;:—-])/g, "$1").replace(/\s+$/, "").trim();
+}
+function guardFraming(text) { const t = String(text || ""); const violated = /\d/.test(t); return { text: violated ? "" : t, violated }; }   // model framing may not contain numbers — reject if it does
+
 function validateComposition(spec, catalog) {
-  if (!spec || !Array.isArray(spec.sections)) return { spec: null, rejectedIds: [] };
-  const rejectedIds = [];
+  if (!spec || !Array.isArray(spec.sections)) return { spec: null, rejectedIds: [], framingViolations: 0 };
+  const rejectedIds = []; let framingViolations = 0;
+  const clean = (raw, cap) => { const g = guardFraming(String(raw || "").slice(0, cap)); if (g.violated) framingViolations++; return g.text; };
   const sections = spec.sections.map((s) => ({
-    heading: String(s.heading || ""),
+    heading: clean(s.heading, 80),
     blocks: (s.blocks || []).filter((b) => { const ok = !!catalog[b.widget]; if (!ok) rejectedIds.push(b.widget); return ok; })
-      .map((b) => ({ widget: b.widget, emphasis: ["hero", "standard", "compact"].includes(b.emphasis) ? b.emphasis : "standard", headline: String(b.headline || "").slice(0, 80), soWhat: String(b.soWhat || "").slice(0, 220) })),
+      .map((b) => ({ widget: b.widget, emphasis: ["hero", "standard", "compact"].includes(b.emphasis) ? b.emphasis : "standard", headline: clean(b.headline, 80), soWhat: clean(b.soWhat, 220) })),
   })).filter((s) => s.blocks.length);
-  return { spec: sections.length ? { sections } : null, rejectedIds };
+  return { spec: sections.length ? { sections } : null, rejectedIds, framingViolations };
 }
 
 // captured fallback per role (labeled), used only when the model is unavailable
@@ -691,7 +706,7 @@ async function narrate(q, desc) {
     const data = await callModel("narrate", [{ role: "user", content: buildNarratePrompt(q, desc) }], 200);
     const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
     const p = JSON.parse(raw.replace(/```json|```/g, "").trim());
-    return { headline: String(p.headline || "").slice(0, 80), soWhat: String(p.soWhat || "").slice(0, 220) };
+    return { headline: guardFraming(String(p.headline || "").slice(0, 80)).text, soWhat: guardFraming(String(p.soWhat || "").slice(0, 220)).text };
   } catch (e) { return null; }
 }
 
@@ -818,10 +833,10 @@ function AppInner() {
     let next;
     try {
       const { prompt, raw, parsed, ms } = await curate(roleKey, catalog);
-      const { spec, rejectedIds } = validateComposition(parsed, catalog);
+      const { spec, rejectedIds, framingViolations } = validateComposition(parsed, catalog);
       const debug = { prompt, raw, parsed, validated: spec, rejectedIds, ms };
-      next = spec ? { loading: false, spec, source: "live", rejected: rejectedIds.length, err: null, debug }
-                  : { loading: false, spec: FALLBACK[roleKey], source: "fallback", rejected: rejectedIds.length, err: "nothing survived validation", debug };
+      next = spec ? { loading: false, spec, source: "live", rejected: rejectedIds.length, framingRejected: framingViolations, err: null, debug }
+                  : { loading: false, spec: FALLBACK[roleKey], source: "fallback", rejected: rejectedIds.length, framingRejected: framingViolations, err: "nothing survived validation", debug };
     } catch (e) {
       next = { loading: false, spec: FALLBACK[roleKey], source: "fallback", rejected: 0, err: String(e).slice(0, 120), debug: null };
     }
@@ -837,7 +852,7 @@ function AppInner() {
         <div className="hdr-l"><span className="hdr-mark">⟡ CALIPER</span><span className="hdr-sub">Caliper Systems · synthetic</span></div>
         <div className={`hdr-status ${state.source}`}>
           {state.loading ? <span><span className="live-dot" /> curating the {role} dashboard — the model is arranging the engine's findings…</span>
-            : state.source === "live" ? <span><span className="live-dot" /> Curated live by the model for the {role} — every number computed by the engine, click any value to verify.</span>
+            : state.source === "live" ? <span><span className="live-dot" /> Curated live by the model for the {role} — every number computed by the engine, click any value to verify.{state.rejected > 0 && <em> · {state.rejected} widget{state.rejected > 1 ? "s" : ""} rejected</em>}{state.framingRejected > 0 && <em> · {state.framingRejected} numeric claim{state.framingRejected > 1 ? "s" : ""} stripped from framing</em>}</span>
             : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>}</span>}
         </div>
         <div className="hdr-r">
