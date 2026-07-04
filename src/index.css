@@ -399,3 +399,21 @@ html,body,#root{ height:100%; overflow:hidden; }
 .node-head{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
 .rows-scroll{ overflow:visible; }
 .rows-recon{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--verdant); margin-top:6px; padding:5px 8px; background:rgba(63,115,87,.07); border-left:2px solid var(--verdant); }
+
+/* full-height drawer: clear the old overlay's height/width caps */
+.workarea{ align-items:stretch; }
+.drawer{ max-height:none; height:auto; align-self:stretch; z-index:auto; }
+.drawer-body{ max-width:none; margin:0; }
+
+/* drawer: wider + horizontal overflow contained (no side-clip) */
+.drawer{ flex:0 0 32%; max-width:32%; }
+.drawer-body{ overflow-x:hidden; }
+.node, .node-kids, .rows, .rows-stat, .rows-recon, .anno{ min-width:0; max-width:100%; }
+.node-head{ flex-wrap:nowrap; min-width:0; }
+.node-label{ min-width:0; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.node-op{ flex:0 0 auto; }
+.node-val{ margin-left:auto; flex:0 0 auto; white-space:nowrap; }
+.rows-scroll{ overflow-x:auto; }
+.rows-tbl{ table-layout:fixed; width:100%; }
+.rows-tbl th,.rows-tbl td{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rows-stat{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }

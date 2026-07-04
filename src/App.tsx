@@ -61,7 +61,7 @@ function TraceNode({ node, depth, isFinding }) {
   const val = isFinding ? `${node.value.toFixed(0)} pp` : fmtMV(node);
   const ptype = node.epistemic === "proxy" ? "MODELED" : (node.provenance?.inputs || []).some((i) => i.kind === "metric") ? "CALCULATED" : "EXTRACTED";
   return (
-    <div className="node" style={{ marginLeft: depth ? 18 : 0 }}>
+    <div className="node" style={{ marginLeft: depth ? 12 : 0 }}>
       <div className="node-head" onClick={() => kids && setOpen(!open)} role={kids ? "button" : undefined} tabIndex={kids ? 0 : undefined} onKeyDown={(e) => e.key === "Enter" && setOpen(!open)}>
         <span className="node-glyph">{kids ? (open ? "▾" : "▸") : "◆"}</span>
         <span className={`ptype ${ptype.toLowerCase()}`}>{ptype}</span>
