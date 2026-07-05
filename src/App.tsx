@@ -19,7 +19,7 @@ async function callModel(task, messages, max_tokens, model) {
 }
 // The one high-judgment call — thesis formation + coherent curation — routes to the strongest
 // model. Everything else stays on the cheap path. (The Netlify function maps this to Opus.)
-const CURATION_MODEL = "claude-opus-4-6";
+const CURATION_MODEL = "claude-opus-4-8";
 
 const fmtM = (v) => `$${(v / 1e6).toFixed(2)}M`;
 const fmtK = (v) => (Math.abs(v) >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : `$${(v / 1e3).toFixed(1)}K`);
@@ -85,15 +85,16 @@ function TraceNode({ node, depth, isFinding }) {
 // an evidence chain (engine values, each traceable), and falsification tests (from the engine's
 // bounded menu). The user runs a test; the engine computes a verdict; the thesis holds or weakens.
 // Model proposes the investigation — engine proves, weakens, or redirects it. =====
-function AnalystRead({ role, catalog, onPick, onClose }) {
-  const [read, setRead] = useState(null);
-  const [loading, setLoading] = useState(true);
+function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
+  const [read, setRead] = useState(shared || null);
+  const [loading, setLoading] = useState(!shared);
   const [verdicts, setVerdicts] = useState({});
   useEffect(() => {
+    if (shared) { setRead(shared); setLoading(false); setVerdicts({}); return; }
     let live = true; setLoading(true); setVerdicts({});
-    curateRead({ role }, catalog).then((r) => { if (live) { setRead(r); setLoading(false); } });
+    curate({ role }, catalog).then((r) => { if (live) { setRead(r); setLoading(false); } });
     return () => { live = false; };
-  }, [role, catalog]);
+  }, [role, catalog, shared]);
   if (loading) return <div className="brief"><div className="brief-load">Forming the read for the {role} — the model is selecting evidence and tests from the engine's menu…</div></div>;
   if (!read) return <div className="brief"><div className="brief-empty">No masking finding in the current data — nothing to investigate.</div></div>;
   const evidence = read.evidenceIds.map((id) => E.store.get(id)).filter(Boolean);
@@ -453,35 +454,6 @@ const ROLES = {
   CFO: { label: "Chief Financial Officer", focus: "durability, efficiency, retention quality, and concentration risk" },
   CRO: { label: "Head of Revenue (CRO)", focus: "growth, bookings momentum, expansion, and segment performance" },
 };
-function buildPrompt(role, catalog) {
-  const cat = Object.entries(catalog).map(([id, w]) => `- ${id} [${w.kind}] (${w.polarity}): ${w.desc}`).join("\n");
-  return [
-    "You are the curation layer of Caliper, a deterministic analytics system. The engine has already computed every number and detected every finding. You cannot compute, alter, or invent numbers or findings — you only arrange pre-built, pre-verified widgets.",
-    "",
-    `ROLE: ${role.label} — cares about ${role.focus}.`,
-    "",
-    "CATALOG (the only widgets available; each is already rendered and traceable):",
-    cat,
-    "",
-    "Compose a dashboard for this role: select widgets and arrange them into 2–3 titled sections, ordered by what matters most to the role. For each widget set an emphasis ('hero' | 'standard' | 'compact') and write brief QUALITATIVE framing — a headline (≤6 words) and a one-sentence 'soWhat' for this role.",
-    "",
-    "Rules:",
-    "- Use ONLY widget ids from the catalog. Never invent an id.",
-    "- State NO numbers in your framing — not values, not thresholds, not benchmark figures (do not write '100%', '0.75', etc.). Refer to a benchmark by name ('clears the retention benchmark'), never by its number. The widgets render every figure.",
-    "- The same underlying data can support opposite emphases for different roles — choose the framing true to THIS role (e.g. rising Enterprise concentration is 'strength' to a CRO, 'fragility' to a CFO).",
-    "- Be editorial: select 4–7 widgets TOTAL across all sections and OMIT widgets this role would not open with — do not include the whole catalog. Lead with what this role is accountable for. Mark callouts 'compact'.",
-    "",
-    'Return ONLY a JSON object, no prose, no markdown fences: {"sections":[{"heading":"...","blocks":[{"widget":"<id>","emphasis":"hero|standard|compact","headline":"...","soWhat":"..."}]}]}',
-  ].join("\n");
-}
-async function curate(roleKey, catalog) {
-  const prompt = buildPrompt(ROLES[roleKey], catalog);
-  const t0 = Date.now();
-  const data = await callModel("curate", [{ role: "user", content: prompt }], 1000);
-  const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-  let parsed = null; try { parsed = JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch (e) { /* parsed stays null -> fallback */ }
-  return { prompt, raw, parsed, ms: Date.now() - t0 };
-}
 // The model authors framing PROSE only — never numbers. Every number on the board comes from
 // the engine (via widgets/values). Any numeral in model-authored text is an attempt to author a
 // value, which the thesis forbids — so we strip it deterministically after generation. The prompt
@@ -523,9 +495,10 @@ function validateCuration(cur, finding, catalog) {
   if (!hasFalsifier) violations.push("no falsifying test selected — a read must be able to fail");
   const tG = guardFraming(cur.thesis || ""), wG = guardFraming(cur.whyRole || "");
   if (tG.violated || wG.violated) violations.push("authored numerals stripped from prose");
+  const partitionPref = ["analytical", "hero", "balanced"].includes(cur.partitionPref) ? cur.partitionPref : null;
   const viable = evidenceIds.length > 0 && hasFalsifier && tG.text.length > 0;
   return { viable, violations,
-    curation: viable ? { thesis: tG.text, whyRole: wG.text, evidenceIds, testIds, widgetIds, partitionPref: cur.partitionPref || null, rationaleTags: cur.rationaleTags || [], source: "live" } : null };
+    curation: viable ? { thesis: tG.text, whyRole: wG.text, evidenceIds, testIds, widgetIds, partitionPref, rationaleTags: cur.rationaleTags || [], source: "live" } : null };
 }
 function buildCurationPrompt(focus, finding, nb, catalog) {
   const metricMenu = nb.metricIds.map((id) => ({ id, label: E.store.get(id).label }));
@@ -540,9 +513,9 @@ TESTS (you MUST include at least one marked falsifier:true, so your read can fai
 WIDGETS (charts you may select, prioritized): ${JSON.stringify(widgetMenu)}
 
 Return ONLY this JSON, nothing around it:
-{"thesis":"1-2 sentences, NO numbers — the story that matters for the ${focus.role}","whyRole":"1 sentence, NO numbers — why it matters to the ${focus.role}","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["ids from WIDGETS, most important first"],"rationaleTags":["short non-numeric tags"]}`;
+{"thesis":"1-2 sentences, NO numbers — the story that matters for the ${focus.role}","whyRole":"1 sentence, NO numbers — why it matters to the ${focus.role}","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["ids from WIDGETS, most important first"],"partitionPref":"one of: analytical (dense data-grid lead) | hero (one dominant panel + rail) | balanced","rationaleTags":["short non-numeric tags"]}`;
 }
-async function curateRead(focus, catalog) {
+async function curate(focus, catalog) {
   const qs = E.QUARTERS, finding = E.detectMasking(qs[qs.length - 5], qs[qs.length - 1]);
   if (!finding) return null;
   const nb = E.findingNeighborhood(finding);
@@ -558,17 +531,6 @@ async function curateRead(focus, catalog) {
   }
 }
 
-function validateComposition(spec, catalog) {
-  if (!spec || !Array.isArray(spec.sections)) return { spec: null, rejectedIds: [], framingViolations: 0 };
-  const rejectedIds = []; let framingViolations = 0;
-  const clean = (raw, cap) => { const g = guardFraming(String(raw || "").slice(0, cap)); if (g.violated) framingViolations++; return g.text; };
-  const sections = spec.sections.map((s) => ({
-    heading: clean(s.heading, 80),
-    blocks: (s.blocks || []).filter((b) => { const ok = !!catalog[b.widget]; if (!ok) rejectedIds.push(b.widget); return ok; })
-      .map((b) => ({ widget: b.widget, emphasis: ["hero", "standard", "compact"].includes(b.emphasis) ? b.emphasis : "standard", headline: clean(b.headline, 80), soWhat: clean(b.soWhat, 220) })),
-  })).filter((s) => s.blocks.length);
-  return { spec: sections.length ? { sections } : null, rejectedIds, framingViolations };
-}
 
 // captured fallback per role (labeled), used only when the model is unavailable
 const FALLBACK = {
@@ -684,8 +646,8 @@ const ROLE_INTENT = {
   CFO: { analytical: 6, hero: 2, dense: 2, grid: 1 },
   CRO: { hero: 6, dense: 2, balanced: 2, grid: 1 },
 };
-function selectPartition(F, C, T, role) {
-  const intent = ROLE_INTENT[role] || {};
+function selectPartition(F, C, T, role, partitionPref) {
+  const intent = partitionPref ? { [partitionPref]: 6 } : (ROLE_INTENT[role] || {});   // model choice primary, role prior is the fallback
   let best = "pair", bs = -Infinity;
   for (const [k, p] of Object.entries(PARTITIONS)) {
     const cp = partCapacity(p);
@@ -736,7 +698,7 @@ const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar
 // lead finding; the board is filled from this ranked menu, so there is always surplus to
 // fill a dense partition — a well-built board every time, regardless of how much the model curated.
 const CHART_MENU = ["metric_matrix", "efficiency_combo", "bridge_smb", "bridge_enterprise", "accel_line", "segment_stack", "hbar_nrr", "magic_line", "efficiency_bullets"];
-function TemplateBoard({ spec, role, catalog, onPick }) {
+function TemplateBoard({ spec, role, catalog, onPick, partitionPref }) {
   const kind = (id) => catalog[id]?.kind;
   const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]).map((b) => ({ ...b, _kind: kind(b.widget) }));
   const findings = all.filter((b) => b._kind === "finding_card");
@@ -747,7 +709,7 @@ function TemplateBoard({ spec, role, catalog, onPick }) {
   const charts = [...modelCharts, ...menuCharts];
   const modelTables = all.filter((b) => b._kind === "table");
   const tables = modelTables.length ? modelTables : (catalog["segment_table"] ? [{ widget: "segment_table", _kind: "table" }] : []);
-  const p = PARTITIONS[selectPartition(findings.length, charts.length, tables.length, role)];
+  const p = PARTITIONS[selectPartition(findings.length, charts.length, tables.length, role, partitionPref)];
   const placed = fillPartition(p, findings, charts, tables, role);
   return (<div className="partition" style={{ gridTemplateRows: p.rowsT }}>
     {placed.map((pl, i) => (
@@ -963,16 +925,18 @@ function AppInner() {
   async function enter(roleKey) {
     setRole(roleKey); setPicked(null);
     if (cache.current[roleKey]) { setState(cache.current[roleKey]); return; }
-    setState({ loading: true, spec: null, source: null, rejected: 0, err: null });
+    setState({ loading: true, curation: null, spec: null, source: null, rejected: 0, framingRejected: 0, err: null, debug: null });
     let next;
     try {
-      const { prompt, raw, parsed, ms } = await curate(roleKey, catalog);
-      const { spec, rejectedIds, framingViolations } = validateComposition(parsed, catalog);
-      const debug = { prompt, raw, parsed, validated: spec, rejectedIds, ms };
-      next = spec ? { loading: false, spec, source: "live", rejected: rejectedIds.length, framingRejected: framingViolations, err: null, debug }
-                  : { loading: false, spec: FALLBACK[roleKey], source: "fallback", rejected: rejectedIds.length, framingRejected: framingViolations, err: "nothing survived validation", debug };
+      // ONE curation call. The model's single judgment drives both the board (widgetIds, partitionPref)
+      // and the analyst read (thesis, evidence, tests) — they cannot diverge because they share a source.
+      const curation = await curate({ role: roleKey }, catalog);
+      if (!curation) throw new Error("no finding to curate");
+      const ids = ["masking_card", ...(curation.widgetIds || []).filter((id) => id !== "masking_card")];
+      const spec = { sections: [{ heading: "", blocks: ids.map((id) => id === "masking_card" ? { widget: id, emphasis: "hero", headline: "", soWhat: curation.thesis } : { widget: id, emphasis: "standard", headline: "", soWhat: "" }) }] };
+      next = { loading: false, curation, spec, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations } };
     } catch (e) {
-      next = { loading: false, spec: FALLBACK[roleKey], source: "fallback", rejected: 0, err: String(e).slice(0, 120), debug: null };
+      next = { loading: false, curation: null, spec: FALLBACK[roleKey], partitionPref: null, source: "fallback", rejected: 0, framingRejected: 0, err: String(e).slice(0, 120), debug: null };
     }
     cache.current[roleKey] = next; setState(next);
   }
@@ -1002,12 +966,12 @@ function AppInner() {
 
       <div className={`workarea ${picked ? "drawer-open" : ""}`}>
         <main className="stage">
-          {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} /></>}
+          {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} /></>}
         </main>
         <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
       </div>
 
-      {showBrief && <div className="brief-overlay"><AnalystRead role={role} catalog={catalog} onPick={(p) => { setPicked(p); setShowBrief(false); }} onClose={() => setShowBrief(false)} /></div>}
+      {showBrief && <div className="brief-overlay"><AnalystRead role={role} catalog={catalog} curation={state.curation} onPick={(p) => { setPicked(p); setShowBrief(false); }} onClose={() => setShowBrief(false)} /></div>}
 
       {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => { setPicked(p); setShowQuery(false); }} busy={queries.some((q) => q.status === "loading")} />}
     </div>
