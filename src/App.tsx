@@ -7,7 +7,7 @@ import { createEngine } from "./engine-core";
 // against the oracle. The browser never hand-edits it.
 let E;
 function initEngine(ds) {
-  E = createEngine({ customers: ds.facts.customers, opex: ds.facts.opex, quarters: ds.meta.quarters, segments: ds.meta.segments, benchmarks: ds.benchmarks });
+  E = createEngine({ customers: ds.facts.customers, opex: ds.facts.opex, quarters: ds.meta.quarters, segments: ds.meta.segments, benchmarks: ds.benchmarks, opportunities: ds.facts.opportunities });
 }
 // All model calls go through one seam. In production this hits the Netlify function
 // holding the key server-side; running plain `vite` (no function) it throws and the
@@ -872,11 +872,25 @@ function AppInner() {
         <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
       </div>
 
-      {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={setPicked} busy={queries.some((q) => q.status === "loading")} />}
+      {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => { setPicked(p); setShowQuery(false); }} busy={queries.some((q) => q.status === "loading")} />}
     </div>
   );
 }
 
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  render() {
+    if (this.state.err) return (
+      <div className="caliper"><div className="err-screen">
+        <div className="err-h">Something threw while rendering.</div>
+        <pre className="err-msg">{String(this.state.err && this.state.err.message || this.state.err)}</pre>
+        <button className="err-btn" onClick={() => this.setState({ err: null })}>dismiss</button>
+      </div></div>
+    );
+    return this.props.children;
+  }
+}
 export default function App() {
   const [ready, setReady] = React.useState(false);
   const [failed, setFailed] = React.useState(false);
@@ -888,5 +902,5 @@ export default function App() {
   }, []);
   if (failed) return <div className="caliper"><div className="loading">could not load dataset</div></div>;
   if (!ready) return <div className="caliper"><div className="loading">…</div></div>;
-  return <AppInner />;
+  return <ErrorBoundary><AppInner /></ErrorBoundary>;
 }
