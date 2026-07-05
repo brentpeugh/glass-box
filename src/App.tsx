@@ -472,7 +472,7 @@ function guardFraming(text) { const t = String(text || ""); const violated = /\d
 const RELATED_DOMAINS = { retention: ["retention", "concentration"], efficiency: ["efficiency", "growth"], growth: ["growth", "concentration"], concentration: ["concentration", "retention"] };
 function fallbackCuration(finding) {
   const nb = E.findingNeighborhood(finding);
-  const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => RELATED_DOMAINS[nb.domain].includes(WIDGET_DOMAIN[id]));
+  const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => (nb.lenses || RELATED_DOMAINS[nb.domain]).includes(WIDGET_DOMAIN[id]));
   return {
     thesis: `Headline retention is not the real story — a blended figure that clears the benchmark conceals a structurally deteriorating ${finding.worstSeg} segment, and the durability risk is real and localized.`,
     whyRole: "It changes which risk is decision-relevant: the aggregate reassures while the forward run-rate erodes underneath it.",
@@ -483,7 +483,7 @@ function fallbackCuration(finding) {
 function validateCuration(cur, finding, catalog) {
   const nb = E.findingNeighborhood(finding);
   const mSet = new Set(nb.metricIds), tSet = new Set(nb.testIds), fSet = new Set(nb.falsifierIds);
-  const rel = RELATED_DOMAINS[nb.domain] || [nb.domain];
+  const rel = nb.lenses || RELATED_DOMAINS[nb.domain] || [nb.domain];   // the finding's licensed widget lenses
   const violations = [];
   const evidenceIds = (cur.evidenceIds || []).filter((id) => mSet.has(id));
   if (evidenceIds.length < (cur.evidenceIds || []).length) violations.push("evidence outside the finding neighborhood — dropped");
@@ -506,7 +506,7 @@ function buildCurationPrompt(focus, finding, nb, catalog) {
   const widgetMenu = Object.keys(catalog).filter((id) => (RELATED_DOMAINS[nb.domain] || []).includes(WIDGET_DOMAIN[id])).map((id) => ({ id, label: catalog[id].title || id }));
   return `You are the analytical-judgment layer of a governed analytics system, briefing the ${focus.role}.
 An engine has DETECTED this finding (you did not compute it; you may foreground and FRAME it): "${finding.label}".
-Form the decision-relevant READ for the ${focus.role}. Select ONLY from the menus below — you may not invent metrics, tests, or widgets, and you may not write any digit in your prose (the engine owns all numbers).
+Form the decision-relevant READ for the ${focus.role}. The SAME finding is legible through several lenses — retention (the segment's churn/contraction), unit-economics (does its trouble show in margin/efficiency?), growth trajectory (is it accelerating?), and concentration (how much ARR is exposed?). Choose the lens most decision-relevant FOR THE ${focus.role} and foreground its widgets: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Select ONLY from the menus below — you may not invent metrics, tests, or widgets, and you may not write any digit in your prose (the engine owns all numbers).
 
 EVIDENCE (metric ids you may cite): ${JSON.stringify(metricMenu)}
 TESTS (you MUST include at least one marked falsifier:true, so your read can fail): ${JSON.stringify(testMenu)}

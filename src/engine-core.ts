@@ -164,19 +164,61 @@ export function createEngine(bundle: Bundle) {
   // the neighborhood are rejected, and at least one *falsifier* (a test that could weaken the
   // read) must be chosen, so the investigation can't be advocacy. =====
   function findingNeighborhood(finding: any) {
+    // The masking finding = a SEGMENT structurally underperforms on retention. Its causal neighborhood
+    // — the lenses mechanically implied by that structure — is derived here, ROLE-NEUTRALLY:
+    //   retention (the finding) · acquisition (segment win rate) · efficiency (margin) ·
+    //   trajectory (persistence) · concentration (ARR exposed). The role does NOT shape this set;
+    // it only selects which lens to foreground, so divergence stays emergent in the model's judgment.
     const [sQ, eQ] = finding.scope.window;
+    const seg = finding.worstSeg;
     const metricIds = new Set<string>();
-    // the finding's own provenance-linked metrics
     if (finding.blendedId) metricIds.add(finding.blendedId);
     if (finding.worstId) metricIds.add(finding.worstId);
-    // the retention neighborhood: every segment's NRR/GRR/ARR + the blended, all real & traceable
     for (const s of SEGMENTS) { metricIds.add(nrr(s, sQ, eQ).id); metricIds.add(grr(s, sQ, eQ).id); metricIds.add(segArr(s, eQ).id); }
     metricIds.add(nrr(null, sQ, eQ).id); metricIds.add(grr(null, sQ, eQ).id);
-    // tests applicable to a retention-masking finding; falsifiers are those that could return
-    // a verdict that WEAKENS the "localized risk" read (a uniform slice would do it)
-    const testIds = ["localize_nrr", "decompose_retention", "localize_winrate"];
-    const falsifierIds = ["localize_nrr", "localize_winrate"];
-    return { domain: "retention", metricIds: [...metricIds], testIds, falsifierIds };
+    metricIds.add(winRate(seg, eQ).id);   // acquisition lens: is the weakness multi-motion?
+    const testIds = ["localize_nrr", "decompose_retention", "localize_winrate", "localize_margin", "persist_growth"];
+    const falsifierIds = ["localize_nrr", "localize_winrate", "localize_margin", "persist_growth"];
+    const lenses = ["retention", "efficiency", "growth", "concentration"];   // widget lenses the finding licenses
+    return { domain: "retention", lenses, metricIds: [...metricIds], testIds, falsifierIds };
+  }
+
+  // ===== NEUTRAL STATISTICAL SURFACE + GENERIC SALIENCE =====
+  // The engine does NOT hunt for a pre-decided story. It computes every metric's anomaly along five
+  // principled, uniform dimensions — benchmark deviation, cross-segment dispersion, aggregate-component
+  // divergence, adverse trend, concentration — standardizes within each dimension, and ranks globally.
+  // Whatever is most statistically anomalous surfaces as the finding. Nothing is story-tuned; the demo's
+  // headline is decided by the data, not by us. Each fact carries traceable MetricValues as its evidence.
+  function fitSlope(ys: number[]) { const n = ys.length, xm = (n - 1) / 2, ym = ys.reduce((a, b) => a + b, 0) / n; const sxx = ys.reduce((s, _, i) => s + (i - xm) ** 2, 0); return ys.reduce((s, y, i) => s + (i - xm) * (y - ym), 0) / sxx; }
+  function computeSalience() {
+    const eQ = QUARTERS[QUARTERS.length - 1], sQ = QUARTERS[QUARTERS.length - 5];
+    const facts: any[] = [];
+    const num = (f: () => any) => { try { const r = f(); return r && !isNaN(r.value) ? r.value : (typeof r === "number" && !isNaN(r) ? r : null); } catch { return null; } };
+    const BK: any = { nrr: BENCH.nrr, grr: BENCH.grr, gm: BENCH.gross_margin, magic: BENCH.magic_number, cac: BENCH.cac_payback_mo, r40: BENCH.rule_of_40 };
+    // DIM 1 — benchmark deviation (relative, adverse magnitude)
+    const benched: any[] = [
+      ["Blended NRR", () => nrr(null, sQ, eQ), BK.nrr], ["Blended GRR", () => grr(null, sQ, eQ), BK.grr],
+      ["Gross Margin", () => grossMargin(eQ), BK.gm], ["Magic #", () => magicNumber(eQ), BK.magic],
+      ["CAC Payback", () => cacPayback(eQ), BK.cac], ["Rule of 40", () => ruleOf40(eQ), BK.r40],
+    ];
+    for (const s of SEGMENTS) { benched.push([`${s} NRR`, () => nrr(s, sQ, eQ), BK.nrr]); benched.push([`${s} GRR`, () => grr(s, sQ, eQ), BK.grr]); }
+    for (const [label, mvf, b] of benched) { const mv = (() => { try { return mvf(); } catch { return null; } })(); if (!mv || isNaN(mv.value)) continue; const adverse = b.good === "above" ? (b.threshold - mv.value) / Math.abs(b.threshold) : (mv.value - b.threshold) / Math.abs(b.threshold); facts.push({ dim: "benchmark", label: `${label} vs benchmark`, raw: adverse, mvs: [mv] }); }
+    // DIM 2 — cross-segment dispersion
+    const segM: any[] = [["NRR", (s: string) => nrr(s, sQ, eQ)], ["GRR", (s: string) => grr(s, sQ, eQ)], ["Win rate", (s: string) => winRate(s, eQ)], ["ARR", (s: string) => segArr(s, eQ)]];
+    for (const [label, mvf] of segM) { const mvs = SEGMENTS.map((s) => { try { return mvf(s); } catch { return null; } }).filter((m) => m && !isNaN(m.value)); if (mvs.length < 2) continue; const vals = mvs.map((m: any) => m.value); const mean = vals.reduce((a: number, b: number) => a + b, 0) / vals.length; facts.push({ dim: "dispersion", label: `${label} spread across segments`, raw: (Math.max(...vals) - Math.min(...vals)) / Math.abs(mean), mvs }); }
+    // DIM 3 — aggregate-component divergence (the "masking" pattern, computed generically)
+    for (const [label, bf, sf] of [["NRR", () => nrr(null, sQ, eQ), (s: string) => nrr(s, sQ, eQ)], ["GRR", () => grr(null, sQ, eQ), (s: string) => grr(s, sQ, eQ)]] as any[]) { const bl = (() => { try { return bf(); } catch { return null; } })(); const segMv = SEGMENTS.map((s) => { try { return sf(s); } catch { return null; } }).filter((m) => m && !isNaN(m.value)); if (!bl || !segMv.length) continue; const worst = segMv.reduce((a: any, b: any) => b.value < a.value ? b : a); facts.push({ dim: "divergence", label: `${label} blended vs worst segment`, raw: (bl.value - worst.value) / Math.abs(bl.value), mvs: [bl, worst] }); }
+    // DIM 4 — adverse trend
+    const ser: any[] = [["Gross Margin", (q: string) => grossMargin(q), "above"], ["Magic #", (q: string) => magicNumber(q), "above"], ["CAC Payback", (q: string) => cacPayback(q), "below"], ["QoQ growth", (q: string) => qoqGrowth(q), "above"]];
+    for (const [label, mvf, good] of ser) { const mvs = QUARTERS.map((q) => { try { return mvf(q); } catch { return null; } }).filter((m: any) => m && !isNaN(m.value)); if (mvs.length < 3) continue; const ys = mvs.map((m: any) => m.value); const sl = fitSlope(ys); const lvl = Math.abs(ys.reduce((a, b) => a + b, 0) / ys.length) || 1; facts.push({ dim: "trend", label: `${label} adverse trend`, raw: (good === "above" ? -sl : sl) / lvl * ys.length, mvs: [mvs[mvs.length - 1]] }); }
+    // DIM 5 — concentration
+    { const mvs = SEGMENTS.map((s) => { try { return segArr(s, eQ); } catch { return null; } }).filter((m) => m && !isNaN(m.value)); const tot = mvs.reduce((a: number, m: any) => a + m.value, 0); const top = mvs.reduce((a: any, b: any) => b.value > a.value ? b : a); facts.push({ dim: "concentration", label: "ARR concentration (top segment)", raw: top.value / tot - 1 / SEGMENTS.length, mvs }); }
+    // standardize WITHIN each dimension (z-score), rank globally — no cross-dimension weighting
+    const dims = [...new Set(facts.map((f) => f.dim))];
+    for (const d of dims) { const fs = facts.filter((f) => f.dim === d); const vals = fs.map((f) => f.raw); const mean = vals.reduce((a, b) => a + b, 0) / vals.length; const sd = Math.sqrt(vals.reduce((a, v) => a + (v - mean) ** 2, 0) / vals.length) || 1; for (const f of fs) f.z = (f.raw - mean) / sd; }
+    facts.sort((a, b) => b.z - a.z);
+    facts.forEach((f, i) => { f.id = `S${i}`; });
+    return facts;
   }
 
   function runDetectors(): Finding[] {
@@ -235,5 +277,5 @@ export function createEngine(bundle: Bundle) {
     return { kind: "col_sum", col: "", n: 0, rows: [] };   // unknown kind → safe empty, never throw
   }
 
-  return { store, QUARTERS, SEGMENTS, BENCH, companyArr, segArr, cogsTotal, smTotal, revenueQ, netNewArr, grossNewBookings, magicNumber, grossMargin, cacPayback, ruleOf40, qoqGrowth, nrr, grr, cohortBridge, entShare, top10Share, winRate, runDetectors, detectMasking, resolveLeaf, TEST_MENU, runTest, winRateBy, nrrBySeg, marginBySeg, findingNeighborhood };
+  return { store, QUARTERS, SEGMENTS, BENCH, companyArr, segArr, cogsTotal, smTotal, revenueQ, netNewArr, grossNewBookings, magicNumber, grossMargin, cacPayback, ruleOf40, qoqGrowth, nrr, grr, cohortBridge, entShare, top10Share, winRate, runDetectors, detectMasking, resolveLeaf, TEST_MENU, runTest, winRateBy, nrrBySeg, marginBySeg, findingNeighborhood, computeSalience };
 }
