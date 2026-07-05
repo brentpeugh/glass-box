@@ -502,6 +502,42 @@ function stripAuthoredNumbers(text) {
 }
 function guardFraming(text) { const t = String(text || ""); const violated = /\d/.test(t); return { text: violated ? "" : t, violated }; }   // model framing may not contain numbers — reject if it does
 
+// ===== the unified curation contract validator. A model curation is admissible only if it is
+// COHERENT: everything it cites is inside the anchoring finding's neighborhood, it picks at least
+// one genuine falsifier, its widgets are on-domain, and its prose is numeral-free. Violations are
+// dropped; if what remains isn't viable, we fall back to the deterministic (always-coherent) read.
+// This makes "the thesis is gospel" a structural guarantee, not a request.
+const RELATED_DOMAINS = { retention: ["retention", "concentration"], efficiency: ["efficiency", "growth"], growth: ["growth", "concentration"], concentration: ["concentration", "retention"] };
+function fallbackCuration(finding) {
+  const nb = E.findingNeighborhood(finding);
+  const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => RELATED_DOMAINS[nb.domain].includes(WIDGET_DOMAIN[id]));
+  return {
+    thesis: `Headline retention is not the real story — a blended figure that clears the benchmark conceals a structurally deteriorating ${finding.worstSeg} segment, and the durability risk is real and localized.`,
+    whyRole: "It changes which risk is decision-relevant: the aggregate reassures while the forward run-rate erodes underneath it.",
+    evidenceIds: [finding.blendedId, finding.worstId], testIds: nb.testIds, widgetIds, partitionPref: null,
+    rationaleTags: ["aggregate conceals segment", "durability risk"], source: "fallback",
+  };
+}
+function validateCuration(cur, finding, catalog) {
+  const nb = E.findingNeighborhood(finding);
+  const mSet = new Set(nb.metricIds), tSet = new Set(nb.testIds), fSet = new Set(nb.falsifierIds);
+  const rel = RELATED_DOMAINS[nb.domain] || [nb.domain];
+  const violations = [];
+  const evidenceIds = (cur.evidenceIds || []).filter((id) => mSet.has(id));
+  if (evidenceIds.length < (cur.evidenceIds || []).length) violations.push("evidence outside the finding neighborhood — dropped");
+  const testIds = (cur.testIds || []).filter((id) => tSet.has(id));
+  if (testIds.length < (cur.testIds || []).length) violations.push("unsupported test id(s) — dropped");
+  const widgetIds = (cur.widgetIds || []).filter((id) => catalog[id] && rel.includes(WIDGET_DOMAIN[id]));
+  if (widgetIds.length < (cur.widgetIds || []).length) violations.push("off-domain widget(s) — dropped");
+  const hasFalsifier = testIds.some((id) => fSet.has(id));
+  if (!hasFalsifier) violations.push("no falsifying test selected — a read must be able to fail");
+  const tG = guardFraming(cur.thesis || ""), wG = guardFraming(cur.whyRole || "");
+  if (tG.violated || wG.violated) violations.push("authored numerals stripped from prose");
+  const viable = evidenceIds.length > 0 && hasFalsifier && tG.text.length > 0;
+  return { viable, violations,
+    curation: viable ? { thesis: tG.text, whyRole: wG.text, evidenceIds, testIds, widgetIds, partitionPref: cur.partitionPref || null, rationaleTags: cur.rationaleTags || [], source: "live" } : null };
+}
+
 function validateComposition(spec, catalog) {
   if (!spec || !Array.isArray(spec.sections)) return { spec: null, rejectedIds: [], framingViolations: 0 };
   const rejectedIds = []; let framingViolations = 0;

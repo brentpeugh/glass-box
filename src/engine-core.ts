@@ -157,6 +157,28 @@ export function createEngine(bundle: Bundle) {
     return null;
   }
 
+  // ===== the coherence boundary. For a detected finding, the neighborhood is the set of
+  // metrics, tests, and falsifiers structurally related to it. The model may foreground and
+  // frame a finding and select WITHIN its neighborhood — it may not wander outside it. This makes
+  // "the thesis is gospel" a deterministic subset check, not a judgment: evidence/tests outside
+  // the neighborhood are rejected, and at least one *falsifier* (a test that could weaken the
+  // read) must be chosen, so the investigation can't be advocacy. =====
+  function findingNeighborhood(finding: any) {
+    const [sQ, eQ] = finding.scope.window;
+    const metricIds = new Set<string>();
+    // the finding's own provenance-linked metrics
+    if (finding.blendedId) metricIds.add(finding.blendedId);
+    if (finding.worstId) metricIds.add(finding.worstId);
+    // the retention neighborhood: every segment's NRR/GRR/ARR + the blended, all real & traceable
+    for (const s of SEGMENTS) { metricIds.add(nrr(s, sQ, eQ).id); metricIds.add(grr(s, sQ, eQ).id); metricIds.add(segArr(s, eQ).id); }
+    metricIds.add(nrr(null, sQ, eQ).id); metricIds.add(grr(null, sQ, eQ).id);
+    // tests applicable to a retention-masking finding; falsifiers are those that could return
+    // a verdict that WEAKENS the "localized risk" read (a uniform slice would do it)
+    const testIds = ["localize_nrr", "decompose_retention", "localize_winrate"];
+    const falsifierIds = ["localize_nrr", "localize_winrate"];
+    return { domain: "retention", metricIds: [...metricIds], testIds, falsifierIds };
+  }
+
   function runDetectors(): Finding[] {
     const F: Finding[] = []; let id = 0;
     const emit = (f: Omit<Finding, "id">) => F.push({ id: `F${++id}`, ...f } as Finding);
@@ -213,5 +235,5 @@ export function createEngine(bundle: Bundle) {
     return { kind: "col_sum", col: "", n: 0, rows: [] };   // unknown kind → safe empty, never throw
   }
 
-  return { store, QUARTERS, SEGMENTS, BENCH, companyArr, segArr, cogsTotal, smTotal, revenueQ, netNewArr, grossNewBookings, magicNumber, grossMargin, cacPayback, ruleOf40, qoqGrowth, nrr, grr, cohortBridge, entShare, top10Share, winRate, runDetectors, detectMasking, resolveLeaf, TEST_MENU, runTest, winRateBy, nrrBySeg, marginBySeg };
+  return { store, QUARTERS, SEGMENTS, BENCH, companyArr, segArr, cogsTotal, smTotal, revenueQ, netNewArr, grossNewBookings, magicNumber, grossMargin, cacPayback, ruleOf40, qoqGrowth, nrr, grr, cohortBridge, entShare, top10Share, winRate, runDetectors, detectMasking, resolveLeaf, TEST_MENU, runTest, winRateBy, nrrBySeg, marginBySeg, findingNeighborhood };
 }
