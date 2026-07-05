@@ -519,15 +519,16 @@ async function curate(focus, catalog) {
   const qs = E.QUARTERS, finding = E.detectMasking(qs[qs.length - 5], qs[qs.length - 1]);
   if (!finding) return null;
   const nb = E.findingNeighborhood(finding);
+  const prompt = buildCurationPrompt(focus, finding, nb, catalog);
   try {
-    const data = await callModel("curate", [{ role: "user", content: buildCurationPrompt(focus, finding, nb, catalog) }], 600, CURATION_MODEL);
+    const data = await callModel("curate", [{ role: "user", content: prompt }], 600, CURATION_MODEL);
     const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
     const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
     const { viable, curation, violations } = validateCuration(parsed, finding, catalog);
-    if (viable) return { ...curation, finding, violations };
-    return { ...fallbackCuration(finding), finding, violations: [...violations, "incoherent — fell back to deterministic read"] };
+    if (viable) return { ...curation, finding, violations, _debug: { prompt, raw, model: data.model } };
+    return { ...fallbackCuration(finding), finding, violations: [...violations, "incoherent — fell back to deterministic read"], _debug: { prompt, raw, model: data.model } };
   } catch (e) {
-    return { ...fallbackCuration(finding), finding, violations: ["model unavailable — deterministic read"] };
+    return { ...fallbackCuration(finding), finding, violations: ["model unavailable — deterministic read"], _debug: { prompt, raw: String(e).slice(0, 200), model: null } };
   }
 }
 
@@ -829,17 +830,23 @@ function AnswerCard({ item, onPick }) {
 
 function DebugPanel({ d }) {
   const [showPrompt, setShowPrompt] = useState(false);
-  if (!d) return (<div className="dbg"><div className="dbg-h">DEBUG · no live spec — model unavailable, captured fallback rendered. <span className="dbg-meta">press ` to hide</span></div></div>);
-  const rej = d.rejectedIds || [];
+  if (!d || !d.curation) return (<div className="dbg"><div className="dbg-h">CURATION LOG <span className="dbg-meta">no curation yet · press ` to hide</span></div></div>);
+  const c = d.curation, v = d.violations || [];
+  const isLive = c.source === "live";
   return (<div className="dbg">
-    <div className="dbg-h">DEBUG · boundary inspector <span className="dbg-meta">{d.ms}ms · {rej.length} rejected · press ` to hide</span></div>
-    {rej.length > 0 && <div className="dbg-rej">refused — ids the model referenced that the engine never produced: {rej.join(", ")}</div>}
+    <div className="dbg-h">CURATION LOG · {d.role} <span className="dbg-meta">source: {c.source}{d.model ? ` · ${d.model}` : ""} · {v.length} validator action(s) · press ` to hide</span></div>
+    {v.length > 0 && <div className="dbg-rej">validator: {v.join(" · ")}</div>}
     <div className="dbg-cols">
-      <div className="dbg-col"><div className="dbg-cap">① raw model response (verbatim)</div><pre className="dbg-pre">{d.raw || "(empty)"}</pre></div>
-      <div className="dbg-col"><div className="dbg-cap">② what survived validation → rendered</div><pre className="dbg-pre">{d.validated ? JSON.stringify(d.validated, null, 1) : "(nothing survived — fallback used)"}</pre></div>
+      <div className="dbg-col"><div className="dbg-cap">① model proposed (judgment)</div><pre className="dbg-pre">{JSON.stringify({ thesis: c.thesis, evidence: c.evidenceIds, tests: c.testIds, widgets: c.widgetIds, partition: c.partitionPref }, null, 1)}</pre></div>
+      <div className="dbg-col"><div className="dbg-cap">② engine enforced (truth)</div><pre className="dbg-pre">{`evidence:  ${c.evidenceIds.length} values, every one traceable
+tests:     ${c.testIds.length} (${c.testIds.length ? "incl. falsifier" : "none"})
+widgets:   ${c.widgetIds.length} on-domain, engine-computed
+partition: ${c.partitionPref || "(role default)"}
+prose:     numeral-free (guard ${v.some((x) => x.includes("numeral")) ? "fired" : "clean"})
+verdict:   ${isLive ? "COHERENT → rendered live" : "fell back to deterministic"}`}</pre></div>
     </div>
-    <button className="dbg-tog" onClick={() => setShowPrompt((s) => !s)}>{showPrompt ? "▾" : "▸"} prompt sent to the model</button>
-    {showPrompt && <pre className="dbg-pre full">{d.prompt}</pre>}
+    <button className="dbg-tog" onClick={() => setShowPrompt((s) => !s)}>{showPrompt ? "▾" : "▸"} raw model response</button>
+    {showPrompt && <pre className="dbg-pre full">{d.raw || "(fallback — no usable model output)"}</pre>}
   </div>);
 }
 
@@ -934,7 +941,7 @@ function AppInner() {
       if (!curation) throw new Error("no finding to curate");
       const ids = ["masking_card", ...(curation.widgetIds || []).filter((id) => id !== "masking_card")];
       const spec = { sections: [{ heading: "", blocks: ids.map((id) => id === "masking_card" ? { widget: id, emphasis: "hero", headline: "", soWhat: curation.thesis } : { widget: id, emphasis: "standard", headline: "", soWhat: "" }) }] };
-      next = { loading: false, curation, spec, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations } };
+      next = { loading: false, curation, spec, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
     } catch (e) {
       next = { loading: false, curation: null, spec: FALLBACK[roleKey], partitionPref: null, source: "fallback", rejected: 0, framingRejected: 0, err: String(e).slice(0, 120), debug: null };
     }
