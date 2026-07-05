@@ -461,3 +461,10 @@ html,body,#root{ height:100%; overflow:hidden; }
 .brief-foot.weakened{ color:var(--ember); background:rgba(168,72,60,.05); }
 .brief-empty{ padding:40px; text-align:center; color:var(--muted); }
 .brief-btn{ font-weight:600; }
+
+/* curation contract: source badge, loading, violations */
+.brief-src{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:.06em; padding:3px 8px; }
+.brief-src.live{ color:var(--verdant); border:1px solid var(--verdant); background:rgba(63,115,87,.07); }
+.brief-src.fallback{ color:var(--muted); border:1px solid var(--rule); }
+.brief-load{ padding:44px 30px; text-align:center; color:var(--slate-d); font-size:14px; line-height:1.5; }
+.brief-viol{ padding:9px 22px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); border-top:1px solid var(--rule); background:var(--parch); }

@@ -12,11 +12,14 @@ function initEngine(ds) {
 // All model calls go through one seam. In production this hits the Netlify function
 // holding the key server-side; running plain `vite` (no function) it throws and the
 // callers fall back to captured compositions / graceful declines.
-async function callModel(task, messages, max_tokens) {
-  const res = await fetch("/.netlify/functions/curate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ task, messages, max_tokens }) });
+async function callModel(task, messages, max_tokens, model) {
+  const res = await fetch("/.netlify/functions/curate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ task, messages, max_tokens, model }) });
   if (!res.ok) throw new Error("model " + res.status);
   return res.json();
 }
+// The one high-judgment call — thesis formation + coherent curation — routes to the strongest
+// model. Everything else stays on the cheap path. (The Netlify function maps this to Opus.)
+const CURATION_MODEL = "claude-opus-4-6";
 
 const fmtM = (v) => `$${(v / 1e6).toFixed(2)}M`;
 const fmtK = (v) => (Math.abs(v) >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : `$${(v / 1e3).toFixed(1)}K`);
@@ -82,32 +85,18 @@ function TraceNode({ node, depth, isFinding }) {
 // an evidence chain (engine values, each traceable), and falsification tests (from the engine's
 // bounded menu). The user runs a test; the engine computes a verdict; the thesis holds or weakens.
 // Model proposes the investigation — engine proves, weakens, or redirects it. =====
-const READ_TESTS = {
-  retention: ["localize_nrr", "decompose_retention", "localize_winrate"],
-};
-function buildRead(role) {
-  const qs = E.QUARTERS, m = E.detectMasking(qs[qs.length - 5], qs[qs.length - 1]);
-  if (!m) return null;
-  const blended = E.store.get(m.blendedId), worst = E.store.get(m.worstId);
-  const whyRole = {
-    CFO: "It bears on the durability of the revenue base and the risk in the forecast — the aggregate looks safe, but the forward run-rate rests on a segment that is eroding.",
-    CRO: "It tells you which segment's retention and conversion mechanics to fix first — the blended number would have you optimize the wrong motion.",
-  }[role] || "It changes which risk is decision-relevant.";
-  return {
-    thesis: `Headline retention is not the real story. A blended figure that clears the benchmark is concealing a structurally deteriorating ${m.worstSeg} segment — the durability risk is real and localized.`,
-    label: `Blended retention conceals ${m.worstSeg} durability risk`,
-    whyRole,
-    evidence: [
-      { mv: blended, role_note: "The aggregate that clears the 100% benchmark — the number that reassures." },
-      { mv: worst, role_note: `The ${m.worstSeg} segment beneath it — well under benchmark, and it is being averaged away.` },
-    ],
-    testIds: READ_TESTS.retention,
-  };
-}
-function AnalystRead({ role, onPick, onClose }) {
-  const read = useMemo(() => buildRead(role), [role]);
+function AnalystRead({ role, catalog, onPick, onClose }) {
+  const [read, setRead] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [verdicts, setVerdicts] = useState({});
+  useEffect(() => {
+    let live = true; setLoading(true); setVerdicts({});
+    curateRead({ role }, catalog).then((r) => { if (live) { setRead(r); setLoading(false); } });
+    return () => { live = false; };
+  }, [role, catalog]);
+  if (loading) return <div className="brief"><div className="brief-load">Forming the read for the {role} — the model is selecting evidence and tests from the engine's menu…</div></div>;
   if (!read) return <div className="brief"><div className="brief-empty">No masking finding in the current data — nothing to investigate.</div></div>;
+  const evidence = read.evidenceIds.map((id) => E.store.get(id)).filter(Boolean);
   const tests = read.testIds.map((id) => E.TEST_MENU.find((t) => t.id === id)).filter(Boolean);
   const run = (t) => { const r = E.runTest({ kind: t.kind, metric: t.metric, dim: t.dims && t.dims[0] }); setVerdicts((v) => ({ ...v, [t.id]: r })); };
   const ran = Object.values(verdicts);
@@ -117,25 +106,25 @@ function AnalystRead({ role, onPick, onClose }) {
     <div className="brief">
       <div className="brief-head">
         <span className="brief-tag">ANALYST READ</span>
+        <span className={`brief-src ${read.source}`}>{read.source === "live" ? "◈ model-authored" : "○ deterministic read"}</span>
         <span className={`brief-status ${status}`}>{statusLabel}</span>
         <button className="brief-x" onClick={onClose}>✕</button>
       </div>
       <div className="brief-thesis">{read.thesis}</div>
       <div className="brief-why"><span className="brief-lbl">Why it matters for the {role}</span>{read.whyRole}</div>
       <div className="brief-sec">
-        <div className="brief-lbl">Evidence — every value traceable</div>
+        <div className="brief-lbl">Evidence — model-selected, engine-computed, every value traceable</div>
         <div className="brief-ev">
-          {read.evidence.map((e, i) => (
-            <button key={i} className="ev-card" onClick={() => onPick({ node: e.mv })}>
-              <div className="ev-top"><span className="ev-val mono">{fmtMV(e.mv)}</span><span className="ev-lbl">{e.mv.label}</span></div>
-              <div className="ev-note">{e.role_note}</div>
+          {evidence.map((mv, i) => (
+            <button key={i} className="ev-card" onClick={() => onPick({ node: mv })}>
+              <div className="ev-top"><span className="ev-val mono">{fmtMV(mv)}</span><span className="ev-lbl">{mv.label}</span></div>
               <div className="ev-trace">trace ▸</div>
             </button>
           ))}
         </div>
       </div>
       <div className="brief-sec">
-        <div className="brief-lbl">What would change this read — deterministic tests</div>
+        <div className="brief-lbl">What would change this read — model-proposed, engine-run</div>
         <div className="brief-tests">
           {tests.map((t) => {
             const r = verdicts[t.id];
@@ -150,8 +139,9 @@ function AnalystRead({ role, onPick, onClose }) {
         </div>
       </div>
       {ran.length > 0 && <div className={`brief-foot ${status}`}>
-        {status === "holds" ? "The tests run so far confirm the read: the weakness is real and localized, not a uniform artifact." : "A test came back uniform — the localized-risk read weakens. The engine redirected the thesis."}
+        {status === "holds" ? "The tests run so far confirm the read — the weakness is real and localized, not a uniform artifact." : "A test came back uniform — the localized-risk read weakens. The engine redirected the thesis."}
       </div>}
+      {read.violations && read.violations.length > 0 && <div className="brief-viol">Contract: {read.violations.join(" · ")}</div>}
     </div>
   );
 }
@@ -536,6 +526,36 @@ function validateCuration(cur, finding, catalog) {
   const viable = evidenceIds.length > 0 && hasFalsifier && tG.text.length > 0;
   return { viable, violations,
     curation: viable ? { thesis: tG.text, whyRole: wG.text, evidenceIds, testIds, widgetIds, partitionPref: cur.partitionPref || null, rationaleTags: cur.rationaleTags || [], source: "live" } : null };
+}
+function buildCurationPrompt(focus, finding, nb, catalog) {
+  const metricMenu = nb.metricIds.map((id) => ({ id, label: E.store.get(id).label }));
+  const testMenu = nb.testIds.map((id) => { const t = E.TEST_MENU.find((x) => x.id === id); return { id, question: t.label, falsifier: nb.falsifierIds.includes(id) }; });
+  const widgetMenu = Object.keys(catalog).filter((id) => (RELATED_DOMAINS[nb.domain] || []).includes(WIDGET_DOMAIN[id])).map((id) => ({ id, label: catalog[id].title || id }));
+  return `You are the analytical-judgment layer of a governed analytics system, briefing the ${focus.role}.
+An engine has DETECTED this finding (you did not compute it; you may foreground and FRAME it): "${finding.label}".
+Form the decision-relevant READ for the ${focus.role}. Select ONLY from the menus below — you may not invent metrics, tests, or widgets, and you may not write any digit in your prose (the engine owns all numbers).
+
+EVIDENCE (metric ids you may cite): ${JSON.stringify(metricMenu)}
+TESTS (you MUST include at least one marked falsifier:true, so your read can fail): ${JSON.stringify(testMenu)}
+WIDGETS (charts you may select, prioritized): ${JSON.stringify(widgetMenu)}
+
+Return ONLY this JSON, nothing around it:
+{"thesis":"1-2 sentences, NO numbers — the story that matters for the ${focus.role}","whyRole":"1 sentence, NO numbers — why it matters to the ${focus.role}","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["ids from WIDGETS, most important first"],"rationaleTags":["short non-numeric tags"]}`;
+}
+async function curateRead(focus, catalog) {
+  const qs = E.QUARTERS, finding = E.detectMasking(qs[qs.length - 5], qs[qs.length - 1]);
+  if (!finding) return null;
+  const nb = E.findingNeighborhood(finding);
+  try {
+    const data = await callModel("curate", [{ role: "user", content: buildCurationPrompt(focus, finding, nb, catalog) }], 600, CURATION_MODEL);
+    const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
+    const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+    const { viable, curation, violations } = validateCuration(parsed, finding, catalog);
+    if (viable) return { ...curation, finding, violations };
+    return { ...fallbackCuration(finding), finding, violations: [...violations, "incoherent — fell back to deterministic read"] };
+  } catch (e) {
+    return { ...fallbackCuration(finding), finding, violations: ["model unavailable — deterministic read"] };
+  }
 }
 
 function validateComposition(spec, catalog) {
@@ -987,7 +1007,7 @@ function AppInner() {
         <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
       </div>
 
-      {showBrief && <div className="brief-overlay"><AnalystRead role={role} onPick={(p) => { setPicked(p); setShowBrief(false); }} onClose={() => setShowBrief(false)} /></div>}
+      {showBrief && <div className="brief-overlay"><AnalystRead role={role} catalog={catalog} onPick={(p) => { setPicked(p); setShowBrief(false); }} onClose={() => setShowBrief(false)} /></div>}
 
       {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => { setPicked(p); setShowQuery(false); }} busy={queries.some((q) => q.status === "loading")} />}
     </div>
