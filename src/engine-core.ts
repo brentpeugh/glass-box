@@ -100,6 +100,63 @@ export function createEngine(bundle: Bundle) {
   // ---- detector battery ----
   function fit1(ys: number[]) { const n = ys.length, xs = ys.map((_, i) => i); const xm = xs.reduce((a, b) => a + b, 0) / n, ym = ys.reduce((a, b) => a + b, 0) / n; const sxx = xs.reduce((s, x) => s + (x - xm) ** 2, 0); const slope = xs.reduce((s, x, i) => s + (x - xm) * (ys[i] - ym), 0) / sxx; const intercept = ym - slope * xm; const sse = ys.reduce((s, y, i) => s + (y - (slope * xs[i] + intercept)) ** 2, 0); const se = Math.sqrt(sse / (n - 2)) / Math.sqrt(sxx); const t = slope / se; const rel = ((slope * (n - 1) + intercept) - intercept) / Math.abs(intercept); return { slope, t, rel }; }
 
+  // ===== falsification test menu: parameterized deterministic checks the model may PROPOSE
+  // (by id + params) but never invent. The engine RUNS them and returns a verdict. Every slice
+  // is engine-computed and traceable — the test menu is as bounded as the widget menu. =====
+  function winRateBy(dim: string, q: string) {
+    const key = (o: any) => dim === "segment" ? o.segment : dim === "region" ? o.region : o.deal_type;
+    const closed = OPPS.filter((o: any) => o.close_quarter === q && (o.stage === "won" || o.stage === "lost"));
+    const g: any = {};
+    for (const o of closed) { const k = key(o); if (!k) continue; (g[k] || (g[k] = { won: 0, n: 0 })); g[k].n++; if (o.stage === "won") g[k].won++; }
+    return Object.entries(g).map(([k, v]: any) => ({ key: k, value: v.n ? (v.won / v.n) * 100 : 0, n: v.n }));
+  }
+  function nrrBySeg(startQ: string, endQ: string) { return SEGMENTS.map((s) => { const mv = nrr(s, startQ, endQ); return { key: s, value: mv.value, n: mv.evidence?.n }; }); }
+  function marginBySeg(q: string) {
+    return SEGMENTS.map((s) => {
+      const rows = OPEX.filter((o: any) => o.quarter === q && o.segment === s);
+      const cogs = rows.reduce((a: number, o: any) => a + o.cogs, 0), rev = segArr(s, q).value / 4;
+      return { key: s, value: rev ? (1 - cogs / rev) * 100 : 0, n: rows.length };
+    });
+  }
+  const TEST_MENU = [
+    { id: "localize_winrate", kind: "localize", metric: "win_rate", label: "Is the win-rate weakness concentrated, or uniform across the book?", dims: ["deal_type", "segment", "region"] },
+    { id: "localize_nrr", kind: "localize", metric: "nrr", label: "Is the retention weakness concentrated in one segment, or broad?", dims: ["segment"] },
+    { id: "localize_margin", kind: "localize", metric: "margin", label: "Is margin compression concentrated in a segment, or company-wide?", dims: ["segment"] },
+    { id: "decompose_retention", kind: "decompose", label: "Is the retention loss driven by logo churn or by contraction?", dims: [] },
+    { id: "persist_growth", kind: "persist", metric: "qoq_growth", label: "Has the growth trend reversed in the recent window?", dims: [] },
+  ];
+  function runTest(spec: any) {
+    const q = spec.endQ || QUARTERS[QUARTERS.length - 1], sQ = spec.startQ || QUARTERS[QUARTERS.length - 5];
+    if (spec.kind === "localize") {
+      const dim = spec.dim || "segment";
+      let slices: any[];
+      if (spec.metric === "win_rate") slices = winRateBy(dim, q);
+      else if (spec.metric === "nrr") slices = nrrBySeg(sQ, q);
+      else if (spec.metric === "margin") slices = marginBySeg(q);
+      else return null;
+      const vals = slices.map((s) => s.value), spread = Math.max(...vals) - Math.min(...vals);
+      const worst = slices.slice().sort((a, b) => a.value - b.value)[0];
+      const concentrated = spread > 12;
+      return { kind: "localize", metric: spec.metric, dim, slices, spread, worst, concentrated,
+        verdict: concentrated ? "concentrated" : "uniform",
+        summary: concentrated ? `Concentrated — ${worst.key} is the weak slice, a ${spread.toFixed(0)}-point spread` : `Roughly uniform across ${dim} — only a ${spread.toFixed(0)}-point spread` };
+    }
+    if (spec.kind === "decompose") {
+      const b = cohortBridge(spec.seg || null, sQ, q), churn = Math.abs(b.churnLoss), contra = Math.abs(b.contractionLoss);
+      const driver = churn >= contra ? "churn" : "contraction";
+      return { kind: "decompose", churn, contra, expansion: b.expansionGain, driver,
+        verdict: driver, summary: `Loss is driven by ${driver} — churn $${(churn / 1e6).toFixed(1)}M vs contraction $${(contra / 1e6).toFixed(1)}M` };
+    }
+    if (spec.kind === "persist") {
+      const series = QUARTERS.slice(1).map((qq) => qoqGrowth(qq).value);
+      const full = fit1(series).slope, recent = fit1(series.slice(-3)).slope;
+      const reversing = Math.sign(recent) !== Math.sign(full) && Math.abs(recent) > 1e-9;
+      return { kind: "persist", full, recent, reversing, verdict: reversing ? "reversing" : "persistent",
+        summary: reversing ? `The trend reverses in the recent window` : `The trend persists in the recent window` };
+    }
+    return null;
+  }
+
   function runDetectors(): Finding[] {
     const F: Finding[] = []; let id = 0;
     const emit = (f: Omit<Finding, "id">) => F.push({ id: `F${++id}`, ...f } as Finding);
@@ -156,5 +213,5 @@ export function createEngine(bundle: Bundle) {
     return { kind: "col_sum", col: "", n: 0, rows: [] };   // unknown kind → safe empty, never throw
   }
 
-  return { store, QUARTERS, SEGMENTS, BENCH, companyArr, segArr, cogsTotal, smTotal, revenueQ, netNewArr, grossNewBookings, magicNumber, grossMargin, cacPayback, ruleOf40, qoqGrowth, nrr, grr, cohortBridge, entShare, top10Share, winRate, runDetectors, detectMasking, resolveLeaf };
+  return { store, QUARTERS, SEGMENTS, BENCH, companyArr, segArr, cogsTotal, smTotal, revenueQ, netNewArr, grossNewBookings, magicNumber, grossMargin, cacPayback, ruleOf40, qoqGrowth, nrr, grr, cohortBridge, entShare, top10Share, winRate, runDetectors, detectMasking, resolveLeaf, TEST_MENU, runTest, winRateBy, nrrBySeg, marginBySeg };
 }
