@@ -78,6 +78,83 @@ function TraceNode({ node, depth, isFinding }) {
     </div>
   );
 }
+// ===== Analyst Read: the investigation layer. A thesis (model-authored prose, numeral-free),
+// an evidence chain (engine values, each traceable), and falsification tests (from the engine's
+// bounded menu). The user runs a test; the engine computes a verdict; the thesis holds or weakens.
+// Model proposes the investigation — engine proves, weakens, or redirects it. =====
+const READ_TESTS = {
+  retention: ["localize_nrr", "decompose_retention", "localize_winrate"],
+};
+function buildRead(role) {
+  const qs = E.QUARTERS, m = E.detectMasking(qs[qs.length - 5], qs[qs.length - 1]);
+  if (!m) return null;
+  const blended = E.store.get(m.blendedId), worst = E.store.get(m.worstId);
+  const whyRole = {
+    CFO: "It bears on the durability of the revenue base and the risk in the forecast — the aggregate looks safe, but the forward run-rate rests on a segment that is eroding.",
+    CRO: "It tells you which segment's retention and conversion mechanics to fix first — the blended number would have you optimize the wrong motion.",
+  }[role] || "It changes which risk is decision-relevant.";
+  return {
+    thesis: `Headline retention is not the real story. A blended figure that clears the benchmark is concealing a structurally deteriorating ${m.worstSeg} segment — the durability risk is real and localized.`,
+    label: `Blended retention conceals ${m.worstSeg} durability risk`,
+    whyRole,
+    evidence: [
+      { mv: blended, role_note: "The aggregate that clears the 100% benchmark — the number that reassures." },
+      { mv: worst, role_note: `The ${m.worstSeg} segment beneath it — well under benchmark, and it is being averaged away.` },
+    ],
+    testIds: READ_TESTS.retention,
+  };
+}
+function AnalystRead({ role, onPick, onClose }) {
+  const read = useMemo(() => buildRead(role), [role]);
+  const [verdicts, setVerdicts] = useState({});
+  if (!read) return <div className="brief"><div className="brief-empty">No masking finding in the current data — nothing to investigate.</div></div>;
+  const tests = read.testIds.map((id) => E.TEST_MENU.find((t) => t.id === id)).filter(Boolean);
+  const run = (t) => { const r = E.runTest({ kind: t.kind, metric: t.metric, dim: t.dims && t.dims[0] }); setVerdicts((v) => ({ ...v, [t.id]: r })); };
+  const ran = Object.values(verdicts);
+  const status = ran.length === 0 ? "untested" : ran.some((r) => r.verdict === "uniform") ? "weakened" : "holds";
+  const statusLabel = { untested: "UNTESTED", holds: "HOLDS", weakened: "WEAKENED" }[status];
+  return (
+    <div className="brief">
+      <div className="brief-head">
+        <span className="brief-tag">ANALYST READ</span>
+        <span className={`brief-status ${status}`}>{statusLabel}</span>
+        <button className="brief-x" onClick={onClose}>✕</button>
+      </div>
+      <div className="brief-thesis">{read.thesis}</div>
+      <div className="brief-why"><span className="brief-lbl">Why it matters for the {role}</span>{read.whyRole}</div>
+      <div className="brief-sec">
+        <div className="brief-lbl">Evidence — every value traceable</div>
+        <div className="brief-ev">
+          {read.evidence.map((e, i) => (
+            <button key={i} className="ev-card" onClick={() => onPick({ node: e.mv })}>
+              <div className="ev-top"><span className="ev-val mono">{fmtMV(e.mv)}</span><span className="ev-lbl">{e.mv.label}</span></div>
+              <div className="ev-note">{e.role_note}</div>
+              <div className="ev-trace">trace ▸</div>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="brief-sec">
+        <div className="brief-lbl">What would change this read — deterministic tests</div>
+        <div className="brief-tests">
+          {tests.map((t) => {
+            const r = verdicts[t.id];
+            return (
+              <div key={t.id} className={`test-row ${r ? "ran" : ""}`}>
+                <div className="test-q">{t.label}</div>
+                {r ? <div className={`test-verdict ${r.verdict === "uniform" ? "weakens" : "confirms"}`}>{r.summary}</div>
+                  : <button className="test-run" onClick={() => run(t)}>run test ▸</button>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {ran.length > 0 && <div className={`brief-foot ${status}`}>
+        {status === "holds" ? "The tests run so far confirm the read: the weakness is real and localized, not a uniform artifact." : "A test came back uniform — the localized-risk read weakens. The engine redirected the thesis."}
+      </div>}
+    </div>
+  );
+}
 function TraceDrawer({ picked, onClose }) {
   if (!picked) return null;
   const node = picked.node;
@@ -809,6 +886,7 @@ function AppInner() {
   const [queries, setQueries] = useState([]);
   const cache = React.useRef({});
   const [showQuery, setShowQuery] = useState(false);
+  const [showBrief, setShowBrief] = useState(false);
   useEffect(() => { const h = (e) => { if (e.key === "`" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); setShowDebug((v) => !v); } }; window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, []);
 
   async function handleQuery(text) {
@@ -857,6 +935,7 @@ function AppInner() {
         </div>
         <div className="hdr-r">
           {Object.keys(ROLES).map((k) => <button key={k} className={`lensbtn ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
+          <button className="recur brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">◈ read</button>
           <button className="recur" onClick={() => setShowQuery(true)} title="interrogate the engine">⌕</button>
           <button className="recur" onClick={() => { delete cache.current[role]; enter(role); }} title="re-curate">↻</button>
           <button className="recur" onClick={() => setShowDebug((v) => !v)} title="boundary inspector (or press `)">dbg</button>
@@ -871,6 +950,8 @@ function AppInner() {
         </main>
         <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
       </div>
+
+      {showBrief && <div className="brief-overlay"><AnalystRead role={role} onPick={(p) => { setPicked(p); setShowBrief(false); }} onClose={() => setShowBrief(false)} /></div>}
 
       {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => { setPicked(p); setShowQuery(false); }} busy={queries.some((q) => q.status === "loading")} />}
     </div>
