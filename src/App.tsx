@@ -7,8 +7,26 @@ import { WIDGET_DOMAIN, RELATED_DOMAINS, guardFraming, validateCurationCore, HEA
 // One engine, two consumers: this same engine-core is what scripts/validate.ts proves
 // against the oracle. The browser never hand-edits it.
 let E;
+let BASE_DS = null;   // retained so perturbations transform a copy and reset restores the original
 function initEngine(ds) {
   E = createEngine({ customers: ds.facts.customers, opex: ds.facts.opex, quarters: ds.meta.quarters, segments: ds.meta.segments, benchmarks: ds.benchmarks, opportunities: ds.facts.opportunities });
+}
+// ===== PERTURBATION: prove discovery is real, not scripted. Apply a transparent, SINGLE-AXIS change
+// to the real data — not a re-authored dataset — then recompute salience from scratch. The finding
+// re-orders on its own and the whole app re-orients, with no code change. Verified blind: cutting
+// recent S&M removes the CAC/efficiency anomaly and the engine surfaces ARR concentration as the new
+// top risk — unprompted. (Discipline: change the input condition, never the output finding.) =====
+const PERTURBATIONS = {
+  improve_cac: {
+    label: "Improve go-to-market efficiency",
+    note: "Cut S&M spend ~40% in the last three quarters — a more efficient acquisition motion.",
+    apply: (d) => { for (const o of d.facts.opex) if (["25Q2", "25Q3", "25Q4"].includes(o.quarter)) o.sm_spend *= 0.6; },
+  },
+};
+function perturbedDataset(name) {
+  const d = JSON.parse(JSON.stringify(BASE_DS));
+  PERTURBATIONS[name].apply(d);
+  return d;
 }
 // All model calls go through one seam. In production this hits the Netlify function
 // holding the key server-side; running plain `vite` (no function) it throws and the
@@ -1007,7 +1025,8 @@ function QueryModal({ queries, onAsk, onClose, onPick, onRecurate, busy }) {
 }
 
 function AppInner() {
-  const catalog = useMemo(() => buildCatalog(), []);
+  const [perturbation, setPerturbation] = useState(null);
+  const catalog = useMemo(() => buildCatalog(), [perturbation]);   // rebuilds from the (possibly perturbed) engine
   const [role, setRole] = useState(null);
   const [state, setState] = useState({ loading: false, spec: null, source: null, rejected: 0, err: null, debug: null });
   const [picked, setPicked] = useState(null);
@@ -1061,6 +1080,15 @@ function AppInner() {
     const next = await buildCuratedState(role, targetFinding);
     setState(next);
   }
+  // Perturbation: swap the engine to run on transformed data, then let salience + curation
+  // recompute from scratch. The effect re-curates whenever the perturbation changes.
+  const firstPerturb = React.useRef(true);
+  useEffect(() => {
+    if (firstPerturb.current) { firstPerturb.current = false; return; }
+    if (role) { cache.current = {}; setPicked(null); enter(role); }
+  }, [perturbation]);
+  function applyPerturbation(name) { initEngine(perturbedDataset(name)); setPerturbation(name); }
+  function resetPerturbation() { initEngine(BASE_DS); setPerturbation(null); }
 
   if (!role) return (<div className="caliper"><EntryScreen onEnter={enter} /></div>);
 
@@ -1078,10 +1106,13 @@ function AppInner() {
           {Object.keys(ROLES).map((k) => <button key={k} className={`lensbtn ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
           <button className="recur brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">◈ read</button>
           <button className="recur" onClick={() => setShowQuery(true)} title="interrogate the engine">⌕</button>
+          <button className={`recur ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">⟲</button>
           <button className="recur" onClick={() => { delete cache.current[role]; enter(role); }} title="re-curate">↻</button>
           <button className="recur" onClick={() => setShowDebug((v) => !v)} title="boundary inspector (or press `)">dbg</button>
         </div>
       </header>
+
+      {perturbation && <div className="perturb-banner"><span className="pb-tag">DATA PERTURBED</span><span className="pb-lbl">{PERTURBATIONS[perturbation].label}</span><span className="pb-note">{PERTURBATIONS[perturbation].note} The engine recomputed salience from the changed data — the finding you see below re-derived on its own, no code change.</span><button className="pb-reset" onClick={resetPerturbation}>reset data ›</button></div>}
 
       {showDebug && <DebugPanel d={state.debug} />}
 
@@ -1119,7 +1150,7 @@ export default function App() {
   React.useEffect(() => {
     fetch(import.meta.env.BASE_URL + "caliper_dataset.json")
       .then((r) => r.json())
-      .then((ds) => { initEngine(ds); setReady(true); })
+      .then((ds) => { BASE_DS = ds; initEngine(ds); setReady(true); })
       .catch(() => setFailed(true));
   }, []);
   if (failed) return <div className="caliper"><div className="loading">could not load dataset</div></div>;
