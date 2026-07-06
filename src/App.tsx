@@ -266,6 +266,54 @@ function MiniTrend({ a, b, benchmark, labels = [], w = 680, h = 66 }) {
     {labels.length > 1 && <><text x={x(0)} y={H - 3} className="mt-qlab" textAnchor="start">{labels[0]}</text><text x={x(labels.length - 1)} y={H - 3} className="mt-qlab" textAnchor="end">{labels[labels.length - 1]}</text></>}
   </svg>);
 }
+const METRIC_SERIES = {
+  cac: (q, i) => { try { return E.cacPayback(q).value; } catch { return null; } },
+  magic: (q, i) => { try { return E.magicNumber(q).value; } catch { return null; } },
+  grossMargin: (q, i) => { try { return E.grossMargin(q).value; } catch { return null; } },
+  qoq: (q, i) => { try { return E.qoqGrowth(q).value; } catch { return null; } },
+  r40: (q, i) => { try { return i >= 4 ? E.ruleOf40(q).value : null; } catch { return null; } },
+};
+function SoloSpark({ vals, labels, benchmark, tone }) {
+  const W = 320, H = 62, padT = 9, padB = 14, padL = 4, padR = 34;
+  const pw = W - padL - padR, ph = H - padT - padB;
+  const all = [...vals, ...(benchmark != null ? [benchmark] : [])]; const lo = Math.min(...all), hi = Math.max(...all), sp = hi - lo || 1;
+  const x = (i) => padL + (vals.length > 1 ? pw * i / (vals.length - 1) : pw / 2);
+  const y = (v) => padT + ph * (1 - (v - lo) / sp);
+  const line = vals.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
+  const area = `${line} L${x(vals.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
+    <defs><linearGradient id="sf-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ember)" stopOpacity="0.20" /><stop offset="100%" stopColor="var(--ember)" stopOpacity="0" /></linearGradient></defs>
+    <path d={area} fill="url(#sf-g)" />
+    {benchmark != null && <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" />}
+    {benchmark != null && <text x={W - padR + 4} y={y(benchmark) + 3} className="mt-bench-lab">{benchmark}</text>}
+    <path d={line} className={`mt-ln ${tone}`} />
+    {vals.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r={i === vals.length - 1 ? 3 : 2} className={`mt-dot ${tone}`} />)}
+    <text x={x(0)} y={H - 3} className="mt-qlab" textAnchor="start">{labels[0]}</text><text x={x(vals.length - 1)} y={H - 3} className="mt-qlab" textAnchor="end">{labels[labels.length - 1]}</text>
+  </svg>);
+}
+// Generic finding band — presents ANY top salient fact the way FindingCard presents masking.
+// Adding a finding type needs no new band: the fact's structure (value, benchmark, trend) drives it.
+function SalientBand({ finding, onPick }) {
+  if (!finding || !finding.mvs || !finding.mvs.length) return null;
+  const primary = finding.mvs[0];
+  const basis = primary.basis;
+  const sf = METRIC_SERIES[finding.metric];
+  let spark = null;
+  if (sf) { const vals = E.QUARTERS.map((q, i) => sf(q, i)).filter((v) => v != null); if (vals.length > 2) spark = { vals, labels: E.QUARTERS.slice(E.QUARTERS.length - vals.length) }; }
+  return (<div className="fband">
+    <div className="fband-vals">
+      <div className="sf-primary">
+        <span className="sf-val mono">{fmtMV(primary)}</span>
+        <span className="sf-lbl">{primary.label}</span>
+        {basis != null && <span className="sf-badge">vs {basis.thr}{primary.unit === "percent" ? "%" : ""} benchmark</span>}
+      </div>
+      <span className="fband-verb">MOST ANOMALOUS</span>
+      <div className="sf-ctx">the largest standardized deviation the engine surfaced across the book</div>
+    </div>
+    {spark && <div className="fband-trend"><SoloSpark vals={spark.vals} labels={spark.labels} benchmark={basis != null ? basis.thr : null} tone="bad" /></div>}
+    <button className="fband-inspect" onClick={() => onPick({ node: primary })}>inspect provenance ›</button>
+  </div>);
+}
 function FindingCard({ finding, onPick }) {
   const schema = FINDING_PRESENTATION[finding.type];
   if (!schema) return null;
@@ -305,6 +353,7 @@ function buildCatalog() {
   const accelLine = Q1.map((q) => ({ q, value: E.qoqGrowth(q).value * 100, mv: E.qoqGrowth(q) }));
   return {
     masking_card: { kind: "finding_card", polarity: "bad", desc: "Blended NRR looks healthy but conceals an underwater segment (SMB).", data: { finding: masking } },
+    salient_band: { kind: "finding_card", polarity: "bad", title: "Top salient anomaly", desc: "The most statistically anomalous signal the engine surfaced.", data: {} },
     bridge_smb: { kind: "waterfall", polarity: "bad", desc: "SMB retention bridge — churn and contraction outweigh expansion.", data: { bridge: E.cohortBridge("SMB", "24Q4", "25Q4"), title: "SMB retention bridge", mv: E.nrr("SMB", "24Q4", "25Q4") } },
     bridge_enterprise: { kind: "waterfall", polarity: "good", desc: "Enterprise retention bridge — the expansion engine; net retention well above 100%.", data: { bridge: E.cohortBridge("Enterprise", "24Q4", "25Q4"), title: "Enterprise retention bridge", mv: E.nrr("Enterprise", "24Q4", "25Q4") } },
     bridge_blended: { kind: "waterfall", polarity: "neutral", desc: "Company-wide retention bridge across all segments.", data: { bridge: E.cohortBridge(null, "24Q4", "25Q4"), title: "Blended retention bridge", mv: E.nrr(null, "24Q4", "25Q4") } },
@@ -578,6 +627,7 @@ function Block({ block, catalog, onPick, dim }) {
 // panels to regions by aspect. A panel budget keeps every screen legible.
 const PANEL_ASPECTS = {
   finding_card: ["band"],
+  salient_band: ["band"],
   table: ["tall", "twothird", "half"],
   matrix: ["twothird", "half"],
   combo: ["half", "third"],
@@ -700,7 +750,7 @@ const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar
 // lead finding; the board is filled from this ranked menu, so there is always surplus to
 // fill a dense partition — a well-built board every time, regardless of how much the model curated.
 const CHART_MENU = ["metric_matrix", "efficiency_combo", "bridge_smb", "bridge_enterprise", "accel_line", "segment_stack", "hbar_nrr", "magic_line", "efficiency_bullets"];
-function TemplateBoard({ spec, role, catalog, onPick, partitionPref }) {
+function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding }) {
   const kind = (id) => catalog[id]?.kind;
   const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]).map((b) => ({ ...b, _kind: kind(b.widget) }));
   const findings = all.filter((b) => b._kind === "finding_card");
@@ -716,7 +766,9 @@ function TemplateBoard({ spec, role, catalog, onPick, partitionPref }) {
   return (<div className="partition" style={{ gridTemplateRows: p.rowsT }}>
     {placed.map((pl, i) => (
       <div key={i} className={`tb-panel asp-${pl.region.a}`} style={{ gridColumn: `${pl.region.c[0]} / ${pl.region.c[1]}`, gridRow: `${pl.region.r[0]} / ${pl.region.r[1]}` }}>
-        {pl.block._kind === "finding_card"
+        {pl.block.widget === "salient_band"
+          ? <SalientBand finding={finding} onPick={onPick} />
+          : pl.block._kind === "finding_card"
           ? <Block block={pl.block} catalog={catalog} onPick={onPick} dim={null} />
           : <Widget id={pl.block.widget} catalog={catalog} onPick={onPick} dim={null} />}
       </div>))}
@@ -941,7 +993,7 @@ function AppInner() {
       const curation = await curate({ role: roleKey }, catalog);
       if (!curation) throw new Error("no finding to curate");
       const isRetention = curation.finding && E.findingNeighborhood(curation.finding).domain === "retention";
-      const lead = isRetention ? ["masking_card"] : [];
+      const lead = isRetention ? ["masking_card"] : ["salient_band"];
       const ids = [...lead, ...(curation.widgetIds || []).filter((id) => !lead.includes(id))];
       const spec = { sections: [{ heading: "", blocks: ids.map((id, i) => (id === "masking_card" || i === 0) ? { widget: id, emphasis: "hero", headline: "", soWhat: i === 0 ? curation.thesis : "" } : { widget: id, emphasis: "standard", headline: "", soWhat: "" }) }] };
       next = { loading: false, curation, spec, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
@@ -976,7 +1028,7 @@ function AppInner() {
 
       <div className={`workarea ${picked ? "drawer-open" : ""}`}>
         <main className="stage">
-          {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} /></>}
+          {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} finding={state.curation && state.curation.finding} /></>}
         </main>
         <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
       </div>

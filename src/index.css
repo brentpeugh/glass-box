@@ -470,3 +470,10 @@ html,body,#root{ height:100%; overflow:hidden; }
 .brief-viol{ padding:9px 22px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); border-top:1px solid var(--rule); background:var(--parch); }
 .ev-top{ flex-wrap:wrap; }
 .ev-lbl{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
+
+/* generic salient finding band */
+.sf-primary{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.sf-val{ font-size:30px; font-weight:600; color:var(--ink); letter-spacing:-0.01em; }
+.sf-lbl{ font-size:13px; color:var(--slate-d); }
+.sf-badge{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ember); border:1px solid var(--ember); padding:2px 7px; background:rgba(168,72,60,.06); }
+.sf-ctx{ font-size:12px; color:var(--muted); font-style:italic; max-width:280px; }
