@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 
 import { createEngine } from "./engine-core";
-import { WIDGET_DOMAIN, RELATED_DOMAINS, guardFraming, validateCurationCore } from "./curation";
+import { WIDGET_DOMAIN, RELATED_DOMAINS, guardFraming, validateCurationCore, HEADLINE_KEYS } from "./curation";
 
 // The engine is created once from the dataset fetched at runtime (see App bootstrap).
 // One engine, two consumers: this same engine-core is what scripts/validate.ts proves
@@ -519,6 +519,14 @@ function stripAuthoredNumbers(text) {
 // one genuine falsifier, its widgets are on-domain, and its prose is numeral-free. Violations are
 // dropped; if what remains isn't viable, we fall back to the deterministic (always-coherent) read.
 // This makes "the thesis is gospel" a structural guarantee, not a request.
+// deterministic fallback vital-signs per finding domain (used only when the model curation
+// is unavailable) — finding-weighted, so even the fallback strip orients to what surfaced
+const FALLBACK_SCORECARD = {
+  efficiency: ["cac_payback", "magic_number", "rule_of_40", "gross_margin", "net_new_arr", "nrr"],
+  retention: ["nrr", "grr", "gross_margin", "net_new_arr", "magic_number", "cac_payback"],
+  growth: ["qoq_growth", "net_new_arr", "ent_share", "nrr", "magic_number", "cac_payback"],
+  concentration: ["ent_share", "nrr", "net_new_arr", "qoq_growth", "gross_margin", "cac_payback"],
+};
 function fallbackCuration(fact) {
   const nb = E.findingNeighborhood(fact);
   const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => (nb.lenses || RELATED_DOMAINS[nb.domain] || [nb.domain]).includes(WIDGET_DOMAIN[id]));
@@ -527,6 +535,7 @@ function fallbackCuration(fact) {
     thesis: `The most statistically anomalous signal in the book is ${fact.label.toLowerCase()} — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.`,
     whyRole: "It is the largest deviation the engine surfaced from the data, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
     evidenceIds, testIds: nb.testIds, widgetIds, partitionPref: null,
+    scorecardKeys: FALLBACK_SCORECARD[nb.domain] || FALLBACK_SCORECARD.efficiency,
     rationaleTags: ["top salient anomaly", nb.domain], source: "fallback",
   };
 }
@@ -537,6 +546,7 @@ function buildCurationPrompt(focus, finding, nb, catalog) {
   const metricMenu = nb.metricIds.map((id) => ({ id, label: E.store.get(id).label }));
   const testMenu = nb.testIds.map((id) => { const t = E.TEST_MENU.find((x) => x.id === id); return { id, question: t.label, falsifier: nb.falsifierIds.includes(id) }; });
   const widgetMenu = Object.keys(catalog).filter((id) => (RELATED_DOMAINS[nb.domain] || []).includes(WIDGET_DOMAIN[id])).map((id) => ({ id, label: catalog[id].title || id }));
+  const headlineMenu = HEADLINE_KEYS;
   return `You are the analytical-judgment layer of a governed analytics system, briefing the ${focus.role}.
 An engine has DETECTED this finding (you did not compute it; you may foreground and FRAME it): "${finding.label}".
 Form the decision-relevant READ for the ${focus.role}. The engine surfaced this top statistical fact from a neutral scan; its finding neighborhood (the menus below) defines what is legible. Do NOT assume the issue is retention, growth, efficiency, or concentration — let the neighborhood and the evidence decide. Choose the framing and widgets most decision-relevant FOR THE ${focus.role}: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Select ONLY from the menus below — you may not invent metrics, tests, or widgets, and you may not write any digit in your prose (the engine owns all numbers).
@@ -544,9 +554,10 @@ Form the decision-relevant READ for the ${focus.role}. The engine surfaced this 
 EVIDENCE (metric ids you may cite): ${JSON.stringify(metricMenu)}
 TESTS (you MUST include at least one marked falsifier:true, so your read can fail): ${JSON.stringify(testMenu)}
 WIDGETS (charts you may select, prioritized): ${JSON.stringify(widgetMenu)}
+HEADLINE (metric keys for the vital-signs strip — pick 6 that matter to the ${focus.role} for THIS finding): ${JSON.stringify(headlineMenu)}
 
 Return ONLY this JSON, nothing around it:
-{"thesis":"1-2 sentences, NO numbers — the story that matters for the ${focus.role}","whyRole":"1 sentence, NO numbers — why it matters to the ${focus.role}","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["ids from WIDGETS, most important first"],"partitionPref":"one of: analytical (dense data-grid lead) | hero (one dominant panel + rail) | balanced","rationaleTags":["short non-numeric tags"]}`;
+{"thesis":"1-2 sentences, NO numbers — the story that matters for the ${focus.role}","whyRole":"1 sentence, NO numbers — why it matters to the ${focus.role}","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["ids from WIDGETS, most important first"],"partitionPref":"one of: analytical (dense data-grid lead) | hero (one dominant panel + rail) | balanced","scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
 }
 async function curate(focus, catalog) {
   const finding = E.topFinding();
@@ -883,10 +894,11 @@ verdict:   ${isLive ? "COHERENT → rendered live" : "fell back to deterministic
   </div>);
 }
 
-// ===== deterministic scorecard: each role declares its headline metrics (production
-// shape — headline KPIs are a persona property in the semantic layer, never the model's
-// choice). Cells are two-mode: benchmarked metrics show ▲/▼ vs threshold; unbenchmarked
-// growth metrics show a trend direction. Every cell is engine-resolved and traceable. =====
+// ===== vital-signs scorecard. The live strip is MODEL-CURATED: the model selects role-aware,
+// finding-weighted headline metrics as part of the curation contract (validated against the
+// headline menu, cached per finding+role so it's stable — bounded, not re-rolled). KPI_SET below
+// is only the DETERMINISTIC FALLBACK persona set, used when curation is unavailable. Every cell is
+// engine-resolved and traceable either way; two-mode cells show ▲/▼ vs benchmark or a trend. =====
 const KPI_SET = {
   CFO: ["nrr", "grr", "gross_margin", "magic_number", "cac_payback", "rule_of_40"],
   CRO: ["qoq_growth", "net_new_arr", "ent_share", "nrr", "magic_number", "cac_payback"],
@@ -919,8 +931,11 @@ function KpiCell({ res, onPick }) {
       : res.trend ? <span className="kcell-b trend">{res.trend === "rising" ? "▲" : res.trend === "falling" ? "▼" : "—"} {res.trend}</span> : null}
   </button>);
 }
-function Scorecard({ role, onPick }) {
-  const set = KPI_SET[role] || KPI_SET.CFO;
+function Scorecard({ role, scorecardKeys, onPick }) {
+  // Model-curated vital signs: the model selects role-aware headline metrics (cached in the
+  // curation, so stable per finding+role — bounded, not re-rolled per render). Falls back to the
+  // deterministic persona set only if curation is unavailable. Every cell engine-resolved + traceable.
+  const set = (scorecardKeys && scorecardKeys.length ? scorecardKeys : (KPI_SET[role] || KPI_SET.CFO));
   return (<div className="scorecard">{set.map((m, i) => { const res = resolveKpi(m); return res ? <KpiCell key={i} res={res} onPick={onPick} /> : null; })}</div>);
 }
 
@@ -1008,7 +1023,7 @@ function AppInner() {
 
       <div className={`workarea ${picked ? "drawer-open" : ""}`}>
         <main className="stage">
-          {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} finding={state.curation && state.curation.finding} /></>}
+          {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} finding={state.curation && state.curation.finding} /></>}
         </main>
         <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
       </div>

@@ -20,6 +20,10 @@ export const WIDGET_DOMAIN: Record<string, string> = {
 export const RELATED_DOMAINS: Record<string, string[]> = { retention: ["retention", "concentration"], efficiency: ["efficiency", "growth"], growth: ["growth", "concentration"], concentration: ["concentration", "retention"] };
 
 // model framing may not contain digits — the engine owns every number
+// headline-strip metrics the model may curate into the vital-signs scorecard (broader than the
+// read's neighborhood — vitals are orientation, not the analytical claim, so not neighborhood-gated)
+export const HEADLINE_KEYS = ["nrr", "grr", "gross_margin", "magic_number", "cac_payback", "rule_of_40", "qoq_growth", "net_new_arr", "ent_share"];
+
 export function guardFraming(text: any) { const t = String(text || ""); const violated = /\d/.test(t); return { text: violated ? "" : t, violated }; }
 
 // The coherence validator. Pure: it takes the finding's neighborhood (from the engine),
@@ -39,7 +43,8 @@ export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDoma
   if (!hasFalsifier) violations.push("no falsifying test selected — a read must be able to fail");
   const tG = guardFraming(cur.thesis || ""), wG = guardFraming(cur.whyRole || "");
   if (tG.violated || wG.violated) violations.push("authored numerals stripped from prose");
+  const scorecardKeys = (cur.scorecardKeys || []).filter((k: string) => HEADLINE_KEYS.includes(k)).slice(0, 6);
   const partitionPref = ["analytical", "hero", "balanced"].includes(cur.partitionPref) ? cur.partitionPref : null;
   const viable = evidenceIds.length > 0 && hasFalsifier && tG.text.length > 0;
-  return { viable, violations, curation: viable ? { thesis: tG.text, whyRole: wG.text, evidenceIds, testIds, widgetIds, partitionPref, rationaleTags: cur.rationaleTags || [], source: "live" } : null };
+  return { viable, violations, curation: viable ? { thesis: tG.text, whyRole: wG.text, evidenceIds, testIds, widgetIds, partitionPref, scorecardKeys, rationaleTags: cur.rationaleTags || [], source: "live" } : null };
 }
