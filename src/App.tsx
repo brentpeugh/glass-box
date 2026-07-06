@@ -811,8 +811,8 @@ AVAILABLE DATA: metrics for retention (NRR/GRR), unit economics (CAC/magic/Rule 
 NOT in the data contract: geography/region, product line, individual reps, marketing channel, headcount.
 
 Classify the interest:
-- "salient": it matches one of the ranked findings above → give that finding's rank (1-based).
-- "present": it names a real metric/breakdown in the data, but does NOT match a ranked finding (it isn't among the anomalies) → rank = the closest ranked finding if any, else null.
+- "salient": it matches one of the ranked findings above → give that finding's rank (1-based). If the interest matches MORE THAN ONE ranked finding (e.g. a domain like "efficiency" that appears several times), map to the HIGHEST-ranked match (the lowest number) — the most salient finding wins.
+- "present": it names a real metric/breakdown in the data, but does NOT match any ranked finding (it isn't among the anomalies at all) → rank = the closest ranked finding if any, else null.
 - "unsupported": it needs data not in the contract → rank null.
 
 THE USER'S ANALYTICAL INTEREST: "${text}"
