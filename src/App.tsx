@@ -407,9 +407,15 @@ function buildCatalog() {
     { label: "Rule of 40", f: (q) => E.ruleOf40(q), thr: E.BENCH.rule_of_40.threshold, good: "above" },
     { label: "Gross Mgn", f: (q) => E.grossMargin(q), thr: E.BENCH.gross_margin.threshold, good: "above" },
   ];
-  const heatmapMetrics = { cols: Q1, rows: hmRows.map((m) => ({ label: m.label, cells: Q1.map((q) => { const mv = m.f(q); const ok = m.good === "above" ? mv.value >= m.thr : mv.value <= m.thr; return { tone: ok ? "good" : "bad", mv, text: "" }; }) })) };
+  const heatmapMetrics = { cols: Q1, rows: hmRows.map((m) => ({ label: m.label, cells: Q1.map((q) => { const mv = m.f(q); if (!mv) return { tone: "none", mv: null, text: "" }; const ok = m.good === "above" ? mv.value >= m.thr : mv.value <= m.thr; return { tone: ok ? "good" : "bad", mv, text: "" }; }) })) };
   const indexedArr = { series: segSeries.map((s) => ({ seg: s.seg, color: s.color, points: s.points })), quarters: E.QUARTERS };
   const dumbbellRet = E.SEGMENTS.map((sg) => { const g = E.grr(sg, "24Q4", "25Q4"), n = E.nrr(sg, "24Q4", "25Q4"); return { label: sg, a: g.value, b: n.value, mv: n }; });
+  // ---- batch-2 general charts (share-of-total / comparison / positioning / small-multiples) ----
+  const treemapArr = E.SEGMENTS.map((sg) => ({ label: sg, value: E.segArr(sg, "25Q4").value, mv: E.segArr(sg, "25Q4") }));
+  const groupedGrowth = E.SEGMENTS.map((sg) => ({ label: sg, bars: [{ value: E.segArr(sg, "24Q1").value, mv: E.segArr(sg, "24Q1") }, { value: E.segArr(sg, "25Q4").value, mv: E.segArr(sg, "25Q4") }] }));
+  const quadEff = Q1.map((q) => ({ x: E.magicNumber(q).value, y: E.qoqGrowth(q).value * 100, label: q, mv: E.magicNumber(q) }));
+  const smArr = segSeries.map((s) => ({ seg: s.seg, color: s.color, points: s.points }));
+  const heatmapRet = { cols: ["NRR", "GRR"], rows: E.SEGMENTS.map((sg) => { const n = E.nrr(sg, "24Q4", "25Q4"), g = E.grr(sg, "24Q4", "25Q4"); return { label: sg, cells: [{ tone: n.value >= 100 ? "good" : "bad", mv: n, text: `${n.value.toFixed(0)}` }, { tone: g.value >= 90 ? "good" : "bad", mv: g, text: `${g.value.toFixed(0)}` }] }; }) };
   return {
     masking_card: { kind: "finding_card", polarity: "bad", desc: "Blended NRR looks healthy but conceals an underwater segment (SMB).", data: { finding: masking } },
     salient_band: { kind: "finding_card", polarity: "bad", title: "Top salient anomaly", desc: "The most statistically anomalous signal the engine surfaced.", data: {} },
@@ -433,6 +439,11 @@ function buildCatalog() {
     heatmap_metrics: { kind: "heatmap", polarity: "bad", desc: "Every efficiency metric across every quarter, tone-coded against benchmark — the fastest scan of where and when the book breaches.", data: { title: "Efficiency heatmap", ...heatmapMetrics } },
     indexed_arr: { kind: "indexed", polarity: "neutral", desc: "Segment ARR rebased to 100 at the first quarter — compares growth rates across segments regardless of size.", data: { title: "Indexed ARR growth by segment", ...indexedArr } },
     dumbbell_ret: { kind: "dumbbell", polarity: "bad", desc: "Gross vs net retention per segment — the gap is the expansion contribution; where the dot moves left, contraction outweighs expansion.", data: { title: "GRR → NRR by segment", items: dumbbellRet, fmt: (v) => `${v.toFixed(0)}%` } },
+    treemap_arr: { kind: "treemap", polarity: "bad", desc: "ARR share by segment as proportional area — the concentration of the book at a glance.", data: { title: "ARR share by segment", items: treemapArr, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
+    grouped_growth: { kind: "grouped", polarity: "neutral", desc: "Segment ARR at the first vs latest quarter side by side — which segments actually drove the growth.", data: { title: "Segment ARR — first vs latest", groups: groupedGrowth, keys: ["24Q1", "25Q4"], colors: ["var(--slate-l)", "var(--slate-d)"], fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
+    quadrant_eff: { kind: "quadrant", polarity: "bad", desc: "Each quarter positioned by sales efficiency and growth against their benchmarks — the four zones separate efficient growth from bought growth.", data: { title: "Efficiency × growth positioning", points: quadEff, xlab: "Magic #", ylab: "QoQ growth %", xbench: E.BENCH.magic_number.threshold, ybench: 5 } },
+    small_mult_arr: { kind: "small_multiples", polarity: "neutral", desc: "One ARR trend per segment on a shared scale — compare the growth shapes side by side.", data: { title: "ARR trend by segment", series: smArr } },
+    heatmap_retention: { kind: "heatmap", polarity: "bad", desc: "NRR and GRR per segment, tone-coded against benchmark — where retention holds and where it breaches.", data: { title: "Retention by segment", ...heatmapRet } },
   };
 }
 
@@ -580,6 +591,70 @@ function Dumbbell({ items, fmt, onPick, w = 420, h = 200 }) {
     </g>); })}
   </svg>);
 }
+// Treemap — segments sized by share of total (composition at a glance). Concentration.
+function Treemap({ items, fmt, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, pad = 3;
+  const total = items.reduce((s, x) => s + x.value, 0) || 1;
+  const sorted = items.slice().sort((a, b) => b.value - a.value);
+  let x0 = 0; const shades = ["var(--slate-d)", "var(--slate)", "var(--slate-l)", "var(--brass)"];
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
+    {sorted.map((it, i) => { const ww = (it.value / total) * W; const rect = (<g key={i} className="ln-pt" onClick={() => it.mv && onPick(it.mv)}>
+      <rect x={x0 + pad} y={pad} width={Math.max(ww - pad * 2, 1)} height={H - pad * 2} fill={shades[i % shades.length]} />
+      <text x={x0 + ww / 2} y={H / 2 - 4} className="tm-lab" textAnchor="middle">{it.label}</text>
+      <text x={x0 + ww / 2} y={H / 2 + 12} className="tm-val" textAnchor="middle">{((it.value / total) * 100).toFixed(0)}%</text>
+    </g>); x0 += ww; return rect; })}
+  </svg>);
+}
+// Grouped bar — two measures per category side by side (direct comparison). General.
+function GroupedBar({ groups, keys, fmt, colors, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, padL = 40, padR = 12, padT = 14, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const max = Math.max(...groups.flatMap((g) => g.bars.map((b) => b.value))) * 1.1;
+  const gw = plotW / groups.length, bw = (gw * 0.7) / keys.length;
+  const y = (v) => padT + plotH - (v / max) * plotH;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
+    <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} className="ln-axis" />
+    {groups.map((g, gi) => (<g key={gi}>
+      {g.bars.map((b, bi) => { const bx = padL + gw * gi + gw * 0.15 + bw * bi; return (<rect key={bi} x={bx} y={y(b.value)} width={bw - 2} height={padT + plotH - y(b.value)} fill={colors[bi]} className="ln-pt" onClick={() => b.mv && onPick(b.mv)} />); })}
+      <text x={padL + gw * gi + gw / 2} y={H - 2} className="wf-xlab" textAnchor="middle">{g.label}</text>
+    </g>))}
+    {keys.map((k, i) => (<g key={i}><rect x={padL + i * 70} y={2} width={8} height={8} fill={colors[i]} /><text x={padL + i * 70 + 12} y={9} className="ax-lab" textAnchor="start">{k}</text></g>))}
+  </svg>);
+}
+// Quadrant — two metrics with benchmark crosshairs dividing four positioning zones. Relationship.
+function Quadrant({ points, xlab, ylab, xbench, ybench, quad, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, padL = 38, padR = 14, padT = 14, padB = 28;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
+  const xmin = Math.min(...xs, xbench), xmax = Math.max(...xs, xbench), ymin = Math.min(...ys, ybench), ymax = Math.max(...ys, ybench);
+  const xr = (xmax - xmin) * 1.2 || 1, yr = (ymax - ymin) * 1.2 || 1;
+  const px = (v) => padL + 0.08 * plotW + ((v - xmin) / xr) * plotW * 0.84;
+  const py = (v) => padT + plotH - 0.08 * plotH - ((v - ymin) / yr) * plotH * 0.84;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
+    <line x1={px(xbench)} y1={padT} x2={px(xbench)} y2={padT + plotH} className="ln-bench" />
+    <line x1={padL} y1={py(ybench)} x2={padL + plotW} y2={py(ybench)} className="ln-bench" />
+    {points.map((p, i) => (<g key={i} className="ln-pt" onClick={() => p.mv && onPick(p.mv)}>
+      <circle cx={px(p.x)} cy={py(p.y)} r={4.5} className="scat-dot last" />
+      <text x={px(p.x)} y={py(p.y) - 8} className="scat-lab" textAnchor="middle">{p.label}</text>
+    </g>))}
+    <text x={padL + plotW / 2} y={H - 3} className="ax-lab" textAnchor="middle">{xlab}</text>
+    <text x={9} y={padT + plotH / 2} className="ax-lab" textAnchor="middle" transform={`rotate(-90 9 ${padT + plotH / 2})`}>{ylab}</text>
+  </svg>);
+}
+// Small multiples — one mini trend per category on a shared scale (compare shapes). General.
+function SmallMultiples({ series, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, cols = series.length, cw = W / cols, padT = 18, padB = 14, padX = 8;
+  const allv = series.flatMap((s) => s.points.map((p) => p.value));
+  const min = Math.min(...allv), max = Math.max(...allv), r = (max - min) || 1;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
+    {series.map((s, si) => { const x0 = cw * si; const x = (i) => x0 + padX + (i / (s.points.length - 1)) * (cw - padX * 2); const y = (v) => padT + (H - padT - padB) - ((v - min) / r) * (H - padT - padB);
+      return (<g key={si}>
+        <text x={x0 + cw / 2} y={12} className="wf-xlab" textAnchor="middle">{s.seg}</text>
+        <polyline points={s.points.map((p, i) => `${x(i)},${y(p.value)}`).join(" ")} className="idx-line" style={{ stroke: s.color }} />
+        <circle cx={x(s.points.length - 1)} cy={y(s.points[s.points.length - 1].value)} r={2.5} style={{ fill: s.color }} className="ln-pt" onClick={() => onPick(s.points[s.points.length - 1].mv)} />
+      </g>); })}
+  </svg>);
+}
 function BulletPanel({ items, onPick, w = 420, h = 200 }) {
   const W = w, H = h, padL = 108, padR = 52, padT = 8, padB = 8;
   const rowH = (H - padT - padB) / items.length;
@@ -653,6 +728,10 @@ function Widget({ id, catalog, onPick, dim }) {
   if (w.kind === "heatmap") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Heatmap rows={d.rows} cols={d.cols} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "indexed") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <IndexedLine series={d.series} quarters={d.quarters} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "dumbbell") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Dumbbell items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "treemap") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Treemap items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "grouped") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <GroupedBar groups={d.groups} keys={d.keys} colors={d.colors} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "quadrant") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Quadrant points={d.points} xlab={d.xlab} ylab={d.ylab} xbench={d.xbench} ybench={d.ybench} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "small_multiples") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <SmallMultiples series={d.series} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   return null;
 }
 
@@ -791,9 +870,13 @@ const PANEL_ASPECTS = {
   heatmap: ["twothird", "half"],
   indexed: ["half", "third"],
   dumbbell: ["third", "half"],
+  treemap: ["half", "third"],
+  grouped: ["half", "third"],
+  quadrant: ["half", "third"],
+  small_multiples: ["twothird", "half"],
 };
 // information density a panel justifies (heavy grids earn a dominant region; trends are light)
-const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bullet: 2, pareto: 2, heatmap: 2, dumbbell: 2, scatter: 1, indexed: 1, line: 1, stacked_area: 1 };
+const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bullet: 2, pareto: 2, heatmap: 2, dumbbell: 2, treemap: 2, grouped: 2, small_multiples: 2, scatter: 1, indexed: 1, quadrant: 1, line: 1, stacked_area: 1 };
 const CHART_ASPECTS = new Set(["twothird", "half", "third"]);
 // regions carry a weight `w` (space they want); a big region can `split` into lighter sub-regions
 const PARTITIONS = {

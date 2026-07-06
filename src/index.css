@@ -546,3 +546,8 @@ html,body,#root{ height:100%; overflow:hidden; }
 .idx-line{ fill:none; stroke-width:1.5; } .idx-lab{ font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:600; }
 .dmb-link{ stroke-width:1.5; } .dmb-link.up{ stroke:var(--verdant); } .dmb-link.down{ stroke:var(--ember); }
 .dmb-a{ fill:var(--slate-l); } .dmb-b.up{ fill:var(--verdant); } .dmb-b.down{ fill:var(--ember); }
+
+/* batch-2 charts */
+.tm-lab{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; fill:#fff; }
+.tm-val{ font-family:'IBM Plex Mono',monospace; font-size:9px; fill:rgba(255,255,255,.8); }
+.hm-cell.none{ fill:var(--rule); opacity:.4; }
