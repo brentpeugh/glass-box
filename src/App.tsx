@@ -559,8 +559,8 @@ HEADLINE (metric keys for the vital-signs strip — pick 6 that matter to the ${
 Return ONLY this JSON, nothing around it:
 {"thesis":"1-2 sentences, NO numbers — the story that matters for the ${focus.role}","whyRole":"1 sentence, NO numbers — why it matters to the ${focus.role}","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["ids from WIDGETS, most important first"],"partitionPref":"one of: analytical (dense data-grid lead) | hero (one dominant panel + rail) | balanced","scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
 }
-async function curate(focus, catalog) {
-  const finding = E.topFinding();
+async function curate(focus, catalog, targetFinding) {
+  const finding = targetFinding || E.topFinding();   // re-orient around a chosen discovered finding, or the top salient one
   if (!finding) return null;
   const nb = E.findingNeighborhood(finding);
   const prompt = buildCurationPrompt(focus, finding, nb, catalog);
@@ -796,6 +796,38 @@ async function parseIntent(q) {
   let intent = null; try { intent = JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch (e) {}
   return { raw, intent };
 }
+// Map a free-form analytical interest onto the engine's NEUTRAL SALIENCE RANKING. The user drives,
+// but every destination is a real ranked finding — the model interprets intent (fuzzy), the engine
+// governs what exists (rigid). Three honest outcomes: salient (re-orient), present-but-not-salient
+// (say where it ranks), unsupported (refuse — not in the data contract). Echo + confidence let the
+// user catch a misclassification before the surface re-orients.
+function buildFindingClassifyPrompt(text, surface) {
+  return `A user is exploring a governed analytics dashboard. The engine computed a NEUTRAL SALIENCE RANKING of the most statistically anomalous facts in the data. The user typed an analytical interest — map it to ONE ranked finding, or flag it.
+
+RANKED FINDINGS (the discoveries available, most anomalous first):
+${surface.map((f, i) => `#${i + 1} [${f.domain}] ${f.label}`).join("\n")}
+
+AVAILABLE DATA: metrics for retention (NRR/GRR), unit economics (CAC/magic/Rule of 40/margin), growth (ARR/net-new), concentration (segment mix). Breakdown dimensions: segment, quarter, cohort.
+NOT in the data contract: geography/region, product line, individual reps, marketing channel, headcount.
+
+Classify the interest:
+- "salient": it matches one of the ranked findings above → give that finding's rank (1-based).
+- "present": it names a real metric/breakdown in the data, but does NOT match a ranked finding (it isn't among the anomalies) → rank = the closest ranked finding if any, else null.
+- "unsupported": it needs data not in the contract → rank null.
+
+Return ONLY JSON, no fences: {"status":"salient|present|unsupported","rank":<1-based integer or null>,"echo":"<restate the user's interest in one short clause, the system's words>","confidence":"high|medium|low","reason":"<short, only for present/unsupported>"}
+Confidence: high if the interest clearly names a finding or metric; medium if you inferred it; low if the interest is vague.`;
+}
+async function classifyToFinding(text) {
+  const ranked = E.computeSalience().slice(0, 8);
+  const surface = ranked.map((f) => ({ label: f.label, domain: E.findingNeighborhood(f).domain }));
+  const data = await callModel("intent", [{ role: "user", content: buildFindingClassifyPrompt(text, surface) }], 300);
+  const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
+  let c = null; try { c = JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch (e) {}
+  if (!c) return null;
+  const rank = typeof c.rank === "number" && c.rank >= 1 && c.rank <= ranked.length ? c.rank : null;
+  return { status: ["salient", "present", "unsupported"].includes(c.status) ? c.status : "present", rank, echo: String(c.echo || text).slice(0, 120), confidence: ["high", "medium", "low"].includes(c.confidence) ? c.confidence : "low", reason: c.reason ? String(c.reason).slice(0, 140) : "", finding: rank ? ranked[rank - 1] : null };
+}
 function validateIntent(it) {
   if (!it || it.answerable !== true || !SUPPORTED.includes(it.metric)) return null;
   return { metric: it.metric, segment: SEGS.includes(it.segment) ? it.segment : null, basis: it.basis === "trend" ? "trend" : "latest", confidence: typeof it.confidence === "number" ? it.confidence : null };
@@ -853,7 +885,7 @@ async function narrate(q, desc) {
 function QueryBar({ onAsk, busy }) {
   const [v, setV] = useState("");
   const go = () => { if (v.trim() && !busy) { onAsk(v.trim()); setV(""); } };
-  return (<div className="qbar"><input className="qin" value={v} placeholder="Ask about a metric or segment — e.g. “how is SMB retention?” or “show the magic number trend”" onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") go(); }} /><button className="qbtn" disabled={busy || !v.trim()} onClick={go}>{busy ? "…" : "Ask"}</button></div>);
+  return (<div className="qbar"><input className="qin" value={v} placeholder="Name an analytical interest — e.g. “why is efficiency slipping?”, “what about retention?”, “show me by geography”" onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") go(); }} /><button className="qbtn" disabled={busy || !v.trim()} onClick={go}>{busy ? "…" : "Map"}</button></div>);
 }
 function QueryWidget({ desc, onPick }) {
   if (desc.kind === "callout") return (<div className="strip"><div className="block"><Callout mv={desc.data.mv} onPick={(mv) => onPick({ node: mv })} /></div></div>);
@@ -861,9 +893,18 @@ function QueryWidget({ desc, onPick }) {
   if (desc.kind === "waterfall") return (<div className="cpanel"><ChartHeader title={desc.data.title} tag={`NRR ${desc.data.bridge.nrr.toFixed(0)}%`} tagTone={desc.data.bridge.nrr >= 100 ? "good" : "bad"} onTrace={() => onPick({ node: desc.data.mv })} /><Fill render={(cw, ch) => <Waterfall c={desc.data.bridge} w={cw} h={ch} />} /></div>);
   return null;
 }
-function AnswerCard({ item, onPick }) {
+function AnswerCard({ item, onPick, onRecurate }) {
   if (item.status === "loading") return (<div className="ans"><div className="ans-q">“{item.q}”</div><div className="anno"><span className="live-dot" /> interpreting intent → computing → narrating…</div></div>);
-  if (item.status === "declined") return (<div className="ans declined"><div className="ans-q">“{item.q}”</div><div className="ans-decline">Can't answer that from this data{item.reason ? ` — ${item.reason}` : ""}.</div></div>);
+  if (item.status === "declined") return (<div className="ans declined"><div className="ans-q">“{item.q}”</div><div className="ans-decline">{item.echo ? <><b>{item.echo}</b> — </> : ""}not in the data contract{item.reason ? `: ${item.reason}` : ""}. Available breakdowns: segment, quarter, cohort.</div></div>);
+  if (item.status === "classified") {
+    const c = item.classify;
+    return (<div className="ans"><div className="ans-q">“{item.q}”</div>
+      <div className="ans-intent">read this as <b>{c.echo}</b> · confidence {c.confidence}{c.rank ? ` · salience rank #${c.rank}` : ""} — the engine governs what exists; check the reading before it re-orients</div>
+      {c.status === "salient"
+        ? <div className="recur-act"><span className="frame-tick">discovered</span><span>Maps to a ranked finding.</span><button className="test-run" onClick={() => onRecurate(c.finding)}>focus the board on this ›</button></div>
+        : <div className="recur-act"><span className="frame-tick warn">not salient</span><span>In the data, but ranks below the top anomalies{c.rank ? ` (closest: #${c.rank})` : ""}.</span>{c.finding && <button className="test-run" onClick={() => onRecurate(c.finding)}>show it anyway ›</button>}</div>}
+    </div>);
+  }
   const d = item.result;
   return (<div className="ans"><div className="ans-q">“{item.q}”</div>
     <div className="ans-intent">L1 read this as <b>{item.intent.metric.replace(/_/g, " ")}</b>{item.intent.segment ? ` · ${item.intent.segment}` : " · company"} · {item.intent.basis}{item.intent.confidence != null ? ` · confidence ${(item.intent.confidence * 100).toFixed(0)}%` : ""} — then the engine computed it</div>
@@ -939,13 +980,13 @@ function Scorecard({ role, scorecardKeys, onPick }) {
   return (<div className="scorecard">{set.map((m, i) => { const res = resolveKpi(m); return res ? <KpiCell key={i} res={res} onPick={onPick} /> : null; })}</div>);
 }
 
-function QueryModal({ queries, onAsk, onClose, onPick, busy }) {
+function QueryModal({ queries, onAsk, onClose, onPick, onRecurate, busy }) {
   return (<div className="qmodal-bg" onClick={onClose}>
     <div className="qmodal" onClick={(e) => e.stopPropagation()}>
       <div className="qmodal-h"><span className="qmodal-t">Interrogate the engine</span><button className="qmodal-x" onClick={onClose}>✕</button></div>
       <QueryBar onAsk={onAsk} busy={busy} />
-      <div className="qmodal-note">Answers are computed by the engine and traceable — the model only interprets your question and narrates the result.</div>
-      <div className="qmodal-results">{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={onPick} />)}</div>
+      <div className="qmodal-note">Type an analytical interest. The model maps it to a discovered finding and echoes back its reading (with a confidence and salience rank) before re-orienting — or refuses if the data contract doesn't support it. You navigate; the engine governs what's real.</div>
+      <div className="qmodal-results">{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={onPick} onRecurate={onRecurate} />)}</div>
     </div>
   </div>);
 }
@@ -967,35 +1008,43 @@ function AppInner() {
     setQueries((qs) => [{ id, q: text, status: "loading" }, ...qs]);
     const upd = (patch) => setQueries((qs) => qs.map((x) => (x.id === id ? { ...x, ...patch } : x)));
     try {
-      const { intent } = await parseIntent(text);                 // L1: model interprets intent
-      const vi = validateIntent(intent);                          // bounded to engine-supported metrics
-      if (!vi) { upd({ status: "declined", reason: intent && intent.reason ? intent.reason : "not a supported metric" }); return; }
-      const desc = resolveQuery(vi);                              // L2: engine computes (deterministic)
-      if (!desc) { upd({ status: "declined", reason: "that combination isn't computable here" }); return; }
-      const framing = await narrate(text, desc);                 // L3: model narrates (bounded, no numbers)
-      upd({ status: "answered", intent: vi, result: desc, framing });
+      const c = await classifyToFinding(text);                    // map intent → ranked finding (or flag)
+      if (!c) { upd({ status: "declined", reason: "couldn't interpret that interest" }); return; }
+      if (c.status === "unsupported") { upd({ status: "declined", echo: c.echo, reason: c.reason || "" }); return; }
+      upd({ status: "classified", classify: c });                 // echo + confidence → user confirms → recurate
     } catch (e) { upd({ status: "declined", reason: "intent service unavailable" }); }
   }
 
-  async function enter(roleKey) {
-    setRole(roleKey); setPicked(null);
-    if (cache.current[roleKey]) { setState(cache.current[roleKey]); return; }
-    setState({ loading: true, curation: null, spec: null, source: null, rejected: 0, framingRejected: 0, err: null, debug: null });
-    let next;
+  // Re-orientation core. Builds the fully curated surface (read + board + strip) around a target
+  // finding — topFinding() by default, or any discovered finding chosen via the query. Perturbation
+  // and query-recurate are both thin front-ends on this: change what we curate around, rebuild.
+  async function buildCuratedState(roleKey, targetFinding) {
     try {
-      // ONE curation call. The model's single judgment drives both the board (widgetIds, partitionPref)
-      // and the analyst read (thesis, evidence, tests) — they cannot diverge because they share a source.
-      const curation = await curate({ role: roleKey }, catalog);
+      const curation = await curate({ role: roleKey }, catalog, targetFinding);
       if (!curation) throw new Error("no finding to curate");
       const isRetention = curation.finding && E.findingNeighborhood(curation.finding).domain === "retention";
       const lead = isRetention ? ["masking_card"] : ["salient_band"];
       const ids = [...lead, ...(curation.widgetIds || []).filter((id) => !lead.includes(id))];
       const spec = { sections: [{ heading: "", blocks: ids.map((id, i) => (id === "masking_card" || i === 0) ? { widget: id, emphasis: "hero", headline: "", soWhat: i === 0 ? curation.thesis : "" } : { widget: id, emphasis: "standard", headline: "", soWhat: "" }) }] };
-      next = { loading: false, curation, spec, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
+      return { loading: false, curation, spec, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
     } catch (e) {
-      next = { loading: false, curation: null, spec: FALLBACK[roleKey], partitionPref: null, source: "fallback", rejected: 0, framingRejected: 0, err: String(e).slice(0, 120), debug: null };
+      return { loading: false, curation: null, spec: FALLBACK[roleKey], partitionPref: null, source: "fallback", rejected: 0, framingRejected: 0, err: String(e).slice(0, 120), debug: null };
     }
+  }
+  async function enter(roleKey) {
+    setRole(roleKey); setPicked(null);
+    if (cache.current[roleKey]) { setState(cache.current[roleKey]); return; }
+    setState({ loading: true, curation: null, spec: null, source: null, rejected: 0, framingRejected: 0, err: null, debug: null });
+    const next = await buildCuratedState(roleKey, null);
     cache.current[roleKey] = next; setState(next);
+  }
+  // Query-driven re-orientation to a chosen discovered finding — transient (not cached; role tabs
+  // remain the "home" top-finding view). The user drives; the finding is always a real ranked one.
+  async function recurate(targetFinding) {
+    setPicked(null); setShowQuery(false);
+    setState((s) => ({ ...s, loading: true }));
+    const next = await buildCuratedState(role, targetFinding);
+    setState(next);
   }
 
   if (!role) return (<div className="caliper"><EntryScreen onEnter={enter} /></div>);
@@ -1030,7 +1079,7 @@ function AppInner() {
 
       {showBrief && <div className="brief-overlay"><AnalystRead role={role} catalog={catalog} curation={state.curation} onPick={(p) => { setPicked(p); setShowBrief(false); }} onClose={() => setShowBrief(false)} /></div>}
 
-      {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => { setPicked(p); setShowQuery(false); }} busy={queries.some((q) => q.status === "loading")} />}
+      {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => { setPicked(p); setShowQuery(false); }} onRecurate={recurate} busy={queries.some((q) => q.status === "loading")} />}
     </div>
   );
 }
