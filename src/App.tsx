@@ -796,39 +796,42 @@ async function parseIntent(q) {
   let intent = null; try { intent = JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch (e) {}
   return { raw, intent };
 }
-// Map a free-form analytical interest onto the engine's NEUTRAL SALIENCE RANKING. The user drives,
-// but every destination is a real ranked finding — the model interprets intent (fuzzy), the engine
-// governs what exists (rigid). Three honest outcomes: salient (re-orient), present-but-not-salient
-// (say where it ranks), unsupported (refuse — not in the data contract). Echo + confidence let the
-// user catch a misclassification before the surface re-orients.
-function buildFindingClassifyPrompt(text, surface) {
-  return `A user is exploring a governed analytics dashboard. The engine computed a NEUTRAL SALIENCE RANKING of the most statistically anomalous facts in the data. The user typed an analytical interest — map it to ONE ranked finding, or flag it.
+// Domain-first classification: the model's ONLY job is to name the analytical domain the interest
+// is about (or flag unsupported) — a robust, phrasing-independent judgment. The ENGINE then
+// deterministically lists the ranked findings in that domain, decides salient vs present by rank,
+// and lets the user pick any of them. Model does the topic (fuzzy); engine does which findings (rigid).
+const DOMAINS = ["efficiency", "retention", "growth", "concentration"];
+function buildDomainClassifyPrompt(text) {
+  return `A user is exploring a governed analytics dashboard. Classify their analytical interest into ONE analytical DOMAIN, or flag it as unsupported. Do not pick a specific metric — just the domain.
 
-RANKED FINDINGS (the discoveries available, most anomalous first):
-${surface.map((f, i) => `#${i + 1} [${f.domain}] ${f.label}`).join("\n")}
+DOMAINS:
+- efficiency: unit economics — CAC payback, magic number, Rule of 40, gross margin, S&M efficiency
+- retention: NRR, GRR, churn, contraction, expansion, segment retention
+- growth: ARR growth, net new ARR, bookings, quarter-over-quarter momentum
+- concentration: segment mix, ARR concentration, dependence on a segment
 
-AVAILABLE DATA: metrics for retention (NRR/GRR), unit economics (CAC/magic/Rule of 40/margin), growth (ARR/net-new), concentration (segment mix). Breakdown dimensions: segment, quarter, cohort.
-NOT in the data contract: geography/region, product line, individual reps, marketing channel, headcount.
-
-Classify the interest:
-- "salient": it matches one of the ranked findings above → give that finding's rank (1-based). If the interest matches MORE THAN ONE ranked finding (e.g. a domain like "efficiency" that appears several times), map to the HIGHEST-ranked match (the lowest number) — the most salient finding wins.
-- "present": it names a real metric/breakdown in the data, but does NOT match any ranked finding (it isn't among the anomalies at all) → rank = the closest ranked finding if any, else null.
-- "unsupported": it needs data not in the contract → rank null.
+NOT in the data contract (→ unsupported): geography/region, product line, individual reps, marketing channel, headcount, anything not above.
 
 THE USER'S ANALYTICAL INTEREST: "${text}"
 
-Return ONLY JSON, no fences: {"status":"salient|present|unsupported","rank":<1-based integer or null>,"echo":"<restate the user's interest in one short clause, the system's words>","confidence":"high|medium|low","reason":"<short, only for present/unsupported>"}
-Confidence: high if the interest clearly names a finding or metric; medium if you inferred it; low if the interest is vague.`;
+Return ONLY JSON, no fences: {"status":"matched|unsupported","domain":"efficiency|retention|growth|concentration or null","echo":"<restate the interest in one short clause — reflect whether they emphasize current status, a worsening trend, or a specific concern>","confidence":"high|medium|low","reason":"<short, only if unsupported>"}
+Confidence: high if the domain is unambiguous; medium if you inferred it; low if the interest is vague.`;
 }
 async function classifyToFinding(text) {
-  const ranked = E.computeSalience().slice(0, 8);
-  const surface = ranked.map((f) => ({ label: f.label, domain: E.findingNeighborhood(f).domain }));
-  const data = await callModel("intent", [{ role: "user", content: buildFindingClassifyPrompt(text, surface) }], 300);
+  const ranked = E.computeSalience();
+  const data = await callModel("intent", [{ role: "user", content: buildDomainClassifyPrompt(text) }], 220);
   const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
   let c = null; try { const m = raw.replace(/```json|```/g, "").trim(); const a = m.indexOf("{"), z = m.lastIndexOf("}"); c = JSON.parse(a >= 0 && z > a ? m.slice(a, z + 1) : m); } catch (e) {}
   if (!c) return null;
-  const rank = typeof c.rank === "number" && c.rank >= 1 && c.rank <= ranked.length ? c.rank : null;
-  return { status: ["salient", "present", "unsupported"].includes(c.status) ? c.status : "present", rank, echo: String(c.echo || text).slice(0, 120), confidence: ["high", "medium", "low"].includes(c.confidence) ? c.confidence : "low", reason: c.reason ? String(c.reason).slice(0, 140) : "", finding: rank ? ranked[rank - 1] : null };
+  const echo = String(c.echo || text).slice(0, 120), confidence = ["high", "medium", "low"].includes(c.confidence) ? c.confidence : "low";
+  if (c.status === "unsupported" || !DOMAINS.includes(c.domain)) {
+    return { status: "unsupported", echo, confidence, reason: c.reason ? String(c.reason).slice(0, 140) : "" };
+  }
+  // engine lists the ranked findings in the chosen domain (deterministic)
+  const inDomain = ranked.map((f, i) => ({ finding: f, rank: i + 1, domain: E.findingNeighborhood(f).domain })).filter((x) => x.domain === c.domain);
+  if (!inDomain.length) return { status: "present", domain: c.domain, echo, confidence, findings: [] };
+  const salient = inDomain[0].rank <= 3;   // top-3 overall = the salient anomalies
+  return { status: salient ? "salient" : "present", domain: c.domain, echo, confidence, findings: inDomain.slice(0, 5) };
 }
 function validateIntent(it) {
   if (!it || it.answerable !== true || !SUPPORTED.includes(it.metric)) return null;
@@ -902,10 +905,19 @@ function AnswerCard({ item, onPick, onRecurate }) {
   if (item.status === "classified") {
     const c = item.classify;
     return (<div className="ans"><div className="ans-q">“{item.q}”</div>
-      <div className="ans-intent">read this as <b>{c.echo}</b> · confidence {c.confidence}{c.rank ? ` · salience rank #${c.rank}` : ""} — the engine governs what exists; check the reading before it re-orients</div>
-      {c.status === "salient"
-        ? <div className="recur-act"><span className="frame-tick">discovered</span><span>Maps to a ranked finding.</span><button className="test-run" onClick={() => onRecurate(c.finding)}>focus the board on this ›</button></div>
-        : <div className="recur-act"><span className="frame-tick warn">not salient</span><span>In the data, but ranks below the top anomalies{c.rank ? ` (closest: #${c.rank})` : ""}.</span>{c.finding && <button className="test-run" onClick={() => onRecurate(c.finding)}>show it anyway ›</button>}</div>}
+      <div className="ans-intent">read this as <b>{c.echo}</b> · confidence {c.confidence} · {c.status === "salient" ? <><b>{c.domain}</b> is a top anomaly</> : <><b>{c.domain}</b> — present, below the top anomalies</>} — the engine governs what exists</div>
+      {c.findings && c.findings.length > 0
+        ? <div className="recur-list">
+            <div className="recur-lbl">{c.findings.length} {c.domain} finding{c.findings.length > 1 ? "s" : ""} the engine surfaced, ranked by salience:</div>
+            {c.findings.map((x, i) => (
+              <div key={i} className={`recur-row ${i === 0 ? "top" : ""}`}>
+                <span className="recur-rank">#{x.rank}</span>
+                <span className="recur-flabel">{x.finding.label}{i === 0 ? " · default" : ""}</span>
+                <button className="test-run" onClick={() => onRecurate(x.finding)}>focus ›</button>
+              </div>
+            ))}
+          </div>
+        : <div className="recur-act"><span className="frame-tick warn">nothing surfaced</span><span>No {c.domain} finding rose above the noise in this data.</span></div>}
     </div>);
   }
   const d = item.result;

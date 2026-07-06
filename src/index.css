@@ -481,3 +481,12 @@ html,body,#root{ height:100%; overflow:hidden; }
 /* query → recurate: echo card + confirm action */
 .recur-act{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:8px; padding:10px 12px; background:var(--parch); border:1px solid var(--rule); font-size:13px; color:var(--slate-d); }
 .frame-tick.warn{ color:var(--ember); border-color:var(--ember); }
+
+/* query → recurate: ranked findings list within a domain */
+.recur-list{ margin-top:8px; border:1px solid var(--rule); background:var(--parch); }
+.recur-lbl{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:8px 12px; border-bottom:1px solid var(--rule); }
+.recur-row{ display:flex; align-items:center; gap:12px; padding:9px 12px; border-bottom:1px solid var(--rule); }
+.recur-row:last-child{ border-bottom:none; }
+.recur-row.top{ background:rgba(148,121,79,.05); }
+.recur-rank{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--brass); min-width:26px; }
+.recur-flabel{ flex:1; font-size:13px; color:var(--ink); }
