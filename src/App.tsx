@@ -470,14 +470,15 @@ function guardFraming(text) { const t = String(text || ""); const violated = /\d
 // dropped; if what remains isn't viable, we fall back to the deterministic (always-coherent) read.
 // This makes "the thesis is gospel" a structural guarantee, not a request.
 const RELATED_DOMAINS = { retention: ["retention", "concentration"], efficiency: ["efficiency", "growth"], growth: ["growth", "concentration"], concentration: ["concentration", "retention"] };
-function fallbackCuration(finding) {
-  const nb = E.findingNeighborhood(finding);
-  const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => (nb.lenses || RELATED_DOMAINS[nb.domain]).includes(WIDGET_DOMAIN[id]));
+function fallbackCuration(fact) {
+  const nb = E.findingNeighborhood(fact);
+  const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => (nb.lenses || RELATED_DOMAINS[nb.domain] || [nb.domain]).includes(WIDGET_DOMAIN[id]));
+  const evidenceIds = [...new Set([...(fact.mvs || []).map((m) => m.id), ...nb.metricIds])].slice(0, 6);
   return {
-    thesis: `Headline retention is not the real story — a blended figure that clears the benchmark conceals a structurally deteriorating ${finding.worstSeg} segment, and the durability risk is real and localized.`,
-    whyRole: "It changes which risk is decision-relevant: the aggregate reassures while the forward run-rate erodes underneath it.",
-    evidenceIds: [finding.blendedId, finding.worstId], testIds: nb.testIds, widgetIds, partitionPref: null,
-    rationaleTags: ["aggregate conceals segment", "durability risk"], source: "fallback",
+    thesis: `The most statistically anomalous signal in the book is ${fact.label.toLowerCase()} — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.`,
+    whyRole: "It is the largest deviation the engine surfaced from the data, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
+    evidenceIds, testIds: nb.testIds, widgetIds, partitionPref: null,
+    rationaleTags: ["top salient anomaly", nb.domain], source: "fallback",
   };
 }
 function validateCuration(cur, finding, catalog) {
@@ -516,7 +517,7 @@ Return ONLY this JSON, nothing around it:
 {"thesis":"1-2 sentences, NO numbers — the story that matters for the ${focus.role}","whyRole":"1 sentence, NO numbers — why it matters to the ${focus.role}","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["ids from WIDGETS, most important first"],"partitionPref":"one of: analytical (dense data-grid lead) | hero (one dominant panel + rail) | balanced","rationaleTags":["short non-numeric tags"]}`;
 }
 async function curate(focus, catalog) {
-  const qs = E.QUARTERS, finding = E.detectMasking(qs[qs.length - 5], qs[qs.length - 1]);
+  const finding = E.topFinding();
   if (!finding) return null;
   const nb = E.findingNeighborhood(finding);
   const prompt = buildCurationPrompt(focus, finding, nb, catalog);
@@ -939,8 +940,10 @@ function AppInner() {
       // and the analyst read (thesis, evidence, tests) — they cannot diverge because they share a source.
       const curation = await curate({ role: roleKey }, catalog);
       if (!curation) throw new Error("no finding to curate");
-      const ids = ["masking_card", ...(curation.widgetIds || []).filter((id) => id !== "masking_card")];
-      const spec = { sections: [{ heading: "", blocks: ids.map((id) => id === "masking_card" ? { widget: id, emphasis: "hero", headline: "", soWhat: curation.thesis } : { widget: id, emphasis: "standard", headline: "", soWhat: "" }) }] };
+      const isRetention = curation.finding && E.findingNeighborhood(curation.finding).domain === "retention";
+      const lead = isRetention ? ["masking_card"] : [];
+      const ids = [...lead, ...(curation.widgetIds || []).filter((id) => !lead.includes(id))];
+      const spec = { sections: [{ heading: "", blocks: ids.map((id, i) => (id === "masking_card" || i === 0) ? { widget: id, emphasis: "hero", headline: "", soWhat: i === 0 ? curation.thesis : "" } : { widget: id, emphasis: "standard", headline: "", soWhat: "" }) }] };
       next = { loading: false, curation, spec, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
     } catch (e) {
       next = { loading: false, curation: null, spec: FALLBACK[roleKey], partitionPref: null, source: "fallback", rejected: 0, framingRejected: 0, err: String(e).slice(0, 120), debug: null };

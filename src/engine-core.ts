@@ -163,24 +163,44 @@ export function createEngine(bundle: Bundle) {
   // "the thesis is gospel" a deterministic subset check, not a judgment: evidence/tests outside
   // the neighborhood are rejected, and at least one *falsifier* (a test that could weaken the
   // read) must be chosen, so the investigation can't be advocacy. =====
-  function findingNeighborhood(finding: any) {
-    // The masking finding = a SEGMENT structurally underperforms on retention. Its causal neighborhood
-    // — the lenses mechanically implied by that structure — is derived here, ROLE-NEUTRALLY:
-    //   retention (the finding) · acquisition (segment win rate) · efficiency (margin) ·
-    //   trajectory (persistence) · concentration (ARR exposed). The role does NOT shape this set;
-    // it only selects which lens to foreground, so divergence stays emergent in the model's judgment.
-    const [sQ, eQ] = finding.scope.window;
-    const seg = finding.worstSeg;
-    const metricIds = new Set<string>();
-    if (finding.blendedId) metricIds.add(finding.blendedId);
-    if (finding.worstId) metricIds.add(finding.worstId);
-    for (const s of SEGMENTS) { metricIds.add(nrr(s, sQ, eQ).id); metricIds.add(grr(s, sQ, eQ).id); metricIds.add(segArr(s, eQ).id); }
-    metricIds.add(nrr(null, sQ, eQ).id); metricIds.add(grr(null, sQ, eQ).id);
-    metricIds.add(winRate(seg, eQ).id);   // acquisition lens: is the weakness multi-motion?
-    const testIds = ["localize_nrr", "decompose_retention", "localize_winrate", "localize_margin", "persist_growth"];
-    const falsifierIds = ["localize_nrr", "localize_winrate", "localize_margin", "persist_growth"];
-    const lenses = ["retention", "efficiency", "growth", "concentration"];   // widget lenses the finding licenses
-    return { domain: "retention", lenses, metricIds: [...metricIds], testIds, falsifierIds };
+  // ===== DEFINITIONAL ADJACENCY (the semantic layer) =====
+  // Adjacency is NOT computed from co-movement — at 8 quarters that correlation is trend-confounded
+  // and n-starved (verified). It is DEFINITIONAL: metrics cluster by what they *are*, provable from
+  // their formulas. CAC, magic number, and Rule of 40 are all S&M-efficiency / unit-economics ratios;
+  // NRR and GRR are retention with and without expansion. These groupings are defensible edge-by-edge
+  // from the definitions — not tuned to a desired story. This is the standard analytics architecture:
+  // generic data-derived discovery (salience) + an authored, definitional semantic layer (this).
+  const METRIC_CLUSTER: any = {
+    cac: "efficiency", magic: "efficiency", r40: "efficiency", grossMargin: "efficiency", netNew: "efficiency",
+    nrr: "retention", grr: "retention", winRate: "retention",
+    arr: "concentration", qoq: "growth",
+  };
+  const CLUSTER_TESTS: any = {
+    efficiency: { tests: ["localize_margin", "persist_growth"], falsifiers: ["localize_margin", "persist_growth"], lenses: ["efficiency", "growth"] },
+    retention: { tests: ["localize_nrr", "decompose_retention", "localize_winrate"], falsifiers: ["localize_nrr", "localize_winrate"], lenses: ["retention", "concentration"] },
+    growth: { tests: ["persist_growth", "localize_nrr"], falsifiers: ["persist_growth", "localize_nrr"], lenses: ["growth", "concentration"] },
+    concentration: { tests: ["localize_nrr", "localize_winrate"], falsifiers: ["localize_nrr", "localize_winrate"], lenses: ["concentration", "retention"] },
+  };
+  // evidence metrics per cluster — the causally/definitionally related values (all traceable)
+  function clusterEvidence(cluster: string, sQ: string, eQ: string): string[] {
+    const ids = new Set<string>();
+    const add = (f: () => any) => { try { const m = f(); if (m && !isNaN(m.value)) ids.add(m.id); } catch { } };
+    if (cluster === "efficiency") { add(() => cacPayback(eQ)); add(() => magicNumber(eQ)); add(() => ruleOf40(eQ)); add(() => grossMargin(eQ)); add(() => netNewArr(eQ)); }
+    else if (cluster === "retention") { for (const s of SEGMENTS) { add(() => nrr(s, sQ, eQ)); add(() => grr(s, sQ, eQ)); add(() => segArr(s, eQ)); } add(() => nrr(null, sQ, eQ)); add(() => grr(null, sQ, eQ)); add(() => winRate(SEGMENTS[0], eQ)); }
+    else if (cluster === "growth") { add(() => qoqGrowth(eQ)); add(() => netNewArr(eQ)); add(() => companyArr(eQ)); for (const s of SEGMENTS) add(() => segArr(s, eQ)); }
+    else { for (const s of SEGMENTS) add(() => segArr(s, eQ)); add(() => entShare(eQ)); }
+    return [...ids];
+  }
+  // The neighborhood of a SALIENT FACT — derived from the fact's metric cluster, generically.
+  // Works for whatever the statistics surfaced: an efficiency fact yields the efficiency neighborhood,
+  // a retention fact the retention neighborhood — same code, keyed off the fact's structure.
+  function findingNeighborhood(fact: any) {
+    const eQ = QUARTERS[QUARTERS.length - 1], sQ = QUARTERS[QUARTERS.length - 5];
+    const cluster = METRIC_CLUSTER[fact.metric] || "efficiency";
+    const ct = CLUSTER_TESTS[cluster];
+    const metricIds = new Set<string>(clusterEvidence(cluster, sQ, eQ));
+    for (const mv of (fact.mvs || [])) if (mv && mv.id) metricIds.add(mv.id);   // the fact's own evidence
+    return { domain: cluster, lenses: ct.lenses, metricIds: [...metricIds], testIds: ct.tests, falsifierIds: ct.falsifiers };
   }
 
   // ===== NEUTRAL STATISTICAL SURFACE + GENERIC SALIENCE =====
@@ -197,22 +217,22 @@ export function createEngine(bundle: Bundle) {
     const BK: any = { nrr: BENCH.nrr, grr: BENCH.grr, gm: BENCH.gross_margin, magic: BENCH.magic_number, cac: BENCH.cac_payback_mo, r40: BENCH.rule_of_40 };
     // DIM 1 — benchmark deviation (relative, adverse magnitude)
     const benched: any[] = [
-      ["Blended NRR", () => nrr(null, sQ, eQ), BK.nrr], ["Blended GRR", () => grr(null, sQ, eQ), BK.grr],
-      ["Gross Margin", () => grossMargin(eQ), BK.gm], ["Magic #", () => magicNumber(eQ), BK.magic],
-      ["CAC Payback", () => cacPayback(eQ), BK.cac], ["Rule of 40", () => ruleOf40(eQ), BK.r40],
+      ["Blended NRR", () => nrr(null, sQ, eQ), BK.nrr, "nrr"], ["Blended GRR", () => grr(null, sQ, eQ), BK.grr, "grr"],
+      ["Gross Margin", () => grossMargin(eQ), BK.gm, "grossMargin"], ["Magic #", () => magicNumber(eQ), BK.magic, "magic"],
+      ["CAC Payback", () => cacPayback(eQ), BK.cac, "cac"], ["Rule of 40", () => ruleOf40(eQ), BK.r40, "r40"],
     ];
-    for (const s of SEGMENTS) { benched.push([`${s} NRR`, () => nrr(s, sQ, eQ), BK.nrr]); benched.push([`${s} GRR`, () => grr(s, sQ, eQ), BK.grr]); }
-    for (const [label, mvf, b] of benched) { const mv = (() => { try { return mvf(); } catch { return null; } })(); if (!mv || isNaN(mv.value)) continue; const adverse = b.good === "above" ? (b.threshold - mv.value) / Math.abs(b.threshold) : (mv.value - b.threshold) / Math.abs(b.threshold); facts.push({ dim: "benchmark", label: `${label} vs benchmark`, raw: adverse, mvs: [mv] }); }
+    for (const s of SEGMENTS) { benched.push([`${s} NRR`, () => nrr(s, sQ, eQ), BK.nrr, "nrr"]); benched.push([`${s} GRR`, () => grr(s, sQ, eQ), BK.grr, "grr"]); }
+    for (const [label, mvf, b, metric] of benched) { const mv = (() => { try { return mvf(); } catch { return null; } })(); if (!mv || isNaN(mv.value)) continue; const adverse = b.good === "above" ? (b.threshold - mv.value) / Math.abs(b.threshold) : (mv.value - b.threshold) / Math.abs(b.threshold); facts.push({ dim: "benchmark", metric, label: `${label} vs benchmark`, raw: adverse, mvs: [mv] }); }
     // DIM 2 — cross-segment dispersion
-    const segM: any[] = [["NRR", (s: string) => nrr(s, sQ, eQ)], ["GRR", (s: string) => grr(s, sQ, eQ)], ["Win rate", (s: string) => winRate(s, eQ)], ["ARR", (s: string) => segArr(s, eQ)]];
-    for (const [label, mvf] of segM) { const mvs = SEGMENTS.map((s) => { try { return mvf(s); } catch { return null; } }).filter((m) => m && !isNaN(m.value)); if (mvs.length < 2) continue; const vals = mvs.map((m: any) => m.value); const mean = vals.reduce((a: number, b: number) => a + b, 0) / vals.length; facts.push({ dim: "dispersion", label: `${label} spread across segments`, raw: (Math.max(...vals) - Math.min(...vals)) / Math.abs(mean), mvs }); }
+    const segM: any[] = [["NRR", (s: string) => nrr(s, sQ, eQ), "nrr"], ["GRR", (s: string) => grr(s, sQ, eQ), "grr"], ["Win rate", (s: string) => winRate(s, eQ), "winRate"], ["ARR", (s: string) => segArr(s, eQ), "arr"]];
+    for (const [label, mvf, metric] of segM) { const mvs = SEGMENTS.map((s) => { try { return mvf(s); } catch { return null; } }).filter((m) => m && !isNaN(m.value)); if (mvs.length < 2) continue; const vals = mvs.map((m: any) => m.value); const mean = vals.reduce((a: number, b: number) => a + b, 0) / vals.length; facts.push({ dim: "dispersion", metric, label: `${label} spread across segments`, raw: (Math.max(...vals) - Math.min(...vals)) / Math.abs(mean), mvs }); }
     // DIM 3 — aggregate-component divergence (the "masking" pattern, computed generically)
-    for (const [label, bf, sf] of [["NRR", () => nrr(null, sQ, eQ), (s: string) => nrr(s, sQ, eQ)], ["GRR", () => grr(null, sQ, eQ), (s: string) => grr(s, sQ, eQ)]] as any[]) { const bl = (() => { try { return bf(); } catch { return null; } })(); const segMv = SEGMENTS.map((s) => { try { return sf(s); } catch { return null; } }).filter((m) => m && !isNaN(m.value)); if (!bl || !segMv.length) continue; const worst = segMv.reduce((a: any, b: any) => b.value < a.value ? b : a); facts.push({ dim: "divergence", label: `${label} blended vs worst segment`, raw: (bl.value - worst.value) / Math.abs(bl.value), mvs: [bl, worst] }); }
+    for (const [label, bf, sf, metric] of [["NRR", () => nrr(null, sQ, eQ), (s: string) => nrr(s, sQ, eQ), "nrr"], ["GRR", () => grr(null, sQ, eQ), (s: string) => grr(s, sQ, eQ), "grr"]] as any[]) { const bl = (() => { try { return bf(); } catch { return null; } })(); const segMv = SEGMENTS.map((s) => { try { return sf(s); } catch { return null; } }).filter((m) => m && !isNaN(m.value)); if (!bl || !segMv.length) continue; const worst = segMv.reduce((a: any, b: any) => b.value < a.value ? b : a); facts.push({ dim: "divergence", metric, label: `${label} blended vs worst segment`, raw: (bl.value - worst.value) / Math.abs(bl.value), mvs: [bl, worst] }); }
     // DIM 4 — adverse trend
-    const ser: any[] = [["Gross Margin", (q: string) => grossMargin(q), "above"], ["Magic #", (q: string) => magicNumber(q), "above"], ["CAC Payback", (q: string) => cacPayback(q), "below"], ["QoQ growth", (q: string) => qoqGrowth(q), "above"]];
-    for (const [label, mvf, good] of ser) { const mvs = QUARTERS.map((q) => { try { return mvf(q); } catch { return null; } }).filter((m: any) => m && !isNaN(m.value)); if (mvs.length < 3) continue; const ys = mvs.map((m: any) => m.value); const sl = fitSlope(ys); const lvl = Math.abs(ys.reduce((a, b) => a + b, 0) / ys.length) || 1; facts.push({ dim: "trend", label: `${label} adverse trend`, raw: (good === "above" ? -sl : sl) / lvl * ys.length, mvs: [mvs[mvs.length - 1]] }); }
+    const ser: any[] = [["Gross Margin", (q: string) => grossMargin(q), "above", "grossMargin"], ["Magic #", (q: string) => magicNumber(q), "above", "magic"], ["CAC Payback", (q: string) => cacPayback(q), "below", "cac"], ["QoQ growth", (q: string) => qoqGrowth(q), "above", "qoq"]];
+    for (const [label, mvf, good, metric] of ser) { const mvs = QUARTERS.map((q) => { try { return mvf(q); } catch { return null; } }).filter((m: any) => m && !isNaN(m.value)); if (mvs.length < 3) continue; const ys = mvs.map((m: any) => m.value); const sl = fitSlope(ys); const lvl = Math.abs(ys.reduce((a, b) => a + b, 0) / ys.length) || 1; facts.push({ dim: "trend", metric, label: `${label} adverse trend`, raw: (good === "above" ? -sl : sl) / lvl * ys.length, mvs: [mvs[mvs.length - 1]] }); }
     // DIM 5 — concentration
-    { const mvs = SEGMENTS.map((s) => { try { return segArr(s, eQ); } catch { return null; } }).filter((m) => m && !isNaN(m.value)); const tot = mvs.reduce((a: number, m: any) => a + m.value, 0); const top = mvs.reduce((a: any, b: any) => b.value > a.value ? b : a); facts.push({ dim: "concentration", label: "ARR concentration (top segment)", raw: top.value / tot - 1 / SEGMENTS.length, mvs }); }
+    { const mvs = SEGMENTS.map((s) => { try { return segArr(s, eQ); } catch { return null; } }).filter((m) => m && !isNaN(m.value)); const tot = mvs.reduce((a: number, m: any) => a + m.value, 0); const top = mvs.reduce((a: any, b: any) => b.value > a.value ? b : a); facts.push({ dim: "concentration", metric: "arr", label: "ARR concentration (top segment)", raw: top.value / tot - 1 / SEGMENTS.length, mvs }); }
     // standardize WITHIN each dimension (z-score), rank globally — no cross-dimension weighting
     const dims = [...new Set(facts.map((f) => f.dim))];
     for (const d of dims) { const fs = facts.filter((f) => f.dim === d); const vals = fs.map((f) => f.raw); const mean = vals.reduce((a, b) => a + b, 0) / vals.length; const sd = Math.sqrt(vals.reduce((a, v) => a + (v - mean) ** 2, 0) / vals.length) || 1; for (const f of fs) f.z = (f.raw - mean) / sd; }
@@ -220,6 +240,7 @@ export function createEngine(bundle: Bundle) {
     facts.forEach((f, i) => { f.id = `S${i}`; });
     return facts;
   }
+  function topFinding() { const f = computeSalience()[0]; return f ? { ...f, scope: { window: [QUARTERS[QUARTERS.length - 5], QUARTERS[QUARTERS.length - 1]] } } : null; }
 
   function runDetectors(): Finding[] {
     const F: Finding[] = []; let id = 0;
@@ -277,5 +298,5 @@ export function createEngine(bundle: Bundle) {
     return { kind: "col_sum", col: "", n: 0, rows: [] };   // unknown kind → safe empty, never throw
   }
 
-  return { store, QUARTERS, SEGMENTS, BENCH, companyArr, segArr, cogsTotal, smTotal, revenueQ, netNewArr, grossNewBookings, magicNumber, grossMargin, cacPayback, ruleOf40, qoqGrowth, nrr, grr, cohortBridge, entShare, top10Share, winRate, runDetectors, detectMasking, resolveLeaf, TEST_MENU, runTest, winRateBy, nrrBySeg, marginBySeg, findingNeighborhood, computeSalience };
+  return { store, QUARTERS, SEGMENTS, BENCH, companyArr, segArr, cogsTotal, smTotal, revenueQ, netNewArr, grossNewBookings, magicNumber, grossMargin, cacPayback, ruleOf40, qoqGrowth, nrr, grr, cohortBridge, entShare, top10Share, winRate, runDetectors, detectMasking, resolveLeaf, TEST_MENU, runTest, winRateBy, nrrBySeg, marginBySeg, findingNeighborhood, computeSalience, topFinding };
 }
