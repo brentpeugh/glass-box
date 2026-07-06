@@ -398,6 +398,18 @@ function buildCatalog() {
   const smBars = Q1.map((q) => ({ q, value: E.smTotal(q).value, mv: E.smTotal(q) }));
   const magicLine = Q1.map((q) => ({ q, value: E.magicNumber(q).value, mv: E.magicNumber(q) }));
   const accelLine = Q1.map((q) => ({ q, value: E.qoqGrowth(q).value * 100, mv: E.qoqGrowth(q) }));
+  // ---- batch-1 general charts (relationship / cumulative / heatmap / indexed / start-vs-end) ----
+  const scatterEG = Q1.map((q) => ({ x: E.magicNumber(q).value, y: E.qoqGrowth(q).value * 100, label: q, mv: E.magicNumber(q) }));
+  const paretoArr = E.SEGMENTS.map((sg) => ({ label: sg, value: E.segArr(sg, "25Q4").value, mv: E.segArr(sg, "25Q4") }));
+  const hmRows = [
+    { label: "Magic #", f: (q) => E.magicNumber(q), thr: E.BENCH.magic_number.threshold, good: "above" },
+    { label: "CAC (mo)", f: (q) => E.cacPayback(q), thr: E.BENCH.cac_payback_mo.threshold, good: "below" },
+    { label: "Rule of 40", f: (q) => E.ruleOf40(q), thr: E.BENCH.rule_of_40.threshold, good: "above" },
+    { label: "Gross Mgn", f: (q) => E.grossMargin(q), thr: E.BENCH.gross_margin.threshold, good: "above" },
+  ];
+  const heatmapMetrics = { cols: Q1, rows: hmRows.map((m) => ({ label: m.label, cells: Q1.map((q) => { const mv = m.f(q); const ok = m.good === "above" ? mv.value >= m.thr : mv.value <= m.thr; return { tone: ok ? "good" : "bad", mv, text: "" }; }) })) };
+  const indexedArr = { series: segSeries.map((s) => ({ seg: s.seg, color: s.color, points: s.points })), quarters: E.QUARTERS };
+  const dumbbellRet = E.SEGMENTS.map((sg) => { const g = E.grr(sg, "24Q4", "25Q4"), n = E.nrr(sg, "24Q4", "25Q4"); return { label: sg, a: g.value, b: n.value, mv: n }; });
   return {
     masking_card: { kind: "finding_card", polarity: "bad", desc: "Blended NRR looks healthy but conceals an underwater segment (SMB).", data: { finding: masking } },
     salient_band: { kind: "finding_card", polarity: "bad", title: "Top salient anomaly", desc: "The most statistically anomalous signal the engine surfaced.", data: {} },
@@ -416,6 +428,11 @@ function buildCatalog() {
     hbar_nrr: { kind: "hbar", polarity: "bad", desc: "Net revenue retention ranked by segment against the 100% benchmark — shows the retention spread at a glance.", data: { title: "NRR by segment", benchmark: 100, fmt: (v) => `${v.toFixed(0)}%`, items: E.SEGMENTS.map((sg) => { const mv = E.nrr(sg, "24Q4", "25Q4"); return { label: sg, value: mv.value, mv, tone: mv.value >= 100 ? "good" : "bad" }; }) } },
     metric_matrix: { kind: "matrix", polarity: "bad", desc: "Every efficiency and durability metric by quarter — the full time-series grid, tone-coded against benchmark. The densest single view of the trajectory.", data: {} },
     efficiency_bullets: { kind: "bullet", polarity: "bad", desc: "Capital-efficiency metrics (magic number, CAC payback, Rule of 40) against their benchmarks as bullet gauges.", data: { title: "Efficiency vs targets", items: (() => { const mag = E.magicNumber("25Q4"), cac = E.cacPayback("25Q4"), r40 = E.ruleOf40("25Q4"); return [{ label: "Magic #", mv: mag, value: mag.value, target: mag.basis.thr, good: mag.basis.good, max: 1.0, fmt: (v) => `${v.toFixed(2)}x` }, { label: "CAC (mo)", mv: cac, value: cac.value, target: cac.basis.thr, good: cac.basis.good, max: 30, fmt: (v) => `${v.toFixed(0)}mo` }, { label: "Rule of 40", mv: r40, value: r40.value, target: r40.basis.thr, good: r40.basis.good, max: 60, fmt: (v) => `${v.toFixed(0)}` }]; })() } },
+    scatter_eff_growth: { kind: "scatter", polarity: "bad", desc: "Sales efficiency (magic number) plotted against ARR growth, quarter by quarter — shows whether growth is being bought with declining efficiency.", data: { title: "Efficiency vs growth", points: scatterEG, xlab: "Magic #", ylab: "QoQ growth %" } },
+    pareto_arr: { kind: "pareto", polarity: "bad", desc: "ARR by segment, ranked, with the cumulative share curve — how concentrated revenue is in the top segment.", data: { title: "ARR concentration (Pareto)", items: paretoArr, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
+    heatmap_metrics: { kind: "heatmap", polarity: "bad", desc: "Every efficiency metric across every quarter, tone-coded against benchmark — the fastest scan of where and when the book breaches.", data: { title: "Efficiency heatmap", ...heatmapMetrics } },
+    indexed_arr: { kind: "indexed", polarity: "neutral", desc: "Segment ARR rebased to 100 at the first quarter — compares growth rates across segments regardless of size.", data: { title: "Indexed ARR growth by segment", ...indexedArr } },
+    dumbbell_ret: { kind: "dumbbell", polarity: "bad", desc: "Gross vs net retention per segment — the gap is the expansion contribution; where the dot moves left, contraction outweighs expansion.", data: { title: "GRR → NRR by segment", items: dumbbellRet, fmt: (v) => `${v.toFixed(0)}%` } },
   };
 }
 
@@ -471,6 +488,95 @@ function HBar({ items, benchmark, fmt, onPick, w = 420, h = 200 }) {
       <text x={padL - 8} y={cy + 4} className="wf-xlab" textAnchor="end">{it.label}</text>
       <rect x={padL} y={cy - bh / 2} width={Math.max(x(it.value) - padL, 1)} height={bh} className={`hbar ${it.tone || ""}`} />
       <text x={x(it.value) + 6} y={cy + 4} className="dlab" textAnchor="start">{fmt(it.value)}</text>
+    </g>); })}
+  </svg>);
+}
+// Scatter — two metrics plotted against each other (relationship view). General: any metric pair.
+function Scatter({ points, xlab, ylab, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, padL = 40, padR = 16, padT = 16, padB = 30;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
+  const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
+  const xr = (xmax - xmin) || 1, yr = (ymax - ymin) || 1;
+  const px = (v) => padL + 0.06 * plotW + ((v - xmin) / xr) * plotW * 0.88;
+  const py = (v) => padT + plotH - 0.06 * plotH - ((v - ymin) / yr) * plotH * 0.88;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
+    <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} className="ln-axis" />
+    <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ln-axis" />
+    <polyline points={points.map((p) => `${px(p.x)},${py(p.y)}`).join(" ")} className="scat-path" />
+    {points.map((p, i) => (<g key={i} className="ln-pt" onClick={() => p.mv && onPick(p.mv)}>
+      <circle cx={px(p.x)} cy={py(p.y)} r={i === points.length - 1 ? 5 : 3.5} className={`scat-dot ${i === points.length - 1 ? "last" : ""}`} />
+      {p.label && <text x={px(p.x)} y={py(p.y) - 8} className="scat-lab" textAnchor="middle">{p.label}</text>}
+    </g>))}
+    <text x={padL + plotW / 2} y={H - 3} className="ax-lab" textAnchor="middle">{xlab}</text>
+    <text x={9} y={padT + plotH / 2} className="ax-lab" textAnchor="middle" transform={`rotate(-90 9 ${padT + plotH / 2})`}>{ylab}</text>
+  </svg>);
+}
+// Pareto — sorted bars + cumulative share curve (concentration / share-of-total). General.
+function Pareto({ items, fmt, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, padL = 40, padR = 40, padT = 14, padB = 26;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const sorted = items.slice().sort((a, b) => b.value - a.value);
+  const total = sorted.reduce((s, x) => s + x.value, 0) || 1;
+  const max = Math.max(...sorted.map((i) => i.value)) * 1.1;
+  const bw = plotW / sorted.length, bar = bw * 0.6;
+  let cum = 0; const cumPts = sorted.map((it, i) => { cum += it.value; return { x: padL + bw * i + bw / 2, y: padT + plotH - (cum / total) * plotH, pct: cum / total }; });
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
+    {sorted.map((it, i) => { const bh = (it.value / max) * plotH; return (<g key={i} className="ln-pt" onClick={() => it.mv && onPick(it.mv)}>
+      <rect x={padL + bw * i + (bw - bar) / 2} y={padT + plotH - bh} width={bar} height={bh} className="par-bar" />
+      <text x={padL + bw * i + bw / 2} y={H - 2} className="wf-xlab" textAnchor="middle">{it.label}</text>
+    </g>); })}
+    <polyline points={cumPts.map((p) => `${p.x},${p.y}`).join(" ")} className="par-cum" />
+    {cumPts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={2.5} className="par-cum-dot" />)}
+    <text x={W - 2} y={cumPts[cumPts.length - 1].y - 4} className="dlab" textAnchor="end">100%</text>
+  </svg>);
+}
+// Heatmap — metric × quarter grid, tone-coded vs benchmark (dense multi-metric scan). General.
+function Heatmap({ rows, cols, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, padL = 96, padT = 18, padR = 8, padB = 6;
+  const gw = (W - padL - padR) / cols.length, gh = (H - padT - padB) / rows.length;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
+    {cols.map((c, j) => <text key={j} x={padL + gw * j + gw / 2} y={padT - 6} className="wf-xlab" textAnchor="middle">{c}</text>)}
+    {rows.map((r, i) => (<g key={i}>
+      <text x={padL - 6} y={padT + gh * i + gh / 2 + 3} className="wf-xlab" textAnchor="end">{r.label}</text>
+      {r.cells.map((cell, j) => (<g key={j} className="ln-pt" onClick={() => cell.mv && onPick(cell.mv)}>
+        <rect x={padL + gw * j + 1} y={padT + gh * i + 1} width={gw - 2} height={gh - 2} className={`hm-cell ${cell.tone}`} style={{ opacity: cell.intensity != null ? 0.25 + 0.7 * cell.intensity : 1 }} />
+        {cell.text && <text x={padL + gw * j + gw / 2} y={padT + gh * i + gh / 2 + 3} className="hm-txt" textAnchor="middle">{cell.text}</text>}
+      </g>))}
+    </g>))}
+  </svg>);
+}
+// Indexed line — series rebased to 100 at t0 (compare growth rates regardless of level). General.
+function IndexedLine({ series, quarters, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, padL = 36, padR = 46, padT = 14, padB = 22;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const idx = series.map((s) => ({ ...s, pts: s.points.map((p) => ({ ...p, iv: (p.value / (s.points[0].value || 1)) * 100 })) }));
+  const allv = idx.flatMap((s) => s.pts.map((p) => p.iv));
+  const min = Math.min(...allv, 100), max = Math.max(...allv, 100), r = (max - min) || 1;
+  const x = (i) => padL + (i / (quarters.length - 1)) * plotW, y = (v) => padT + plotH - ((v - min) / r) * plotH;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
+    <line x1={padL} y1={y(100)} x2={padL + plotW} y2={y(100)} className="ln-bench" /><text x={padL + plotW + 3} y={y(100) + 3} className="ln-bench-lab" textAnchor="start">100</text>
+    {idx.map((s, si) => (<g key={si}>
+      <polyline points={s.pts.map((p, i) => `${x(i)},${y(p.iv)}`).join(" ")} className="idx-line" style={{ stroke: s.color }} />
+      <text x={padL + plotW + 3} y={y(s.pts[s.pts.length - 1].iv) + 3} className="idx-lab" style={{ fill: s.color }} textAnchor="start">{s.seg}</text>
+      {s.pts.map((p, i) => <circle key={i} cx={x(i)} cy={y(p.iv)} r={2} style={{ fill: s.color }} className="ln-pt" onClick={() => p.mv && onPick(p.mv)} />)}
+    </g>))}
+  </svg>);
+}
+// Dumbbell — start vs end per category (change over the window, at a glance). General.
+function Dumbbell({ items, fmt, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, padL = 100, padR = 50, padT = 14, padB = 10;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const all = items.flatMap((i) => [i.a, i.b]);
+  const min = Math.min(...all), max = Math.max(...all), r = (max - min) || 1;
+  const x = (v) => padL + ((v - min) / r) * plotW, gap = plotH / items.length;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
+    {items.map((it, i) => { const cy = padT + gap * i + gap / 2; const up = it.b >= it.a; return (<g key={i} className="ln-pt" onClick={() => it.mv && onPick(it.mv)}>
+      <text x={padL - 8} y={cy + 4} className="wf-xlab" textAnchor="end">{it.label}</text>
+      <line x1={x(it.a)} y1={cy} x2={x(it.b)} y2={cy} className={`dmb-link ${up ? "up" : "down"}`} />
+      <circle cx={x(it.a)} cy={cy} r={3.5} className="dmb-a" />
+      <circle cx={x(it.b)} cy={cy} r={4.5} className={`dmb-b ${up ? "up" : "down"}`} />
+      <text x={x(it.b) + (x(it.b) >= x(it.a) ? 8 : -8)} y={cy + 4} className="dlab" textAnchor={x(it.b) >= x(it.a) ? "start" : "end"}>{fmt(it.b)}</text>
     </g>); })}
   </svg>);
 }
@@ -542,6 +648,11 @@ function Widget({ id, catalog, onPick, dim }) {
   if (w.kind === "bullet") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <BulletPanel items={d.items} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "table") return (<div className="tpanel"><ChartHeader title="Segment breakdown" /><SegmentTable onPick={onPick} /></div>);
   if (w.kind === "waterfall") return (<div className="cpanel"><ChartHeader title={d.title} tag={`NRR ${d.bridge.nrr.toFixed(0)}%`} tagTone={d.bridge.nrr >= 100 ? "good" : "bad"} onTrace={() => onPick({ node: d.mv })} /><Fill render={(cw, ch) => <Waterfall c={d.bridge} w={cw} h={ch} />} /></div>);
+  if (w.kind === "scatter") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Scatter points={d.points} xlab={d.xlab} ylab={d.ylab} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "pareto") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Pareto items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "heatmap") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Heatmap rows={d.rows} cols={d.cols} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "indexed") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <IndexedLine series={d.series} quarters={d.quarters} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "dumbbell") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Dumbbell items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   return null;
 }
 
@@ -675,9 +786,14 @@ const PANEL_ASPECTS = {
   waterfall: ["third", "half"],
   hbar: ["third", "half"],
   bullet: ["third", "half"],
+  scatter: ["half", "third"],
+  pareto: ["half", "third"],
+  heatmap: ["twothird", "half"],
+  indexed: ["half", "third"],
+  dumbbell: ["third", "half"],
 };
 // information density a panel justifies (heavy grids earn a dominant region; trends are light)
-const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bullet: 2, line: 1, stacked_area: 1 };
+const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bullet: 2, pareto: 2, heatmap: 2, dumbbell: 2, scatter: 1, indexed: 1, line: 1, stacked_area: 1 };
 const CHART_ASPECTS = new Set(["twothird", "half", "third"]);
 // regions carry a weight `w` (space they want); a big region can `split` into lighter sub-regions
 const PARTITIONS = {
