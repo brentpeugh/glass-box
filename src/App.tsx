@@ -166,6 +166,33 @@ function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
     </div>
   );
 }
+function TrustPanel({ audit, onClose }) {
+  return (<div className="brief">
+    <div className="brief-head"><span className="brief-tag">TRUST CONTRACT</span><span className="brief-src fallback">the boundary, made explicit</span><button className="brief-x" onClick={onClose}>✕</button></div>
+    <div className="brief-sec">
+      <div className="brief-lbl">The boundary — what each layer may do</div>
+      <div className="tc-grid">
+        <div className="tc-col"><div className="tc-h ok">The model MAY</div><ul><li>frame the finding in prose</li><li>select evidence, tests, and widgets from the engine's menus</li><li>choose the role's lens and the vital-signs metrics</li></ul></div>
+        <div className="tc-col"><div className="tc-h no">The model MAY NOT</div><ul><li>author any number — framing is numeral-guarded</li><li>cite evidence outside the finding's neighborhood</li><li>invent a finding, metric, test, or widget</li></ul></div>
+        <div className="tc-col"><div className="tc-h eng">The engine GUARANTEES</div><ul><li>every value computed deterministically, traceable to source rows</li><li>coherence enforced — off-neighborhood selections rejected</li><li>the finding is data-derived by generic salience, never planted</li></ul></div>
+      </div>
+    </div>
+    <div className="brief-sec">
+      <div className="brief-lbl">The data contract — what this system can and cannot answer</div>
+      <div className="tc-contract">
+        <div className="tc-line"><span className="tc-yes">ANSWERABLE</span><span>retention (NRR/GRR/churn) · unit economics (CAC/magic/Rule of 40/margin) · growth (ARR/net-new) · concentration (segment mix) — broken down by segment, quarter, cohort</span></div>
+        <div className="tc-line"><span className="tc-no">REFUSED</span><span>geography/region · product line · individual reps · marketing channel · headcount — not in the data contract, so the system declines rather than fabricates</span></div>
+      </div>
+    </div>
+    <div className="brief-sec">
+      <div className="brief-lbl">AI audit log — every model decision this session, and how the engine governed it</div>
+      <div className="tc-audit">
+        {audit.length === 0 ? <div className="tc-empty">No model actions yet this session.</div>
+          : audit.map((e, i) => (<div key={i} className={`tc-row ${e.kind}`}><span className="tc-kind">{e.kind}</span><span className="tc-detail">{e.kind === "curation" && e.finding ? <><b>{e.finding}</b> — </> : ""}{e.detail}</span></div>))}
+      </div>
+    </div>
+  </div>);
+}
 function TraceDrawer({ picked, onClose }) {
   if (!picked) return null;
   const node = picked.node;
@@ -1028,6 +1055,11 @@ function AppInner() {
   const cache = React.useRef({});
   const [showQuery, setShowQuery] = useState(false);
   const [showBrief, setShowBrief] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showTrust, setShowTrust] = useState(false);
+  const audit = React.useRef([]);
+  const [auditN, setAuditN] = useState(0);
+  const pushAudit = (entry) => { audit.current = [{ ...entry, ts: Date.now() }, ...audit.current].slice(0, 60); setAuditN((n) => n + 1); };
   useEffect(() => { const h = (e) => { if (e.key === "`" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); setShowDebug((v) => !v); } }; window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, []);
 
   async function handleQuery(text) {
@@ -1037,6 +1069,7 @@ function AppInner() {
     try {
       const c = await classifyQuery(text);
       if (!c) { upd({ status: "failed", reason: "couldn't read that — try rephrasing the interest" }); return; }
+      pushAudit({ kind: "query", role, detail: `"${text}" → ${c.mode}${c.echo ? ` (${c.echo})` : ""}` });
       if (c.mode === "unsupported") { upd({ status: "declined", echo: c.echo, reason: c.reason || "" }); return; }
       if (c.mode === "answer") {
         if (!c.intent) { upd({ status: "failed", reason: "couldn't map that to a supported metric" }); return; }
@@ -1071,7 +1104,12 @@ function AppInner() {
       const lead = isRetention ? ["masking_card"] : ["salient_band"];
       const ids = [...lead, ...(curation.widgetIds || []).filter((id) => !lead.includes(id))];
       const spec = { sections: [{ heading: "", blocks: ids.map((id, i) => (id === "masking_card" || i === 0) ? { widget: id, emphasis: "hero", headline: "", soWhat: i === 0 ? curation.thesis : "" } : { widget: id, emphasis: "standard", headline: "", soWhat: "" }) }] };
-      return { loading: false, curation, spec, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
+      const nb = curation.finding ? E.findingNeighborhood(curation.finding) : { lenses: [] };
+      const candidates = Object.keys(WIDGET_DOMAIN).filter((id) => (nb.lenses || []).includes(WIDGET_DOMAIN[id])).length;
+      const rows = BASE_DS ? BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length : 0;
+      const stats = { selected: (curation.widgetIds || []).length, candidates, evidence: (curation.evidenceIds || []).length, tests: (curation.testIds || []).length, rejected: (curation.violations || []).filter((v) => /drop|reject/.test(v)).length, rows };
+      pushAudit({ kind: "curation", role: roleKey, finding: curation.finding ? curation.finding.label : "—", source: curation.source, detail: `chose ${stats.selected} panels, ${stats.evidence} evidence, ${stats.tests} tests · ${stats.rejected} rejected · ${(curation.violations || []).length} validator actions` });
+      return { loading: false, curation, spec, stats, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
     } catch (e) {
       return { loading: false, curation: null, spec: FALLBACK[roleKey], partitionPref: null, source: "fallback", rejected: 0, framingRejected: 0, err: String(e).slice(0, 120), debug: null };
     }
@@ -1098,8 +1136,8 @@ function AppInner() {
     if (firstPerturb.current) { firstPerturb.current = false; return; }
     if (role) { cache.current = {}; setPicked(null); enter(role); }
   }, [perturbation]);
-  function applyPerturbation(name) { initEngine(perturbedDataset(name)); setPerturbation(name); }
-  function resetPerturbation() { initEngine(BASE_DS); setPerturbation(null); }
+  function applyPerturbation(name) { initEngine(perturbedDataset(name)); pushAudit({ kind: "perturbation", role, detail: `applied "${PERTURBATIONS[name].label}" — data changed, salience recomputes` }); setPerturbation(name); }
+  function resetPerturbation() { initEngine(BASE_DS); pushAudit({ kind: "perturbation", role, detail: "reset to original data" }); setPerturbation(null); }
 
   if (!role) return (<div className="caliper"><EntryScreen onEnter={enter} /></div>);
 
@@ -1110,16 +1148,21 @@ function AppInner() {
         <div className="hdr-l"><span className="hdr-mark">⟡ CALIPER</span><span className="hdr-sub">Caliper Systems · synthetic</span></div>
         <div className={`hdr-status ${state.source}`}>
           {state.loading ? <span><span className="live-dot" /> curating the {role} dashboard — the model is arranging the engine's findings…</span>
-            : state.source === "live" ? <span><span className="live-dot" /> Curated live by the model for the {role} — every number computed by the engine, click any value to verify.{state.rejected > 0 && <em> · {state.rejected} widget{state.rejected > 1 ? "s" : ""} rejected</em>}{state.framingRejected > 0 && <em> · {state.framingRejected} numeric claim{state.framingRejected > 1 ? "s" : ""} stripped from framing</em>}</span>
-            : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>}</span>}
+            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>} · <button className="trust-link" onClick={() => setShowTrust(true)}>trust contract ›</button></span>
+            : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>} · <button className="trust-link" onClick={() => setShowTrust(true)}>trust contract ›</button></span>}
         </div>
         <div className="hdr-r">
           {Object.keys(ROLES).map((k) => <button key={k} className={`lensbtn ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
           <button className="recur brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">◈ read</button>
           <button className="recur" onClick={() => setShowQuery(true)} title="interrogate the engine">⌕</button>
-          <button className={`recur ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">⟲</button>
-          <button className="recur" onClick={() => { delete cache.current[role]; enter(role); }} title="re-curate">↻</button>
-          <button className="recur" onClick={() => setShowDebug((v) => !v)} title="boundary inspector (or press `)">dbg</button>
+          <button className={`recur ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">⟲ perturb</button>
+          <div className="hdr-menu-wrap">
+            <button className="recur" onClick={() => setShowMenu((v) => !v)} title="tools">⋯</button>
+            {showMenu && <div className="hdr-menu" onMouseLeave={() => setShowMenu(false)}>
+              <button onClick={() => { delete cache.current[role]; enter(role); setShowMenu(false); }}>↻ re-curate</button>
+              <button onClick={() => { setShowDebug((v) => !v); setShowMenu(false); }}>◱ curation log</button>
+            </div>}
+          </div>
         </div>
       </header>
 
@@ -1135,6 +1178,7 @@ function AppInner() {
       </div>
 
       {showBrief && <div className="brief-overlay"><AnalystRead role={role} catalog={catalog} curation={state.curation} onPick={(p) => { setPicked(p); setShowBrief(false); }} onClose={() => setShowBrief(false)} /></div>}
+      {showTrust && <div className="brief-overlay"><TrustPanel audit={audit.current} onClose={() => setShowTrust(false)} /></div>}
 
       {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => { setPicked(p); setShowQuery(false); }} onRecurate={recurate} onAnswerFully={answerFully} busy={queries.some((q) => q.status === "loading")} />}
     </div>
