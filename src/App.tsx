@@ -797,59 +797,48 @@ function EntryScreen({ onEnter }) {
 // ================= query path: L1 intent → L2 engine → L3 narrate =================
 const SUPPORTED = ["nrr", "grr", "magic_number", "cac_payback", "rule_of_40", "gross_margin", "arr", "qoq_growth", "ent_share", "retention_bridge"];
 const SEGS = ["SMB", "Mid-Market", "Enterprise"];
-function buildIntentPrompt(q) {
-  return [
-    "You are the intent layer of Caliper. Map the user's question to a query the deterministic engine can compute. You do NOT compute or state any number.",
-    "SUPPORTED metrics: " + SUPPORTED.join(", ") + ".",
-    "SEGMENTS: SMB, Mid-Market, Enterprise — or null for company-wide.",
-    "BASIS: 'latest' (current value) or 'trend' (over the available quarters). For retention_bridge, basis is ignored.",
-    "If the question maps to a supported metric+scope, return answerable=true with the mapping and a confidence 0–1 reflecting how sure you are of the interpretation. If it asks for something this engine cannot answer (forecasts, a metric not in the list, anything unrelated), return answerable=false with a one-line reason.",
-    'Return ONLY JSON, no fences: {"answerable":true|false,"metric":"<one of the supported list or null>","segment":"SMB|Mid-Market|Enterprise|null","basis":"latest|trend","confidence":0-1,"reason":"<short, only if not answerable>"}',
-    "Question: " + JSON.stringify(q),
-  ].join("\n");
-}
-async function parseIntent(q) {
-  const data = await callModel("intent", [{ role: "user", content: buildIntentPrompt(q) }], 300);
-  const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-  let intent = null; try { intent = JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch (e) {}
-  return { raw, intent };
-}
-// Domain-first classification: the model's ONLY job is to name the analytical domain the interest
-// is about (or flag unsupported) — a robust, phrasing-independent judgment. The ENGINE then
-// deterministically lists the ranked findings in that domain, decides salient vs present by rank,
-// and lets the user pick any of them. Model does the topic (fuzzy); engine does which findings (rigid).
+// Mode router: one call decides what the user wants and routes it. RE-ORIENT the board to a domain
+// (topic interest), ANSWER a specific metric (pointed question), BOTH when genuinely ambiguous, or
+// UNSUPPORTED. For "both", the engine shows the computed VALUE (truth, immediate) while the model's
+// framing-as-answer waits for the user's click — facts are free, interpretations are confirmed.
 const DOMAINS = ["efficiency", "retention", "growth", "concentration"];
-function buildDomainClassifyPrompt(text) {
-  return `A user is exploring a governed analytics dashboard. Classify their analytical interest into ONE analytical DOMAIN, or flag it as unsupported. Do not pick a specific metric — just the domain.
+function buildRouterPrompt(text) {
+  return `A user typed an interest in a governed analytics dashboard. Decide what they want and route it.
 
-DOMAINS:
-- efficiency: unit economics — CAC payback, magic number, Rule of 40, gross margin, S&M efficiency
-- retention: NRR, GRR, churn, contraction, expansion, segment retention
-- growth: ARR growth, net new ARR, bookings, quarter-over-quarter momentum
-- concentration: segment mix, ARR concentration, dependence on a segment
+THE SYSTEM CAN DO TWO THINGS:
+1. RE-ORIENT the board to an analytical DOMAIN — for topic-level, exploratory interests ("how is efficiency", "what about retention", "show me concentration"). Domains: efficiency (CAC/magic/Rule of 40/margin), retention (NRR/GRR/churn), growth (ARR growth/net-new), concentration (segment mix).
+2. ANSWER a specific metric value — for pointed questions about a number ("what's SMB's magic number", "how is CAC payback trending"). Supported metrics: ${SUPPORTED.join(", ")}. Segments: SMB, Mid-Market, Enterprise (or null = company). Basis: latest or trend.
 
-NOT in the data contract (→ unsupported): geography/region, product line, individual reps, marketing channel, headcount, anything not above.
+NOT in the data contract (→ unsupported): geography/region, product line, individual reps, marketing channel, headcount.
 
-THE USER'S ANALYTICAL INTEREST: "${text}"
+Decide the MODE:
+- "recurate": clearly a topic/re-orient interest → give the domain (metric null).
+- "answer": clearly a specific-value question → give the metric intent (domain null).
+- "both": genuinely ambiguous — a topic that is ALSO a plausible specific-value question (e.g. "how is efficiency") → give BOTH a domain AND a best-guess metric intent.
+- "unsupported": needs data not in the contract.
 
-Return ONLY JSON, no fences: {"status":"matched|unsupported","domain":"efficiency|retention|growth|concentration or null","echo":"<restate the interest in one short clause — reflect whether they emphasize current status, a worsening trend, or a specific concern>","confidence":"high|medium|low","reason":"<short, only if unsupported>"}
-Confidence: high if the domain is unambiguous; medium if you inferred it; low if the interest is vague.`;
+Return ONLY JSON, no fences: {"mode":"recurate|answer|both|unsupported","domain":"efficiency|retention|growth|concentration or null","metric":"<supported metric or null>","segment":"SMB|Mid-Market|Enterprise or null","basis":"latest|trend","echo":"<restate their interest in one short clause>","confidence":"high|medium|low","reason":"<short, only if unsupported>"}
+
+THE USER'S INTEREST: "${text}"`;
 }
-async function classifyToFinding(text) {
-  const ranked = E.computeSalience();
-  const data = await callModel("intent", [{ role: "user", content: buildDomainClassifyPrompt(text) }], 220);
+async function classifyQuery(text) {
+  const data = await callModel("intent", [{ role: "user", content: buildRouterPrompt(text) }], 260);
   const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
   let c = null; try { const m = raw.replace(/```json|```/g, "").trim(); const a = m.indexOf("{"), z = m.lastIndexOf("}"); c = JSON.parse(a >= 0 && z > a ? m.slice(a, z + 1) : m); } catch (e) {}
   if (!c) return null;
+  const mode = ["recurate", "answer", "both", "unsupported"].includes(c.mode) ? c.mode : "recurate";
   const echo = String(c.echo || text).slice(0, 120), confidence = ["high", "medium", "low"].includes(c.confidence) ? c.confidence : "low";
-  if (c.status === "unsupported" || !DOMAINS.includes(c.domain)) {
-    return { status: "unsupported", echo, confidence, reason: c.reason ? String(c.reason).slice(0, 140) : "" };
+  if (mode === "unsupported") return { mode, echo, confidence, reason: c.reason ? String(c.reason).slice(0, 140) : "" };
+  // domain findings (recurate / both)
+  let domain = null, findings = [], salient = false;
+  if (DOMAINS.includes(c.domain)) {
+    const ranked = E.computeSalience();
+    const inD = ranked.map((f, i) => ({ finding: f, rank: i + 1, domain: E.findingNeighborhood(f).domain })).filter((x) => x.domain === c.domain);
+    domain = c.domain; findings = inD.slice(0, 5); salient = inD.length ? inD[0].rank <= 3 : false;
   }
-  // engine lists the ranked findings in the chosen domain (deterministic)
-  const inDomain = ranked.map((f, i) => ({ finding: f, rank: i + 1, domain: E.findingNeighborhood(f).domain })).filter((x) => x.domain === c.domain);
-  if (!inDomain.length) return { status: "present", domain: c.domain, echo, confidence, findings: [] };
-  const salient = inDomain[0].rank <= 3;   // top-3 overall = the salient anomalies
-  return { status: salient ? "salient" : "present", domain: c.domain, echo, confidence, findings: inDomain.slice(0, 5) };
+  // metric intent (answer / both) — validated to the supported engine metrics
+  const intent = validateIntent({ answerable: true, metric: c.metric, segment: c.segment, basis: c.basis, confidence: 1 });
+  return { mode, echo, confidence, domain, findings, salient, intent };
 }
 function validateIntent(it) {
   if (!it || it.answerable !== true || !SUPPORTED.includes(it.metric)) return null;
@@ -908,7 +897,7 @@ async function narrate(q, desc) {
 function QueryBar({ onAsk, busy }) {
   const [v, setV] = useState("");
   const go = () => { if (v.trim() && !busy) { onAsk(v.trim()); setV(""); } };
-  return (<div className="qbar"><input className="qin" value={v} placeholder="Name an analytical interest — e.g. “why is efficiency slipping?”, “what about retention?”, “show me by geography”" onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") go(); }} /><button className="qbtn" disabled={busy || !v.trim()} onClick={go}>{busy ? "…" : "Map"}</button></div>);
+  return (<div className="qbar"><input className="qin" value={v} placeholder="Ask or explore — “how is efficiency?” (re-orient), “what\u2019s SMB\u2019s magic number?” (answer), or an ambiguous one gets both" onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") go(); }} /><button className="qbtn" disabled={busy || !v.trim()} onClick={go}>{busy ? "…" : "Map"}</button></div>);
 }
 function QueryWidget({ desc, onPick }) {
   if (desc.kind === "callout") return (<div className="strip"><div className="block"><Callout mv={desc.data.mv} onPick={(mv) => onPick({ node: mv })} /></div></div>);
@@ -916,34 +905,38 @@ function QueryWidget({ desc, onPick }) {
   if (desc.kind === "waterfall") return (<div className="cpanel"><ChartHeader title={desc.data.title} tag={`NRR ${desc.data.bridge.nrr.toFixed(0)}%`} tagTone={desc.data.bridge.nrr >= 100 ? "good" : "bad"} onTrace={() => onPick({ node: desc.data.mv })} /><Fill render={(cw, ch) => <Waterfall c={desc.data.bridge} w={cw} h={ch} />} /></div>);
   return null;
 }
-function AnswerCard({ item, onPick, onRecurate }) {
+function AnswerCard({ item, onPick, onRecurate, onAnswerFully }) {
   if (item.status === "loading") return (<div className="ans"><div className="ans-q">“{item.q}”</div><div className="anno"><span className="live-dot" /> interpreting intent → computing → narrating…</div></div>);
   if (item.status === "failed") return (<div className="ans declined"><div className="ans-q">“{item.q}”</div><div className="ans-decline">{item.reason || "Couldn't read that — try rephrasing."}</div></div>);
   if (item.status === "declined") return (<div className="ans declined"><div className="ans-q">“{item.q}”</div><div className="ans-decline">{item.echo ? <><b>{item.echo}</b> — </> : ""}not in the data contract{item.reason ? `: ${item.reason}` : ""}. Available breakdowns: segment, quarter, cohort.</div></div>);
+  const FindingList = ({ c, label }) => (c.findings && c.findings.length > 0
+    ? <div className="recur-list"><div className="recur-lbl">{label || `${c.findings.length} ${c.domain} finding${c.findings.length > 1 ? "s" : ""} the engine surfaced, ranked by salience:`}</div>
+        {c.findings.map((x, i) => (<div key={i} className={`recur-row ${i === 0 ? "top" : ""}`}><span className="recur-rank">#{x.rank}</span><span className="recur-flabel">{x.finding.label}{i === 0 ? " · default" : ""}</span><button className="test-run" onClick={() => onRecurate(x.finding)}>focus ›</button></div>))}
+      </div>
+    : <div className="recur-act"><span className="frame-tick warn">nothing surfaced</span><span>No {c.domain} finding rose above the noise in this data.</span></div>);
   if (item.status === "classified") {
     const c = item.classify;
     return (<div className="ans"><div className="ans-q">“{item.q}”</div>
       <div className="ans-intent">read this as <b>{c.echo}</b> · confidence {c.confidence} · {c.status === "salient" ? <><b>{c.domain}</b> is a top anomaly</> : <><b>{c.domain}</b> — present, below the top anomalies</>} — the engine governs what exists</div>
-      {c.findings && c.findings.length > 0
-        ? <div className="recur-list">
-            <div className="recur-lbl">{c.findings.length} {c.domain} finding{c.findings.length > 1 ? "s" : ""} the engine surfaced, ranked by salience:</div>
-            {c.findings.map((x, i) => (
-              <div key={i} className={`recur-row ${i === 0 ? "top" : ""}`}>
-                <span className="recur-rank">#{x.rank}</span>
-                <span className="recur-flabel">{x.finding.label}{i === 0 ? " · default" : ""}</span>
-                <button className="test-run" onClick={() => onRecurate(x.finding)}>focus ›</button>
-              </div>
-            ))}
-          </div>
-        : <div className="recur-act"><span className="frame-tick warn">nothing surfaced</span><span>No {c.domain} finding rose above the noise in this data.</span></div>}
+      <FindingList c={c} />
     </div>);
   }
-  const d = item.result;
-  return (<div className="ans"><div className="ans-q">“{item.q}”</div>
-    <div className="ans-intent">L1 read this as <b>{item.intent.metric.replace(/_/g, " ")}</b>{item.intent.segment ? ` · ${item.intent.segment}` : " · company"} · {item.intent.basis}{item.intent.confidence != null ? ` · confidence ${(item.intent.confidence * 100).toFixed(0)}%` : ""} — then the engine computed it</div>
-    {item.framing && <div className="frame"><span className="frame-tick">answered</span><span className="frame-h">{item.framing.headline}</span>{item.framing.soWhat && <span className="frame-sw">{item.framing.soWhat}</span>}</div>}
-    <QueryWidget desc={d} onPick={onPick} />
-  </div>);
+  if (item.status === "answered") {
+    return (<div className="ans"><div className="ans-q">“{item.q}”</div>
+      <div className="ans-intent">read this as <b>{item.echo}</b> — the engine computed it, every value traceable</div>
+      {item.framing && <div className="frame"><span className="frame-tick">answered</span><span className="frame-h">{item.framing.headline}</span>{item.framing.soWhat && <span className="frame-sw">{item.framing.soWhat}</span>}</div>}
+      <QueryWidget desc={item.desc} onPick={onPick} />
+    </div>);
+  }
+  if (item.status === "both") {
+    const c = item.classify;
+    return (<div className="ans"><div className="ans-q">“{item.q}”</div>
+      <div className="ans-intent">read this as <b>{c.echo}</b> · confidence {c.confidence} — this could be a specific value or a board view. The engine computed the value below; pick what you meant.</div>
+      <div className="both-value"><div className="both-hd"><span className="both-lbl">the value · engine-computed · traceable</span><button className="test-run" onClick={() => onAnswerFully(item)}>answer this fully ›</button></div><QueryWidget desc={item.desc} onPick={onPick} /></div>
+      <FindingList c={c} label={`or re-orient the board — ${c.domain} finding${c.findings.length > 1 ? "s" : ""}:`} />
+    </div>);
+  }
+  return null;
 }
 
 function DebugPanel({ d }) {
@@ -1013,13 +1006,13 @@ function Scorecard({ role, scorecardKeys, onPick }) {
   return (<div className="scorecard">{set.map((m, i) => { const res = resolveKpi(m); return res ? <KpiCell key={i} res={res} onPick={onPick} /> : null; })}</div>);
 }
 
-function QueryModal({ queries, onAsk, onClose, onPick, onRecurate, busy }) {
+function QueryModal({ queries, onAsk, onClose, onPick, onRecurate, onAnswerFully, busy }) {
   return (<div className="qmodal-bg" onClick={onClose}>
     <div className="qmodal" onClick={(e) => e.stopPropagation()}>
       <div className="qmodal-h"><span className="qmodal-t">Interrogate the engine</span><button className="qmodal-x" onClick={onClose}>✕</button></div>
       <QueryBar onAsk={onAsk} busy={busy} />
       <div className="qmodal-note">Type an analytical interest. The model maps it to a discovered finding and echoes back its reading (with a confidence and salience rank) before re-orienting — or refuses if the data contract doesn't support it. You navigate; the engine governs what's real.</div>
-      <div className="qmodal-results">{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={onPick} onRecurate={onRecurate} />)}</div>
+      <div className="qmodal-results">{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={onPick} onRecurate={onRecurate} onAnswerFully={onAnswerFully} />)}</div>
     </div>
   </div>);
 }
@@ -1042,11 +1035,29 @@ function AppInner() {
     setQueries((qs) => [{ id, q: text, status: "loading" }, ...qs]);
     const upd = (patch) => setQueries((qs) => qs.map((x) => (x.id === id ? { ...x, ...patch } : x)));
     try {
-      const c = await classifyToFinding(text);                    // map intent → ranked finding (or flag)
+      const c = await classifyQuery(text);
       if (!c) { upd({ status: "failed", reason: "couldn't read that — try rephrasing the interest" }); return; }
-      if (c.status === "unsupported") { upd({ status: "declined", echo: c.echo, reason: c.reason || "" }); return; }
-      upd({ status: "classified", classify: c });                 // echo + confidence → user confirms → recurate
-    } catch (e) { upd({ status: "declined", reason: "intent service unavailable" }); }
+      if (c.mode === "unsupported") { upd({ status: "declined", echo: c.echo, reason: c.reason || "" }); return; }
+      if (c.mode === "answer") {
+        if (!c.intent) { upd({ status: "failed", reason: "couldn't map that to a supported metric" }); return; }
+        const desc = resolveQuery(c.intent); if (!desc) { upd({ status: "failed", reason: "that combination isn't computable here" }); return; }
+        const framing = await narrate(text, desc);                 // direct answer request → model commits the framing now
+        upd({ status: "answered", desc, framing, echo: c.echo }); return;
+      }
+      const classify = { domain: c.domain, findings: c.findings, status: c.salient ? "salient" : "present", echo: c.echo, confidence: c.confidence };
+      if (c.mode === "both" && c.intent) {
+        const desc = resolveQuery(c.intent);                        // engine computes the VALUE (truth), shown inline — NOT narrated until the user confirms
+        upd({ status: "both", classify, desc, intent: c.intent }); return;
+      }
+      upd({ status: "classified", classify }); return;              // recurate (or ambiguous with no valid metric → re-orient)
+    } catch (e) { upd({ status: "failed", reason: "intent service unavailable" }); }
+  }
+  // From a "both" fork: the user confirms they want the ANSWER — the model commits the framing now.
+  async function answerFully(item) {
+    const upd = (patch) => setQueries((qs) => qs.map((x) => (x.id === item.id ? { ...x, ...patch } : x)));
+    upd({ status: "loading" });
+    const framing = await narrate(item.q, item.desc);
+    upd({ status: "answered", desc: item.desc, framing, echo: item.classify.echo });
   }
 
   // Re-orientation core. Builds the fully curated surface (read + board + strip) around a target
@@ -1125,7 +1136,7 @@ function AppInner() {
 
       {showBrief && <div className="brief-overlay"><AnalystRead role={role} catalog={catalog} curation={state.curation} onPick={(p) => { setPicked(p); setShowBrief(false); }} onClose={() => setShowBrief(false)} /></div>}
 
-      {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => { setPicked(p); setShowQuery(false); }} onRecurate={recurate} busy={queries.some((q) => q.status === "loading")} />}
+      {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => { setPicked(p); setShowQuery(false); }} onRecurate={recurate} onAnswerFully={answerFully} busy={queries.some((q) => q.status === "loading")} />}
     </div>
   );
 }
