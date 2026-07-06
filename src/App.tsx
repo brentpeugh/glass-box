@@ -823,7 +823,7 @@ async function classifyToFinding(text) {
   const surface = ranked.map((f) => ({ label: f.label, domain: E.findingNeighborhood(f).domain }));
   const data = await callModel("intent", [{ role: "user", content: buildFindingClassifyPrompt(text, surface) }], 300);
   const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-  let c = null; try { c = JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch (e) {}
+  let c = null; try { const m = raw.replace(/```json|```/g, "").trim(); const a = m.indexOf("{"), z = m.lastIndexOf("}"); c = JSON.parse(a >= 0 && z > a ? m.slice(a, z + 1) : m); } catch (e) {}
   if (!c) return null;
   const rank = typeof c.rank === "number" && c.rank >= 1 && c.rank <= ranked.length ? c.rank : null;
   return { status: ["salient", "present", "unsupported"].includes(c.status) ? c.status : "present", rank, echo: String(c.echo || text).slice(0, 120), confidence: ["high", "medium", "low"].includes(c.confidence) ? c.confidence : "low", reason: c.reason ? String(c.reason).slice(0, 140) : "", finding: rank ? ranked[rank - 1] : null };
@@ -895,6 +895,7 @@ function QueryWidget({ desc, onPick }) {
 }
 function AnswerCard({ item, onPick, onRecurate }) {
   if (item.status === "loading") return (<div className="ans"><div className="ans-q">“{item.q}”</div><div className="anno"><span className="live-dot" /> interpreting intent → computing → narrating…</div></div>);
+  if (item.status === "failed") return (<div className="ans declined"><div className="ans-q">“{item.q}”</div><div className="ans-decline">{item.reason || "Couldn't read that — try rephrasing."}</div></div>);
   if (item.status === "declined") return (<div className="ans declined"><div className="ans-q">“{item.q}”</div><div className="ans-decline">{item.echo ? <><b>{item.echo}</b> — </> : ""}not in the data contract{item.reason ? `: ${item.reason}` : ""}. Available breakdowns: segment, quarter, cohort.</div></div>);
   if (item.status === "classified") {
     const c = item.classify;
@@ -1009,7 +1010,7 @@ function AppInner() {
     const upd = (patch) => setQueries((qs) => qs.map((x) => (x.id === id ? { ...x, ...patch } : x)));
     try {
       const c = await classifyToFinding(text);                    // map intent → ranked finding (or flag)
-      if (!c) { upd({ status: "declined", reason: "couldn't interpret that interest" }); return; }
+      if (!c) { upd({ status: "failed", reason: "couldn't read that — try rephrasing the interest" }); return; }
       if (c.status === "unsupported") { upd({ status: "declined", echo: c.echo, reason: c.reason || "" }); return; }
       upd({ status: "classified", classify: c });                 // echo + confidence → user confirms → recurate
     } catch (e) { upd({ status: "declined", reason: "intent service unavailable" }); }
