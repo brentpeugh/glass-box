@@ -242,6 +242,12 @@ export function createEngine(bundle: Bundle) {
   }
   function topFinding() { const f = computeSalience()[0]; return f ? { ...f, scope: { window: [QUARTERS[QUARTERS.length - 5], QUARTERS[QUARTERS.length - 1]] } } : null; }
 
+  // ===== LEGACY / DIAGNOSTIC — not the live analytical origin =====
+  // runDetectors() and detectMasking() are the ORIGINAL hand-written detector battery. They are
+  // retained only (a) as the oracle target in scripts/validate.ts (proving the engine reproduces
+  // known findings) and (b) as diagnostics. The LIVE analytical path does NOT use them: the finding
+  // is computeSalience()[0] via topFinding(), a neutral data-derived surface. See scripts/
+  // validate-discovery.ts for the thesis-critical path proof. Do not wire these into curation.
   function runDetectors(): Finding[] {
     const F: Finding[] = []; let id = 0;
     const emit = (f: Omit<Finding, "id">) => F.push({ id: `F${++id}`, ...f } as Finding);
@@ -276,6 +282,8 @@ export function createEngine(bundle: Bundle) {
     return F;
   }
 
+  // LEGACY / DIAGNOSTIC (see note on runDetectors): used by the oracle test and as a diagnostic
+  // helper only. The live finding is data-derived via computeSalience()/topFinding(), not this.
   function detectMasking(startQ: string, endQ: string): any {
     const blended = nrr(null, startQ, endQ); const segN = SEGMENTS.map((s) => nrr(s, startQ, endQ));
     if (blended.value <= BENCH.nrr.threshold) return null;
