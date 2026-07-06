@@ -815,6 +815,8 @@ Classify the interest:
 - "present": it names a real metric/breakdown in the data, but does NOT match a ranked finding (it isn't among the anomalies) → rank = the closest ranked finding if any, else null.
 - "unsupported": it needs data not in the contract → rank null.
 
+THE USER'S ANALYTICAL INTEREST: "${text}"
+
 Return ONLY JSON, no fences: {"status":"salient|present|unsupported","rank":<1-based integer or null>,"echo":"<restate the user's interest in one short clause, the system's words>","confidence":"high|medium|low","reason":"<short, only for present/unsupported>"}
 Confidence: high if the interest clearly names a finding or metric; medium if you inferred it; low if the interest is vague.`;
 }
