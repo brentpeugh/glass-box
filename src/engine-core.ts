@@ -61,6 +61,9 @@ export function createEngine(bundle: Bundle) {
   }
   function cogsTotal(q: string) { const rows = OPEX.filter((o) => o.quarter === q); return mk(`cogs.${q}`, "cogs", "COGS", rows.reduce((s, o) => s + o.cogs, 0), "usd", { op: "sum", description: `Sum of COGS over ${rows.length} opex rows for ${q}`, inputs: [rowsRef("opex", `quarter=${q}`, rows.map((o) => o.segment), { kind: "opex", quarter: q, field: "cogs" })] }); }
   function smTotal(q: string) { const rows = OPEX.filter((o) => o.quarter === q); return mk(`sm.${q}`, "sm_spend", "S&M Spend", rows.reduce((s, o) => s + o.sm_spend, 0), "usd", { op: "sum", description: `Sum of S&M over ${rows.length} opex rows for ${q}`, inputs: [rowsRef("opex", `quarter=${q}`, rows.map((o) => o.segment), { kind: "opex", quarter: q, field: "sm_spend" })] }); }
+  // segment-level S&M and gross new bookings — the inputs to per-segment sales efficiency
+  function smSeg(seg: string, q: string) { const rows = OPEX.filter((o) => o.quarter === q && o.segment === seg); return mk(`sm.${seg}.${q}`, "sm_spend", `${seg} S&M Spend`, rows.reduce((s, o) => s + o.sm_spend, 0), "usd", { op: "sum", description: `Sum of S&M for ${seg} in ${q}`, inputs: [rowsRef("opex", `quarter=${q} AND segment=${seg}`, [seg], { kind: "opex", quarter: q, field: "sm_spend" })] }); }
+  function gnbSeg(seg: string, q: string) { const i = qIdx(q); if (i <= 0) return null; const cur = arrK(q), prev = arrK(QUARTERS[i - 1]); let v = 0; const ids: string[] = []; for (const r of ROWS) { if (r.segment !== seg) continue; const d = r[cur] - r[prev]; if (d > 0) { v += d; ids.push(r.customer_id); } } return mk(`gnb.${seg}.${q}`, "gross_new_bookings", `${seg} Gross New Bookings`, v, "usd", { op: "sum_positive_delta", description: `Positive ARR deltas for ${seg}, ${ids.length} accounts`, inputs: [rowsRef("customers", `segment=${seg} AND max(0, ${cur}-${prev})`, ids, { kind: "delta", from: QUARTERS[i - 1], to: q })] }); }
   function revenueQ(q: string) { const a = companyArr(q); return mk(`rev.${q}`, "revenue", "Quarterly Revenue", a.value / 4, "usd", { op: "scale", description: `ARR(${q}) / 4`, inputs: [mref(a.id)] }); }
   function netNewArr(q: string) { const i = qIdx(q); if (i <= 0) return null; const cur = companyArr(q), prev = companyArr(QUARTERS[i - 1]); return mk(`nna.${q}`, "net_new_arr", "Net New ARR", cur.value - prev.value, "usd", { op: "subtract", description: `ARR(${q}) - ARR(${QUARTERS[i - 1]})`, inputs: [mref(cur.id), mref(prev.id)] }); }
   function grossNewBookings(q: string) { const i = qIdx(q); if (i <= 0) return null; const cur = arrK(q), prev = arrK(QUARTERS[i - 1]); let v = 0; const ids: string[] = []; for (const r of ROWS) { const d = r[cur] - r[prev]; if (d > 0) { v += d; ids.push(r.customer_id); } } return mk(`gnb.${q}`, "gross_new_bookings", "Gross New Bookings", v, "usd", { op: "sum_positive_delta", description: `Sum of positive ARR deltas (new logos + expansion), ${ids.length} accounts`, inputs: [rowsRef("customers", `max(0, ${cur}-${prev})`, ids, { kind: "delta", from: QUARTERS[i - 1], to: q })] }); }
@@ -124,6 +127,10 @@ export function createEngine(bundle: Bundle) {
     { id: "localize_margin", kind: "localize", metric: "margin", label: "Is margin compression concentrated in a segment, or company-wide?", dims: ["segment"] },
     { id: "decompose_retention", kind: "decompose", label: "Is the retention loss driven by logo churn or by contraction?", dims: [] },
     { id: "persist_growth", kind: "persist", metric: "qoq_growth", label: "Has the growth trend reversed in the recent window?", dims: [] },
+    { id: "decompose_cac_payback", kind: "decompose_cac", label: "Is payback deterioration driven by S&M spend, new bookings, or gross margin?", dims: [] },
+    { id: "persist_cac_payback", kind: "persist_metric", metric: "cac", label: "Is the CAC payback deterioration persistent, or one-quarter noise?", dims: [] },
+    { id: "persist_magic_number", kind: "persist_metric", metric: "magic", label: "Is the sales-efficiency decline persistent, or one-quarter noise?", dims: [] },
+    { id: "localize_efficiency", kind: "localize_eff", label: "Is the efficiency drag concentrated in a segment, or company-wide?", dims: [] },
   ];
   function runTest(spec: any) {
     const q = spec.endQ || QUARTERS[QUARTERS.length - 1], sQ = spec.startQ || QUARTERS[QUARTERS.length - 5];
@@ -154,6 +161,46 @@ export function createEngine(bundle: Bundle) {
       return { kind: "persist", full, recent, reversing, verdict: reversing ? "reversing" : "persistent",
         summary: reversing ? `The trend reverses in the recent window` : `The trend persists in the recent window` };
     }
+    // ---- CAC / unit-economics falsifiers: directly adjudicate an efficiency read ----
+    if (spec.kind === "decompose_cac") {
+      // CAC = 12·S&M / (GNB · GM/100). Log-linear attribution of the change over the window:
+      // %Δln(CAC) ≈ %Δln(S&M) − %Δln(GNB) − %Δln(GM). Largest positive term drives deterioration.
+      const sQ = spec.startQ || QUARTERS[QUARTERS.length - 5], eQ = spec.endQ || QUARTERS[QUARTERS.length - 1];
+      const si = qIdx(sQ), ei = qIdx(eQ);
+      const dl = (a: number, b: number) => Math.log(b) - Math.log(a);
+      const smC = dl(smTotal(QUARTERS[si - 1]).value, smTotal(QUARTERS[ei - 1]).value);
+      const gnbC = -dl(grossNewBookings(sQ)!.value, grossNewBookings(eQ)!.value);
+      const gmC = -dl(grossMargin(sQ).value, grossMargin(eQ).value);
+      const parts = [{ k: "S&M spend rising", v: smC }, { k: "new bookings falling", v: gnbC }, { k: "gross margin falling", v: gmC }];
+      const driver = parts.slice().sort((a, b) => b.v - a.v)[0];
+      const offset = parts.filter((p) => p.v < -1e-6).map((p) => p.k.replace(" rising", "").replace(" falling", ""));
+      return { kind: "decompose_cac", parts, driver: driver.k, verdict: "attributed",
+        summary: `Deterioration is driven by ${driver.k}${offset.length ? ` — partly offset by ${offset.join(" and ")}` : ""}` };
+    }
+    if (spec.kind === "persist_metric") {
+      // is the deterioration structural (present across the window) or one-quarter noise?
+      const mf: any = { cac: (qq: string) => cacPayback(qq), magic: (qq: string) => magicNumber(qq) }[spec.metric];
+      const good = spec.metric === "cac" ? "below" : "above";  // cac: lower better; magic: higher better
+      const ys = QUARTERS.map((qq) => { const m = mf(qq); return m ? m.value : null; }).filter((v: any) => v != null);
+      const steps = ys.slice(1).map((v: number, i: number) => v - ys[i]);
+      const adverse = steps.filter((d: number) => good === "below" ? d > 0 : d < 0).length;
+      const withoutLast = fit1(ys.slice(0, -1)).slope;   // does deterioration predate the last quarter?
+      const predates = good === "below" ? withoutLast > 0 : withoutLast < 0;
+      const persistent = adverse >= Math.ceil(steps.length * 0.5) && predates;
+      return { kind: "persist_metric", metric: spec.metric, adverse, steps: steps.length, predates, verdict: persistent ? "persistent" : "noise",
+        summary: persistent ? `Persistent — ${adverse} of ${steps.length} quarters deteriorated, and it predates the latest quarter` : `Possible noise — deterioration is not consistent across the window` };
+    }
+    if (spec.kind === "localize_eff") {
+      // per-segment sales efficiency = gross new bookings / S&M. Concentrated or company-wide?
+      const eQ = spec.endQ || QUARTERS[QUARTERS.length - 1];
+      const slices = SEGMENTS.map((s) => { const sm = smSeg(s, eQ).value, g = gnbSeg(s, eQ); const eff = sm ? (g ? g.value : 0) / sm : 0; return { key: s, value: eff }; });
+      const vals = slices.map((s) => s.value), mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const spread = (Math.max(...vals) - Math.min(...vals)) / (Math.abs(mean) || 1);
+      const worst = slices.slice().sort((a, b) => a.value - b.value)[0];
+      const concentrated = spread > 0.5;
+      return { kind: "localize_eff", slices, spread, worst, concentrated, verdict: concentrated ? "concentrated" : "uniform",
+        summary: concentrated ? `Concentrated — ${worst.key} is the least efficient segment (${spread.toFixed(1)}x spread)` : `Company-wide — efficiency is roughly uniform across segments` };
+    }
     return null;
   }
 
@@ -176,7 +223,7 @@ export function createEngine(bundle: Bundle) {
     arr: "concentration", qoq: "growth",
   };
   const CLUSTER_TESTS: any = {
-    efficiency: { tests: ["localize_margin", "persist_growth"], falsifiers: ["localize_margin", "persist_growth"], lenses: ["efficiency", "growth"] },
+    efficiency: { tests: ["decompose_cac_payback", "persist_cac_payback", "persist_magic_number", "localize_efficiency"], falsifiers: ["persist_cac_payback", "persist_magic_number", "localize_efficiency"], lenses: ["efficiency", "growth"] },
     retention: { tests: ["localize_nrr", "decompose_retention", "localize_winrate"], falsifiers: ["localize_nrr", "localize_winrate"], lenses: ["retention", "concentration"] },
     growth: { tests: ["persist_growth", "localize_nrr"], falsifiers: ["persist_growth", "localize_nrr"], lenses: ["growth", "concentration"] },
     concentration: { tests: ["localize_nrr", "localize_winrate"], falsifiers: ["localize_nrr", "localize_winrate"], lenses: ["concentration", "retention"] },
