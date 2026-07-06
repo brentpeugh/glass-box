@@ -55,6 +55,7 @@ function RowsLeaf({ leaf, parentVal }) {
     note = `closed opportunities, resolved live from the pipeline`;
     recon = <>{r.won} won ÷ {r.n} closed = <b className="mono">{r.n ? (r.won / r.n * 100).toFixed(1) : "—"}%</b> — reconciles to the value above</>;
   } else {
+    const sum = r.rows.reduce((s, o) => s + (o[r.field] || 0), 0);
     stat = (<span><b>{r.rows.length}</b> opex rows · {r.field} · full audit trail</span>);
     body = (<table className="rows-tbl"><thead><tr><th>segment</th><th>quarter</th><th>{r.field}</th></tr></thead><tbody>{r.rows.map((o, i) => (<tr key={i}><td className="mono">{o.segment}</td><td className="mono">{o.quarter}</td><td className="mono">{fmtK(o[r.field])}</td></tr>))}</tbody></table>);
     note = `operating expense at segment×quarter grain — its natural grain`;
@@ -767,7 +768,7 @@ function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding }) 
     {placed.map((pl, i) => (
       <div key={i} className={`tb-panel asp-${pl.region.a}`} style={{ gridColumn: `${pl.region.c[0]} / ${pl.region.c[1]}`, gridRow: `${pl.region.r[0]} / ${pl.region.r[1]}` }}>
         {pl.block.widget === "salient_band"
-          ? <SalientBand finding={finding} onPick={onPick} />
+          ? <div className="block emph-hero"><SalientBand finding={finding} onPick={onPick} /></div>
           : pl.block._kind === "finding_card"
           ? <Block block={pl.block} catalog={catalog} onPick={onPick} dim={null} />
           : <Widget id={pl.block.widget} catalog={catalog} onPick={onPick} dim={null} />}
