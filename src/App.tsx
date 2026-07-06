@@ -539,7 +539,7 @@ function buildCurationPrompt(focus, finding, nb, catalog) {
   const widgetMenu = Object.keys(catalog).filter((id) => (RELATED_DOMAINS[nb.domain] || []).includes(WIDGET_DOMAIN[id])).map((id) => ({ id, label: catalog[id].title || id }));
   return `You are the analytical-judgment layer of a governed analytics system, briefing the ${focus.role}.
 An engine has DETECTED this finding (you did not compute it; you may foreground and FRAME it): "${finding.label}".
-Form the decision-relevant READ for the ${focus.role}. The SAME finding is legible through several lenses — retention (the segment's churn/contraction), unit-economics (does its trouble show in margin/efficiency?), growth trajectory (is it accelerating?), and concentration (how much ARR is exposed?). Choose the lens most decision-relevant FOR THE ${focus.role} and foreground its widgets: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Select ONLY from the menus below — you may not invent metrics, tests, or widgets, and you may not write any digit in your prose (the engine owns all numbers).
+Form the decision-relevant READ for the ${focus.role}. The engine surfaced this top statistical fact from a neutral scan; its finding neighborhood (the menus below) defines what is legible. Do NOT assume the issue is retention, growth, efficiency, or concentration — let the neighborhood and the evidence decide. Choose the framing and widgets most decision-relevant FOR THE ${focus.role}: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Select ONLY from the menus below — you may not invent metrics, tests, or widgets, and you may not write any digit in your prose (the engine owns all numbers).
 
 EVIDENCE (metric ids you may cite): ${JSON.stringify(metricMenu)}
 TESTS (you MUST include at least one marked falsifier:true, so your read can fail): ${JSON.stringify(testMenu)}
@@ -696,14 +696,17 @@ function pickChart(pool, want, aspect, drank, leadByDomain) {
   if (!pool.length) return null;
   let cands = pool.filter((c) => c.asp.includes(aspect));
   if (!cands.length) cands = pool.slice();
-  if (leadByDomain) cands.sort((a, b) => drank(a) - drank(b) || b.w - a.w);
-  else cands.sort((a, b) => Math.abs(a.w - want) - Math.abs(b.w - want) || drank(a) - drank(b) || b.w - a.w);
+  if (leadByDomain) cands.sort((a, b) => a.mo - b.mo || b.w - a.w || drank(a) - drank(b));
+  else cands.sort((a, b) => Math.abs(a.w - want) - Math.abs(b.w - want) || a.mo - b.mo || drank(a) - drank(b));
   const chosen = cands[0]; pool.splice(pool.indexOf(chosen), 1); return chosen;
 }
+// Layout placement. The MODEL'S widget ORDER dominates (charts arrive model-first, then menu
+// top-up); role domain priority is a TIE-BREAKER for presentation validity only, never a re-ranking
+// of the model's analytical choices. `mo` = model order; `drank` (role prior) only breaks ties.
 function fillPartition(p, findings, charts, tables, role) {
   const prio = ROLE_DOMAIN_PRIORITY[role] || ROLE_DOMAIN_PRIORITY.CFO;
   const drank = (c) => { const d = WIDGET_DOMAIN[c.b.widget]; const i = prio.indexOf(d); return i < 0 ? 99 : i; };
-  const pool = charts.slice(0, PANEL_BUDGET).map((b) => ({ b, w: PANEL_WEIGHT[b._kind] || 2, asp: PANEL_ASPECTS[b._kind] || [] }));
+  const pool = charts.slice(0, PANEL_BUDGET).map((b, i) => ({ b, w: PANEL_WEIGHT[b._kind] || 2, asp: PANEL_ASPECTS[b._kind] || [], mo: i }));
   const fQ = [...findings], tQ = [...tables];
   const placed = []; let leadDone = false;
   for (const region of p.regions) {
