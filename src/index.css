@@ -66,7 +66,7 @@
 @media(prefers-reduced-motion:reduce){.wf-bar,.live-dot{animation:none;}.trace{transition:none;}}
 
 .wf-axis.r{fill:var(--muted);}
-.co-bar{fill:var(--slate);shape-rendering:crispEdges;cursor:pointer;transition:fill .12s;} .co-bar:hover{fill:var(--slate-d);}
+.co-bar{ fill:#c3ccd6; cursor:pointer; } .co-bar:hover{ fill:#aeb9c6; } .co-bar:hover{fill:var(--slate-d);}
 .area{fill-opacity:.86;}
 .legend{display:flex;gap:16px;margin:0 0 8px 4px;flex-wrap:wrap;}
 .chip{display:flex;align-items:center;gap:6px;background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink);cursor:pointer;padding:2px 2px;}
@@ -583,3 +583,5 @@ html,body,#root{ height:100%; overflow:hidden; }
 .hdr-status b{ color:#fff; }
 .hdr .live-dot{ background:var(--verdant); }
 .hdr-menu button{ color:var(--ink); }
+
+.cx-axlab{ font-family:'IBM Plex Sans',sans-serif; font-size:8px; font-weight:600; fill:var(--muted); letter-spacing:.06em; text-transform:uppercase; }

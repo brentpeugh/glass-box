@@ -221,22 +221,22 @@ function Waterfall({ c, w = 440, h = 260 }) {
   return (<svg viewBox={`0 0 ${W} ${H}`} className="wf"><line x1={padL} y1={padT} x2={padL} y2={H - padB} className="ax" /><line x1={padL} y1={H - padB} x2={W - padR} y2={H - padB} className="ax" />{Array.from({ length: 5 }, (_, i) => (domainMax / 4) * i).map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bars.map((b, i) => (<g key={i}>{i > 0 && <line x1={bars[i - 1].x + bw} x2={b.x} y1={bars[i - 1].cy} y2={bars[i - 1].cy} className="wf-conn" />}<rect x={b.x} y={b.yTop} width={bw} height={Math.max(b.h, 1)} className={`wf-bar wf-${b.t}`} /><text x={b.x + bw / 2} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{b.k}</text><text x={b.x + bw / 2} y={H - padB + 28} className="wf-xval" textAnchor="middle">{b.t === "anchor" ? fmtM(b.v) : (b.t === "up" ? "+" : "−") + fmtM(b.v).slice(1)}</text></g>))}</svg>);
 }
 function Combo({ bars, line, benchmark, good, onPick, fmtL, fmtR, w = 620, h = 260 }) {
-  const W = w, H = h, padL = 44, padR = 50, padB = 36, padT = 18; const plotW = W - padL - padR, plotH = H - padT - padB;
-  const maxBar = Math.max(...bars.map((b) => b.value)) * 1.12;
-  const maxLine = Math.max(...line.map((p) => p.value), benchmark) * 1.18;
-  const yL = (v) => padT + plotH - (v / maxBar) * plotH, yR = (v) => padT + plotH - (v / maxLine) * plotH;
-  const n = bars.length, slot = plotW / n, bw = slot * 0.42, x = (i) => padL + slot * i + slot / 2;
-  const ticks = Array.from({ length: 4 }, (_, i) => (maxBar / 3) * i), rticks = Array.from({ length: 4 }, (_, i) => (maxLine / 3) * i);
+  const W = w, H = h, padL = 46, padR = 50, padB = 36, padT = 20; const plotW = W - padL - padR, plotH = H - padT - padB;
+  const scL = niceScale(0, Math.max(...bars.map((b) => b.value)), 4);
+  const scR = niceScale(Math.min(...line.map((p) => p.value), benchmark), Math.max(...line.map((p) => p.value), benchmark), 4);
+  const yL = (v) => padT + plotH - (v / scL.max) * plotH, yR = (v) => padT + plotH - ((v - scR.min) / (scR.max - scR.min)) * plotH;
+  const n = bars.length, slot = plotW / n, bw = slot * 0.5, x = (i) => padL + slot * i + slot / 2;
   const path = line.map((p, i) => `${i ? "L" : "M"}${x(i)},${yR(p.value)}`).join(" ");
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
-    {ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={yL(tv)} y2={yL(tv)} className="wf-grid" /><text x={padL - 8} y={yL(tv) + 3} className="wf-axis" textAnchor="end">{fmtL(tv)}</text></g>))}
-    {rticks.map((tv, i) => (<text key={i} x={W - padR + 8} y={yR(tv) + 3} className="wf-axis r" textAnchor="start">{fmtR(tv)}</text>))}
-    <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{bars.map((b, i) => (<rect key={i} x={x(i) - bw / 2} y={yL(b.value)} width={bw} height={padT + plotH - yL(b.value)} className="co-bar" onClick={() => onPick(b.mv)} />))}
-    <line x1={padL} x2={W - padR} y1={yR(benchmark)} y2={yR(benchmark)} className="ln-bench" /><text x={padL + 4} y={yR(benchmark) + 13} className="ln-bench-lab" textAnchor="start">benchmark {fmtR(benchmark)}</text>
-    <path d={path} className="ln-path" />
-    {line.map((p, i) => { const br = good === "above" ? p.value < benchmark : p.value > benchmark; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={yR(p.value)} r="3.5" className={br ? "ln-dot bad" : "ln-dot good"} /></g>); })}
-    {bars.map((b, i) => (<text key={i} x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{b.q}</text>))}
-    <text x={padL - 8} y={padT - 5} className="wf-axis" textAnchor="end">S&M $</text><text x={W - padR + 8} y={padT - 5} className="wf-axis r" textAnchor="start">magic</text><text x={x(line.length - 1)} y={yR(line[line.length - 1].value) - 9} className="dlab" textAnchor="middle">{fmtR(line[line.length - 1].value)}</text>
+    {scL.ticks.map((tv, i) => tv <= scL.max && (<g key={i}><line x1={padL} x2={W - padR} y1={yL(tv)} y2={yL(tv)} className="cx-grid" /><text x={padL - 8} y={yL(tv) + 3.5} className="cx-ytick" textAnchor="end">{fmtL(tv)}</text></g>))}
+    {scR.ticks.map((tv, i) => tv >= scR.min && tv <= scR.max && (<text key={i} x={W - padR + 8} y={yR(tv) + 3.5} className="cx-ytick" textAnchor="start">{fmtR(tv)}</text>))}
+    {bars.map((b, i) => (<rect key={i} x={x(i) - bw / 2} y={yL(b.value)} width={bw} height={padT + plotH - yL(b.value)} className="co-bar" onClick={() => onPick(b.mv)} />))}
+    <line x1={padL} x2={W - padR} y1={yR(benchmark)} y2={yR(benchmark)} className="cx-bench" /><text x={padL + 2} y={yR(benchmark) - 6} className="cx-bench-lab" textAnchor="start">TARGET {fmtR(benchmark)}</text>
+    <path d={path} className="cx-line" />
+    <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="cx-axis" />
+    {line.map((p, i) => { const br = good === "above" ? p.value < benchmark : p.value > benchmark; const last = i === line.length - 1; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={yR(p.value)} r={last ? 4 : 2.5} className={`cx-dot ${br ? "bad" : "good"} ${last ? "last" : ""}`} /></g>); })}
+    {bars.map((b, i) => (<text key={i} x={x(i)} y={H - padB + 16} className="cx-xtick" textAnchor="middle">{b.q}</text>))}
+    <text x={padL - 8} y={padT - 6} className="cx-axlab" textAnchor="end">S&M $</text><text x={W - padR + 8} y={padT - 6} className="cx-axlab" textAnchor="start">MAGIC</text>
   </svg>);
 }
 function StackedArea({ quarters, series, onPick, w = 620, h = 270 }) {
