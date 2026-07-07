@@ -1313,8 +1313,8 @@ function KpiCell({ res, onPick }) {
   const disp = res.disp || fmtMV(mv);
   const tone = b ? ((b.good === "above" ? mv.value >= b.thr : mv.value <= b.thr) ? "good" : "bad") : "";
   return (<button className="kcell" onClick={() => onPick({ node: mv })}>
-    <span className="kcell-v">{disp}</span>
     <span className="kcell-l">{mv.label}{mv.epistemic === "proxy" && <span className="proxy">proxy</span>}</span>
+    <span className="kcell-v">{disp}</span>
     {b ? <span className={`kcell-b ${tone}`}>{mv.value < b.thr ? "▼" : "▲"} vs {kpiThr(b, mv.unit)}</span>
       : res.trend ? <span className="kcell-b trend">{res.trend === "rising" ? "▲" : res.trend === "falling" ? "▼" : "—"} {res.trend}</span> : null}
   </button>);
