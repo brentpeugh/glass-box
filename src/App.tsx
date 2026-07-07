@@ -326,6 +326,10 @@ const METRIC_SERIES = {
   grossMargin: (q, i) => { try { return E.grossMargin(q).value; } catch { return null; } },
   qoq: (q, i) => { try { return E.qoqGrowth(q).value; } catch { return null; } },
   r40: (q, i) => { try { return i >= 4 ? E.ruleOf40(q).value : null; } catch { return null; } },
+  // segment-scoped: read the segment from the primary mv's id (e.g. "arr.SMB.25Q4") so the spark
+  // tracks the exact value the hero displays. Covers concentration (arr) and retention (nrr) leads.
+  arr: (q, i, primary) => { try { const p = String(primary && primary.id || "").split("."); const seg = p.length === 3 ? p[1] : null; return seg ? E.segArr(seg, q).value : E.companyArr(q).value; } catch { return null; } },
+  nrr: (q, i, primary) => { try { const p = String(primary && primary.id || "").split("."); const seg = p.length >= 3 && E.SEGMENTS.includes(p[1]) ? p[1] : null; const qi = E.QUARTERS.indexOf(q); if (qi < 4) return null; return E.nrr(seg, E.QUARTERS[qi - 4], q).value; } catch { return null; } },
 };
 function SoloSpark({ vals, labels, benchmark, tone }) {
   const W = 320, H = 62, padT = 9, padB = 14, padL = 4, padR = 34;
@@ -353,7 +357,7 @@ function SalientBand({ finding, onPick }) {
   const basis = primary.basis;
   const sf = METRIC_SERIES[finding.metric];
   let spark = null;
-  if (sf) { const vals = E.QUARTERS.map((q, i) => sf(q, i)).filter((v) => v != null); if (vals.length > 2) spark = { vals, labels: E.QUARTERS.slice(E.QUARTERS.length - vals.length) }; }
+  if (sf) { const vals = E.QUARTERS.map((q, i) => sf(q, i, primary)).filter((v) => v != null); if (vals.length > 2) spark = { vals, labels: E.QUARTERS.slice(E.QUARTERS.length - vals.length) }; }
   return (<div className="fband">
     <div className="fband-vals">
       <div className="sf-primary">
@@ -1378,7 +1382,7 @@ function AppInner() {
         <div className="hdr-l"><span className="hdr-mark">⟡ CALIPER</span><span className="hdr-sub">Caliper Systems · synthetic</span></div>
         <div className={`hdr-status ${state.source}`}>
           {state.loading ? <span><span className="live-dot" /> curating the {role} dashboard — the model is arranging the engine's findings…</span>
-            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · top signal overall: {state.disclosure.label} ({state.disclosure.owner.org}-led · see {state.disclosure.owner.role} view)</em>}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>} · <button className="trust-link" onClick={() => setShowTrust(true)}>trust contract ›</button></span>
+            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · overall #1: {state.disclosure.label} → {state.disclosure.owner.role} view</em>}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>} · <button className="trust-link" onClick={() => setShowTrust(true)}>trust contract ›</button></span>
             : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>} · <button className="trust-link" onClick={() => setShowTrust(true)}>trust contract ›</button></span>}
         </div>
         <div className="hdr-r">
