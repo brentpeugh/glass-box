@@ -278,7 +278,7 @@ function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
   const areaId = `lg-${Math.abs(series.reduce((a, p, i) => a + p.value * (i + 1), 0) * 1000 | 0)}`;
   const area = `M${x(0)},${padT + plotH} ` + series.map((p, i) => `L${x(i)},${y(p.value)}`).join(" ") + ` L${x(series.length - 1)},${padT + plotH} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln" preserveAspectRatio="xMidYMid meet">
-    <defs><linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ink)" stopOpacity="0.07" /><stop offset="100%" stopColor="var(--ink)" stopOpacity="0" /></linearGradient></defs>
+    <defs><linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data)" stopOpacity="0.12" /><stop offset="100%" stopColor="var(--data)" stopOpacity="0" /></linearGradient></defs>
     {sc.ticks.map((tv, i) => (tv >= sc.min && tv <= sc.max && <g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="cx-grid" /><text x={padL - 10} y={y(tv) + 3.5} className="cx-ytick" textAnchor="end">{fmt(tv)}</text></g>))}
     {benchmark != null && <><line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="cx-bench" /><text x={W - padR} y={y(benchmark) - 6} className="cx-bench-lab" textAnchor="end">benchmark {fmt(benchmark)}</text></>}
     <path d={area} fill={`url(#${areaId})`} />
@@ -434,9 +434,9 @@ function buildCatalog() {
   const Q1 = E.QUARTERS.slice(1);
   const masking = E.detectMasking("24Q4", "25Q4");
   const segSeries = [
-    { seg: "SMB", color: "#B07C51", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("SMB", q).value, mv: E.segArr("SMB", q) })) },
-    { seg: "Mid-Market", color: "#9AA1A8", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Mid-Market", q).value, mv: E.segArr("Mid-Market", q) })) },
-    { seg: "Enterprise", color: "#39424B", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Enterprise", q).value, mv: E.segArr("Enterprise", q) })) },
+    { seg: "SMB", color: "#8ba6c4", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("SMB", q).value, mv: E.segArr("SMB", q) })) },
+    { seg: "Mid-Market", color: "#4a7ba8", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Mid-Market", q).value, mv: E.segArr("Mid-Market", q) })) },
+    { seg: "Enterprise", color: "#1f3a5f", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Enterprise", q).value, mv: E.segArr("Enterprise", q) })) },
   ];
   const smBars = Q1.map((q) => ({ q, value: E.smTotal(q).value, mv: E.smTotal(q) }));
   const magicLine = Q1.map((q) => ({ q, value: E.magicNumber(q).value, mv: E.magicNumber(q) }));
