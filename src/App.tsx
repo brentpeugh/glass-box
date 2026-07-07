@@ -965,21 +965,39 @@ const PARTITION_CHARACTER = {
   band_pair_trio: ["balanced", "dense"], band_trio_trio: ["grid", "dense"], band_trio_pair: ["grid"],
   band_pair: ["compact"], band_trio: ["compact"], band_duo_table: ["analytical", "compact"], band_solo: ["compact"], grid_six: ["grid"], split_table: ["analytical"], pair: ["compact"],
 };
-const ROLE_INTENT = {
-  CFO: { analytical: 6, hero: 2, dense: 2, grid: 1 },
-  CRO: { hero: 6, dense: 2, balanced: 2, grid: 1 },
-};
-function selectPartition(F, C, T, role, partitionPref) {
-  const intent = partitionPref ? { [partitionPref]: 6 } : (ROLE_INTENT[role] || {});   // model choice primary, role prior is the fallback
+// (ROLE_INTENT removed — layout is now derived from composition shape, not a role→layout prior)
+// Derive the board's SHAPE from the weight distribution of the model's actual selection — role
+// absent. A composition with one dominant heavy panel wants a hero layout; several heavy panels
+// want a dense analytical grid; comparable-weight panels want a balanced/grid. The layout is a
+// CONSEQUENCE of what was composed, so two roles diverge in layout exactly when their compositions
+// differ in shape — never because a role→layout table said so.
+function deriveShape(charts) {
+  const weights = charts.map((c) => PANEL_WEIGHT[c._kind] || 2);
+  const n = weights.length;
+  if (n <= 2) return "compact";
+  const heavy = weights.filter((w) => w >= 3).length;
+  const maxW = Math.max(...weights);
+  if (heavy >= 2) return "analytical";            // multiple heavy panels → dense data-grid
+  if (maxW >= 3 && heavy === 1) return "hero";    // one dominant heavy panel + support → hero
+  return n >= 5 ? "grid" : "balanced";            // comparable-weight panels
+}
+function selectPartition(F, modelCharts, allCharts, T, partitionPref) {
+  const C = allCharts.length;
+  // shape from the model's own composition (its compositional intent); fall back to the full board
+  // only if the model picked too few to have a discernible shape.
+  const shape = deriveShape(modelCharts.length >= 3 ? modelCharts : allCharts);
+  const prefChar = partitionPref && ["hero", "analytical", "balanced"].includes(partitionPref) ? partitionPref : null;
   let best = "pair", bs = -Infinity;
   for (const [k, p] of Object.entries(PARTITIONS)) {
     const cp = partCapacity(p);
     let s = fitScore(p, F, C, T);
-    if (p.asym) s += 14;
-    // intent only steers among partitions that actually fit the content (no empty chart regions),
-    // so it diverges full boards by role without ever selecting an oversized layout on thin content
+    if (p.asym) s += 8;
     const chartEmpty = Math.max(0, cp.chart - Math.min(C, cp.chart));
-    if (chartEmpty <= 1) for (const ch of (PARTITION_CHARACTER[k] || [])) s += (intent[ch] || 0) * 10;
+    if (chartEmpty <= 1) {
+      const chars = PARTITION_CHARACTER[k] || [];
+      if (chars.includes(shape)) s += 30;                         // derived shape is primary
+      if (prefChar && chars.includes(prefChar)) s += 10;          // model's stated pref reinforces
+    }
     if (s > bs) { bs = s; best = k; }
   }
   return best;
@@ -1045,7 +1063,7 @@ function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding }) 
   const charts = [...modelCharts, ...menuCharts];
   const modelTables = all.filter((b) => b._kind === "table");
   const tables = modelTables.length ? modelTables : (catalog["segment_table"] ? [{ widget: "segment_table", _kind: "table" }] : []);
-  const p = PARTITIONS[selectPartition(findings.length, charts.length, tables.length, role, partitionPref)];
+  const p = PARTITIONS[selectPartition(findings.length, modelCharts, charts, tables.length, partitionPref)];
   const placed = fillPartition(p, findings, charts, tables, role);
   return (<div className="partition" style={{ gridTemplateRows: p.rowsT }}>
     {placed.map((pl, i) => (
