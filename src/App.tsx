@@ -1026,7 +1026,17 @@ function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding }) 
   // model-curated charts lead; the ranked menu tops up so the partition is always fully filled
   const modelCharts = all.filter((b) => CHART_KINDS.has(b._kind));
   const chosen = new Set(modelCharts.map((b) => b.widget));
-  const menuCharts = CHART_MENU.filter((id) => catalog[id] && CHART_KINDS.has(catalog[id].kind) && !chosen.has(id)).map((id) => ({ widget: id, _kind: catalog[id].kind }));
+  // Domain-scoped top-up: fill empty slots from the SAME domain the finding lives in — so a
+  // concentration board tops up with concentration/growth charts, not retention bridges. The
+  // finding's own domain leads the top-up order, then related domains. Falls back to the fixed
+  // menu only if the finding's domain can't be resolved.
+  const findingDomain = finding ? (() => { try { return E.findingNeighborhood(finding).domain; } catch { return null; } })() : null;
+  const related = findingDomain ? (RELATED_DOMAINS[findingDomain] || [findingDomain]) : null;
+  const scopedIds = related
+    ? Object.keys(catalog).filter((id) => catalog[id] && CHART_KINDS.has(catalog[id].kind) && related.includes(WIDGET_DOMAIN[id]) && !chosen.has(id))
+        .sort((a, b) => (WIDGET_DOMAIN[a] === findingDomain ? 0 : 1) - (WIDGET_DOMAIN[b] === findingDomain ? 0 : 1))
+    : CHART_MENU.filter((id) => catalog[id] && CHART_KINDS.has(catalog[id].kind) && !chosen.has(id));
+  const menuCharts = scopedIds.map((id) => ({ widget: id, _kind: catalog[id].kind }));
   const charts = [...modelCharts, ...menuCharts];
   const modelTables = all.filter((b) => b._kind === "table");
   const tables = modelTables.length ? modelTables : (catalog["segment_table"] ? [{ widget: "segment_table", _kind: "table" }] : []);
