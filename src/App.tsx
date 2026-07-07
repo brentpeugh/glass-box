@@ -185,6 +185,13 @@ function TrustPanel({ audit, onClose }) {
       </div>
     </div>
     <div className="brief-sec">
+      <div className="brief-lbl">Role scoping — why boards differ by role</div>
+      <div className="tc-contract">
+        <div className="tc-line"><span className="tc-yes">HOW</span><span>Every role sees the <b>same neutral salience ranking</b>. A role <b>leads</b> with the highest-ranked finding in a domain where it holds <b>primary decision rights</b> — who owns the lever that moves the metric. The objective #1 is always disclosed, and led-with only if it's in the role's remit.</span></div>
+        <div className="tc-line"><span className="tc-no">NOT</span><span>This is <b>not</b> a preference weight or a per-role dataset. No tilt, no tuning, no manipulated data — the ranking is identical for everyone; only what <b>leads</b> is scoped. CFO holds capital efficiency, portfolio risk; CRO holds growth, retention, segment strategy; concentration is shared.</span></div>
+      </div>
+    </div>
+    <div className="brief-sec">
       <div className="brief-lbl">AI audit log — every model decision this session, and how the engine governed it</div>
       <div className="tc-audit">
         {audit.length === 0 ? <div className="tc-empty">No model actions yet this session.</div>
@@ -740,6 +747,24 @@ const ROLES = {
   CFO: { label: "Chief Financial Officer", focus: "durability, efficiency, retention quality, and concentration risk" },
   CRO: { label: "Head of Revenue (CRO)", focus: "growth, bookings momentum, expansion, and segment performance" },
 };
+// ===== ROLE DECISION-RIGHTS SCOPE — the one authored semantic layer. A role LEADS with the
+// highest-salience finding in a domain where it holds PRIMARY DECISION RIGHTS (who owns the lever
+// that moves the metric, not who "cares"). Defined over domains with zero reference to any finding —
+// portable and outcome-blind (verified across four dominant-domain surfaces: it diverges when the
+// top finding is single-remit, converges when it's shared). The objective #1 is always DISCLOSED,
+// led-with only if in-remit. Same neutral salience for every role; the scope only decides what leads.
+const ROLE_SCOPE = {
+  CFO: ["efficiency", "concentration", "retention"],   // spend/payback/allocation · portfolio risk · durability input
+  CRO: ["growth", "retention", "concentration"],       // pipeline/motion · renewals/expansion · segment go-to-market
+};
+const DOMAIN_LABEL = { efficiency: "capital efficiency", concentration: "revenue concentration", retention: "retention", growth: "growth" };
+const DOMAIN_OWNER = { efficiency: { org: "Finance", role: "CFO" }, growth: { org: "Revenue", role: "CRO" }, retention: { org: "Revenue", role: "CRO" }, concentration: { org: "Finance & Revenue", role: "CFO" } };
+// highest-salience finding within the role's decision-rights scope
+function roleScopedTopFinding(roleKey) {
+  const scope = ROLE_SCOPE[roleKey] || ROLE_SCOPE.CFO;
+  const inScope = E.computeSalience().find((f) => scope.includes(E.findingNeighborhood(f).domain));
+  return inScope ? { ...inScope, scope: { window: [E.QUARTERS[E.QUARTERS.length - 5], E.QUARTERS[E.QUARTERS.length - 1]] } } : E.topFinding();
+}
 // The model authors framing PROSE only — never numbers. Every number on the board comes from
 // the engine (via widgets/values). Any numeral in model-authored text is an attempt to author a
 // value, which the thesis forbids — so we strip it deterministically after generation. The prompt
@@ -1143,7 +1168,7 @@ function AnswerCard({ item, onPick, onRecurate, onAnswerFully }) {
   if (item.status === "classified") {
     const c = item.classify;
     return (<div className="ans"><div className="ans-q">“{item.q}”</div>
-      <div className="ans-intent">read this as <b>{c.echo}</b> · confidence {c.confidence} · {c.status === "salient" ? <><b>{c.domain}</b> is a top anomaly</> : <><b>{c.domain}</b> — present, below the top anomalies</>} — the engine governs what exists</div>
+      <div className="ans-intent">read this as <b>{c.echo}</b> · confidence {c.confidence} · {c.status === "salient" ? <><b>{DOMAIN_LABEL[c.domain] || c.domain}</b> is a top anomaly</> : <><b>{DOMAIN_LABEL[c.domain] || c.domain}</b> — present, below the top anomalies</>} — the engine governs what exists</div>
       <FindingList c={c} />
     </div>);
   }
@@ -1297,8 +1322,14 @@ function AppInner() {
   // and query-recurate are both thin front-ends on this: change what we curate around, rebuild.
   async function buildCuratedState(roleKey, targetFinding) {
     try {
-      const curation = await curate({ role: roleKey }, catalog, targetFinding);
+      const anchor = targetFinding || roleScopedTopFinding(roleKey);   // default board leads with the top finding in the role's decision-rights scope
+      const curation = await curate({ role: roleKey }, catalog, anchor);
       if (!curation) throw new Error("no finding to curate");
+      // disclosure: is the OBJECTIVE #1 outside this role's remit? (always shown, never hidden)
+      const objTop = E.topFinding();
+      const objDomain = objTop ? E.findingNeighborhood(objTop).domain : null;
+      const scope = ROLE_SCOPE[roleKey] || ROLE_SCOPE.CFO;
+      const disclosure = objTop && objDomain && !scope.includes(objDomain) ? { label: DOMAIN_LABEL[objDomain] || objDomain, owner: DOMAIN_OWNER[objDomain] || { org: "Finance", role: "CFO" } } : null;
       const isRetention = curation.finding && E.findingNeighborhood(curation.finding).domain === "retention";
       const lead = isRetention ? ["masking_card"] : ["salient_band"];
       const ids = [...lead, ...(curation.widgetIds || []).filter((id) => !lead.includes(id))];
@@ -1308,7 +1339,7 @@ function AppInner() {
       const rows = BASE_DS ? BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length : 0;
       const stats = { selected: (curation.widgetIds || []).length, candidates, evidence: (curation.evidenceIds || []).length, tests: (curation.testIds || []).length, rejected: (curation.violations || []).filter((v) => /drop|reject/.test(v)).length, rows };
       pushAudit({ kind: "curation", role: roleKey, finding: curation.finding ? curation.finding.label : "—", source: curation.source, detail: `chose ${stats.selected} panels, ${stats.evidence} evidence, ${stats.tests} tests · ${stats.rejected} rejected · ${(curation.violations || []).length} validator actions` });
-      return { loading: false, curation, spec, stats, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
+      return { loading: false, curation, spec, stats, disclosure, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
     } catch (e) {
       return { loading: false, curation: null, spec: FALLBACK[roleKey], partitionPref: null, source: "fallback", rejected: 0, framingRejected: 0, err: String(e).slice(0, 120), debug: null };
     }
@@ -1347,7 +1378,7 @@ function AppInner() {
         <div className="hdr-l"><span className="hdr-mark">⟡ CALIPER</span><span className="hdr-sub">Caliper Systems · synthetic</span></div>
         <div className={`hdr-status ${state.source}`}>
           {state.loading ? <span><span className="live-dot" /> curating the {role} dashboard — the model is arranging the engine's findings…</span>
-            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>} · <button className="trust-link" onClick={() => setShowTrust(true)}>trust contract ›</button></span>
+            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · top signal overall: {state.disclosure.label} ({state.disclosure.owner.org}-led · see {state.disclosure.owner.role} view)</em>}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>} · <button className="trust-link" onClick={() => setShowTrust(true)}>trust contract ›</button></span>
             : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>} · <button className="trust-link" onClick={() => setShowTrust(true)}>trust contract ›</button></span>}
         </div>
         <div className="hdr-r">

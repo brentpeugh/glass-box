@@ -14,10 +14,10 @@ export const WIDGET_DOMAIN: Record<string, string> = {
   masking_card: "retention", bridge_smb: "retention", bridge_enterprise: "retention", bridge_blended: "retention", hbar_nrr: "retention",
   efficiency_combo: "efficiency", magic_line: "efficiency", metric_matrix: "efficiency", efficiency_bullets: "efficiency",
   accel_line: "growth", segment_stack: "growth",
-  segment_table: "concentration", pareto_arr: "concentration",
-  scatter_eff_growth: "efficiency", heatmap_metrics: "efficiency",
-  indexed_arr: "growth",
-  dumbbell_ret: "retention",
+  segment_table: "concentration", pareto_arr: "concentration", treemap_arr: "concentration",
+  scatter_eff_growth: "efficiency", heatmap_metrics: "efficiency", quadrant_eff: "efficiency",
+  indexed_arr: "growth", grouped_growth: "growth", small_mult_arr: "growth",
+  dumbbell_ret: "retention", heatmap_retention: "retention",
 };
 // domains a finding's widgets may draw from when the neighborhood doesn't declare lenses
 export const RELATED_DOMAINS: Record<string, string[]> = { retention: ["retention", "concentration"], efficiency: ["efficiency", "growth"], growth: ["growth", "concentration"], concentration: ["concentration", "retention"] };
