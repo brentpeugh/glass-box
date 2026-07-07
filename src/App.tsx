@@ -644,7 +644,7 @@ function Treemap({ items, fmt, onPick, w = 420, h = 200 }) {
   const W = w, H = h, pad = 3;
   const total = items.reduce((s, x) => s + x.value, 0) || 1;
   const sorted = items.slice().sort((a, b) => b.value - a.value);
-  let x0 = 0; const shades = ["var(--slate-d)", "var(--slate)", "var(--slate-l)", "var(--brass)"];
+  let x0 = 0; const shades = ["#1f3a5f", "#4a7ba8", "#8ba6c4", "#b8c8da"];
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
     {sorted.map((it, i) => { const ww = (it.value / total) * W; const rect = (<g key={i} className="ln-pt" onClick={() => it.mv && onPick(it.mv)}>
       <rect x={x0 + pad} y={pad} width={Math.max(ww - pad * 2, 1)} height={H - pad * 2} fill={shades[i % shades.length]} />
