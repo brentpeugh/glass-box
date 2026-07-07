@@ -1266,13 +1266,13 @@ function AnswerCard({ item, onPick, onRecurate, onAnswerFully }) {
   return null;
 }
 
-function DebugPanel({ d }) {
+function DebugPanel({ d, onClose }) {
   const [showPrompt, setShowPrompt] = useState(false);
-  if (!d || !d.curation) return (<div className="dbg"><div className="dbg-h">CURATION LOG <span className="dbg-meta">no curation yet · press ` to hide</span></div></div>);
+  if (!d || !d.curation) return (<div className="dbg"><div className="dbg-h">CURATION LOG <span className="dbg-meta">no curation yet</span>{onClose && <button className="dbg-close" onClick={onClose}>✕</button>}</div></div>);
   const c = d.curation, v = d.violations || [];
   const isLive = c.source === "live";
   return (<div className="dbg">
-    <div className="dbg-h">CURATION LOG · {d.role} <span className="dbg-meta">source: {c.source}{d.model ? ` · ${d.model}` : ""} · {v.length} validator action(s) · press ` to hide</span></div>
+    <div className="dbg-h">CURATION LOG · {d.role} <span className="dbg-meta">source: {c.source}{d.model ? ` · ${d.model}` : ""} · {v.length} validator action(s)</span>{onClose && <button className="dbg-close" onClick={onClose}>✕</button>}</div>
     {v.length > 0 && <div className="dbg-rej">validator: {v.join(" · ")}</div>}
     <div className="dbg-cols">
       <div className="dbg-col"><div className="dbg-cap">① model proposed (judgment)</div><pre className="dbg-pre">{JSON.stringify({ thesis: c.thesis, evidence: c.evidenceIds, tests: c.testIds, widgets: c.widgetIds, partition: c.partitionPref }, null, 1)}</pre></div>
@@ -1454,8 +1454,8 @@ function AppInner() {
         <div className="hdr-l"><span className="hdr-mark">⟡ CALIPER</span><span className="hdr-sub">Caliper Systems · synthetic</span></div>
         <div className={`hdr-status ${state.source}`}>
           {state.loading ? <span><span className="live-dot" /> curating the {role} dashboard — the model is arranging the engine's findings…</span>
-            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · overall #1: {state.disclosure.label} → {state.disclosure.owner.role} view</em>}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>} · <button className="trust-link" onClick={() => setShowTrust(true)}>trust contract ›</button></span>
-            : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>} · <button className="trust-link" onClick={() => setShowTrust(true)}>trust contract ›</button></span>}
+            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · overall #1: {state.disclosure.label} → {state.disclosure.owner.role} view</em>}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>}</span>
+            : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>}</span>}
         </div>
         <div className="hdr-r">
           {Object.keys(ROLES).map((k) => <button key={k} className={`lensbtn ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
@@ -1466,7 +1466,8 @@ function AppInner() {
             <button className="recur" onClick={() => setShowMenu((v) => !v)} title="tools">⋯</button>
             {showMenu && <div className="hdr-menu" onMouseLeave={() => setShowMenu(false)}>
               <button onClick={() => { delete cache.current[role]; enter(role); setShowMenu(false); }}>↻ re-curate</button>
-              <button onClick={() => { setShowDebug((v) => !v); setShowMenu(false); }}>◱ curation log</button>
+              <button onClick={() => { setShowDebug(true); setShowMenu(false); }}>◱ curation log</button>
+              <button onClick={() => { setShowTrust(true); setShowMenu(false); }}>⛨ trust contract</button>
             </div>}
           </div>
         </div>
@@ -1474,7 +1475,7 @@ function AppInner() {
 
       {perturbation && <div className="perturb-banner"><span className="pb-tag">DATA PERTURBED</span><span className="pb-lbl">{PERTURBATIONS[perturbation].label}</span><span className="pb-note">{PERTURBATIONS[perturbation].note} The engine recomputed salience from the changed data — the finding you see below re-derived on its own, no code change.</span><button className="pb-reset" onClick={resetPerturbation}>reset data ›</button></div>}
 
-      {showDebug && <DebugPanel d={state.debug} />}
+      {showDebug && <div className="brief-overlay"><DebugPanel d={state.debug} onClose={() => setShowDebug(false)} /></div>}
 
       <div className={`workarea ${picked ? "drawer-open" : ""}`}>
         <main className="stage">

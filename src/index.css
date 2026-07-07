@@ -292,7 +292,7 @@ button.dt-num:hover{ color:var(--brass); }
 .tb-panel.asp-band{ border:none; background:none; padding:0; overflow:visible; }
 .tb-panel .cpanel{ height:100%; display:flex; flex-direction:column; }
 .tb-panel .cfill{ flex:1 1 auto; height:auto; min-height:0; }
-.tb-panel .tpanel{ height:100%; display:flex; flex-direction:column; }
+.tb-panel .tpanel{ height:100%; display:flex; flex-direction:column; min-height:0; } .tb-panel .tpanel .matrix{ flex:1 1 auto; min-height:0; overflow-y:auto; } .tb-panel .tpanel .dtable-wrap{ flex:1 1 auto; min-height:0; overflow-y:auto; }
 .tb-panel .dtable{ flex:1 1 auto; min-height:0; overflow-y:auto; }
 
 /* ===== contain to viewport: tighten vertical rhythm, harden no-scroll ===== */
@@ -585,3 +585,21 @@ html,body,#root{ height:100%; overflow:hidden; }
 .hdr-menu button{ color:var(--ink); }
 
 .cx-axlab{ font-family:'IBM Plex Sans',sans-serif; font-size:8px; font-weight:600; fill:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+/* ===== modals — new design language (navy headers, Plex type, cool tints, crisp geometry) ===== */
+.caliper{ --parch:#eef1f4; }
+.brief{ border:1px solid var(--rule); border-radius:4px; }
+.brief-head{ background:var(--navy); border-bottom:2px solid var(--gold); padding:12px 22px; color:#e8ebef; }
+.brief-head .brief-tag{ color:#aeb9c9; border-color:#3a4a63; }
+.brief-head .brief-status.untested{ color:#aeb9c9; border-color:#3a4a63; }
+.brief-x{ color:#aeb9c9; }
+.brief-x:hover{ color:#fff; }
+.brief-thesis{ font-family:'IBM Plex Serif',Georgia,serif; }
+.brief-why{ font-family:'IBM Plex Serif',Georgia,serif; }
+.tc-col{ background:#f4f6f8; border:1px solid var(--rule); border-radius:3px; }
+.brief-viol{ background:#f4f6f8; }
+/* curation log as a centered modal card */
+.brief-overlay .dbg{ max-width:920px; width:100%; background:var(--panel); border:1px solid var(--rule); border-radius:4px; box-shadow:0 24px 60px rgba(20,24,28,.22); font-family:'IBM Plex Mono',monospace; }
+.dbg-h{ background:var(--navy); color:#e8ebef; border-bottom:2px solid var(--gold); padding:12px 22px; letter-spacing:.08em; }
+.dbg-h .dbg-meta{ color:#8b98ab; }
+.dbg-close{ background:none; border:none; color:#aeb9c9; font-size:14px; cursor:pointer; margin-left:auto; padding:0 0 0 12px; }
+.dbg-close:hover{ color:#fff; }
