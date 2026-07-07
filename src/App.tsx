@@ -293,7 +293,7 @@ function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
     {/* single load-bearing mark: the current value */}
     {(() => { const p = series[series.length - 1], br = benchmark != null && (good === "above" ? p.value < benchmark : p.value > benchmark); return (<g className="ln-pt" onClick={() => onPick(p.mv)}>
       <circle cx={x(series.length - 1)} cy={y(p.value)} r={4.5} className={`cx-dot ${benchmark == null ? "neutral" : br ? "bad" : "good"} last`} />
-      <text x={x(series.length - 1) - 8} y={y(p.value) + 4} className={`cx-dlab ${br ? "bad" : ""}`} textAnchor="end">{fmt(p.value)}</text>
+      <text x={x(series.length - 1)} y={y(p.value) - 12} className={`cx-dlab ${br ? "bad" : ""}`} textAnchor="end">{fmt(p.value)}</text>
     </g>); })()}
   </svg>);
 }

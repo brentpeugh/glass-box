@@ -266,7 +266,7 @@ button.dt-num:hover{ color:var(--brass); }
 /* ===== fixed viewport: fill the screen, no scroll ===== */
 .caliper{ height:100vh; display:flex; flex-direction:column; overflow:hidden; padding:0; }
 .hdr,.honesty{ flex:0 0 auto; }
-.stage{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:12px; padding:12px var(--pad) 14px; max-width:none; margin:0; overflow:hidden; }
+.stage{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:12px; padding:12px var(--pad) 52px; max-width:none; margin:0; overflow:hidden; }
 .scorecard{ flex:0 0 auto; margin:0; }
 /* board fills remaining height; chart rows flex, table row sizes to content */
 .tboard{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:12px; }
@@ -376,7 +376,7 @@ html,body,#root{ height:100%; overflow:hidden; }
 
 /* ===== robust fit: every level can shrink to its allocation (no estimate, no clip) ===== */
 *{ box-sizing:border-box; }
-.stage{ padding-bottom:10px; }
+.stage{ padding-bottom:52px; }
 .tb-panel,.cpanel,.tpanel,.cfill,.split-minor{ min-height:0; }
 .tb-panel .cfill{ flex:1 1 auto; }
 /* dominant-plus-rail: the big panel's chart fills its taller region */
