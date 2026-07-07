@@ -1014,7 +1014,7 @@ function fillPartition(p, findings, charts, tables, role) {
   }
   return placed;
 }
-const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar", "bullet", "matrix"]);
+const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar", "bullet", "matrix", "scatter", "pareto", "heatmap", "indexed", "dumbbell", "treemap", "grouped", "quadrant", "small_multiples"]);
 // the full analytical menu the engine can render (salience-ordered). The model frames the
 // lead finding; the board is filled from this ranked menu, so there is always surplus to
 // fill a dense partition — a well-built board every time, regardless of how much the model curated.
