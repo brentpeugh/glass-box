@@ -719,11 +719,12 @@ function BulletPanel({ items, onPick, w = 420, h = 200 }) {
       const x = (v) => trackX + (Math.min(v, it.max) / it.max) * trackW;
       const clears = it.good === "above" ? it.value >= it.target : it.value <= it.target;
       return (<g key={i} className="ln-pt" onClick={() => onPick(it.mv)}>
-        <text x={padL - 8} y={cy + 3} className="wf-xlab" textAnchor="end">{it.label}</text>
+        <text x={padL - 8} y={cy + 3} className="bl-rowlab" textAnchor="end">{it.label}</text>
         <rect x={trackX} y={cy - 7} width={trackW} height={14} className="bullet-track" />
         <rect x={trackX} y={cy - 4} width={Math.max(x(it.value) - trackX, 1)} height={8} className={`bullet-bar ${clears ? "good" : "bad"}`} />
         <line x1={x(it.target)} y1={cy - 9} x2={x(it.target)} y2={cy + 9} className="bullet-target" />
-        <text x={W - padR + 6} y={cy + 3} className="dlab" textAnchor="start">{it.fmt(it.value)}</text>
+        <text x={x(it.target)} y={cy - 12} className="bl-tlab" textAnchor="middle">{it.fmt(it.target)}</text>
+        <text x={W - padR + 6} y={cy + 3} className={`bl-val ${clears ? "good" : "bad"}`} textAnchor="start">{it.fmt(it.value)}</text>
       </g>);
     })}
   </svg>);
