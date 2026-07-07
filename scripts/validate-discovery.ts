@@ -8,7 +8,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { createEngine } from "../src/engine-core";
-import { validateCurationCore, WIDGET_DOMAIN } from "../src/curation";
+import { validateCurationCore, WIDGET_DOMAIN, guardDirection, engineHeadline } from "../src/curation";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -73,6 +73,21 @@ ok("4. masking is NOT the selected top finding",
   ok("7. validator rejects model-authored numerals in framing",
     r.viable === false && r.violations.some((v) => v.includes("numeral")),
     "thesis with a digit should not be viable");
+}
+
+// 8 — directional coherence: framing that contradicts the engine's verdict is inadmissible,
+//     and the engine-authored fallback is always consistent with the verdict
+{
+  const breachG = { label: "SaaS Magic Number", hasBenchmark: true, status: "breaches", direction: "falling" };
+  const clearG = { label: "Gross Margin", hasBenchmark: true, status: "clears", direction: "rising" };
+  const contradictBreach = guardDirection("SaaS Magic Number exceeds benchmark, performing strong", breachG).violated;
+  const contradictClear = guardDirection("Gross Margin falls short below target", clearG).violated;
+  const honestBreach = guardDirection("SaaS Magic Number falls below benchmark", breachG).violated;
+  const fbBreach = engineHeadline(breachG), fbClear = engineHeadline(clearG);
+  ok("8. validator rejects direction-contradicting framing; engine fallback stays truthful",
+    contradictBreach === true && contradictClear === true && honestBreach === false &&
+    guardDirection(fbBreach, breachG).violated === false && guardDirection(fbClear, clearG).violated === false,
+    `contradictBreach=${contradictBreach} contradictClear=${contradictClear} honestBreach=${honestBreach} fb="${fbBreach}"`);
 }
 
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — discovery path: ${pass}/${pass + fail} thesis-critical assertions`);

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 
 import { createEngine } from "./engine-core";
-import { WIDGET_DOMAIN, RELATED_DOMAINS, guardFraming, validateCurationCore, HEADLINE_KEYS } from "./curation";
+import { WIDGET_DOMAIN, RELATED_DOMAINS, guardFraming, guardDirection, engineHeadline, validateCurationCore, HEADLINE_KEYS } from "./curation";
 
 // The engine is created once from the dataset fetched at runtime (see App bootstrap).
 // One engine, two consumers: this same engine-core is what scripts/validate.ts proves
@@ -857,9 +857,19 @@ function buildCurationPrompt(focus, finding, nb, catalog) {
   const testMenu = nb.testIds.map((id) => { const t = E.TEST_MENU.find((x) => x.id === id); return { id, question: t.label, falsifier: nb.falsifierIds.includes(id) }; });
   const widgetMenu = Object.keys(catalog).filter((id) => (RELATED_DOMAINS[nb.domain] || []).includes(WIDGET_DOMAIN[id])).map((id) => ({ id, label: catalog[id].title || id }));
   const headlineMenu = HEADLINE_KEYS;
+  // Domain-conditional composition guidance. Some findings (concentration especially) are served
+  // by segment-based widgets the model may not recognize as "the board" — naming the complementary
+  // views a complete board of that kind contains helps it compose fully without forcing a count.
+  const DOMAIN_HINT = {
+    concentration: "For a concentration finding, a complete board typically shows: the segment composition (treemap or stacked share), the ranking/Pareto of segments, the share trend over time (indexed or stacked-over-time), and the segment breakdown table. These segment-based views ARE the concentration story — select the complementary ones that build the full picture.",
+    efficiency: "For an efficiency finding, a complete board typically shows: the metric trend vs benchmark, the spend-vs-output relationship, the positioning against peers/quadrant, and the supporting metric matrix.",
+    retention: "For a retention finding, a complete board typically shows: the cohort/NRR bridge, the segment retention comparison, and the trend against benchmark.",
+    growth: "For a growth finding, a complete board typically shows: the growth trend, the segment contribution, and the acceleration/composition over time.",
+  };
+  const domainHint = DOMAIN_HINT[nb.domain] ? "\n" + DOMAIN_HINT[nb.domain] : "";
   return `You are the analytical-judgment layer of a governed analytics system, briefing the ${focus.role}.
 An engine has DETECTED this finding (you did not compute it; you may foreground and FRAME it): "${finding.label}".
-Form the decision-relevant READ for the ${focus.role}. The engine surfaced this top statistical fact from a neutral scan; its finding neighborhood (the menus below) defines what is legible. Do NOT assume the issue is retention, growth, efficiency, or concentration — let the neighborhood and the evidence decide. Choose the framing and widgets most decision-relevant FOR THE ${focus.role}: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Compose a COMPLETE board: select the set of widgets that give a full analytical view of this finding from complementary angles (e.g. the trend over time, the segment/component breakdown, the composition or share, a comparison against benchmark) — typically 5-6 panels, ordered most important first. Prefer a fuller board that examines the finding from several angles over a sparse one; only select fewer if the finding genuinely cannot support more. Select ONLY from the menus below — you may not invent metrics, tests, or widgets, and you may not write any digit in your prose (the engine owns all numbers).
+Form the decision-relevant READ for the ${focus.role}. The engine surfaced this top statistical fact from a neutral scan; its finding neighborhood (the menus below) defines what is legible. Do NOT assume the issue is retention, growth, efficiency, or concentration — let the neighborhood and the evidence decide. Choose the framing and widgets most decision-relevant FOR THE ${focus.role}: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Compose a COMPLETE board: select the set of widgets that give a full analytical view of this finding from complementary angles (e.g. the trend over time, the segment/component breakdown, the composition or share, a comparison against benchmark) — typically 5-6 panels, ordered most important first. Prefer a fuller board that examines the finding from several angles over a sparse one; only select fewer if the finding genuinely cannot support more.${domainHint} Select ONLY from the menus below — you may not invent metrics, tests, or widgets, and you may not write any digit in your prose (the engine owns all numbers).
 
 EVIDENCE (metric ids you may cite): ${JSON.stringify(metricMenu)}
 TESTS (you MUST include at least one marked falsifier:true, so your read can fail): ${JSON.stringify(testMenu)}
@@ -1201,7 +1211,7 @@ function resolveQuery(it) {
 }
 function buildNarratePrompt(q, desc) {
   const g = desc.grounding; const facts = [`Metric: ${g.label}.`];
-  if (g.hasBenchmark) facts.push(`It has a benchmark and currently ${g.status} it — you may refer to "the benchmark" by name, never by a number.`);
+  if (g.hasBenchmark) facts.push(`It has a benchmark and currently ${g.status} it — you may refer to "the benchmark" by name, never by a number. ${g.status === "breaches" ? "This is UNDERPERFORMANCE: your headline MUST convey falling short — do NOT write 'exceeds', 'above', 'strong', 'outperforms', or any success language." : "This is favorable: do NOT write 'below', 'misses', 'weak', or any shortfall language."}`);
   else facts.push(`It has NO benchmark — do NOT mention any benchmark, target, or threshold at all.`);
   if (g.direction) facts.push(`Over the window it is ${g.direction}.`);
   if (g.proxy) facts.push(`This is a proxy metric (an approximation); you may note that.`);
@@ -1219,7 +1229,15 @@ async function narrate(q, desc) {
     const data = await callModel("narrate", [{ role: "user", content: buildNarratePrompt(q, desc) }], 200);
     const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
     const p = JSON.parse(raw.replace(/```json|```/g, "").trim());
-    return { headline: guardFraming(String(p.headline || "").slice(0, 80)).text, soWhat: guardFraming(String(p.soWhat || "").slice(0, 220)).text };
+    let headline = guardFraming(String(p.headline || "").slice(0, 80)).text;
+    let soWhat = guardFraming(String(p.soWhat || "").slice(0, 220)).text;
+    // directional admissibility: if the model's framing contradicts the engine's verdict, the
+    // engine's verdict wins — the headline is replaced, the contradicting soWhat is dropped.
+    const g = desc.grounding;
+    const hViol = guardDirection(headline, g).violated, sViol = guardDirection(soWhat, g).violated;
+    if (hViol) headline = engineHeadline(g);
+    if (sViol) soWhat = "";
+    return { headline, soWhat, corrected: hViol || sViol };
   } catch (e) { return null; }
 }
 

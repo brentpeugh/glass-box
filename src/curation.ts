@@ -29,6 +29,32 @@ export const HEADLINE_KEYS = ["nrr", "grr", "gross_margin", "magic_number", "cac
 
 export function guardFraming(text: any) { const t = String(text || ""); const violated = /\d/.test(t); return { text: violated ? "" : t, violated }; }
 
+// Directional coherence: the engine owns the VERDICT (does the metric clear/breach its benchmark,
+// is it rising/falling) exactly as it owns the numbers. A framing whose direction language
+// contradicts the engine's verdict is INADMISSIBLE — just like an invented numeral. Returns
+// violated=true when the model asserts the opposite of what the engine computed.
+const UP_WORDS = /\b(exceed\w*|above|outperform\w*|beat\w*|surpass\w*|strong\w*|healthy|robust|ahead|clearing|clears|improv\w*|gain\w*|rising|climb\w*)\b/i;
+const DOWN_WORDS = /\b(below|breach\w*|miss\w*|weak\w*|short|behind|lag\w*|trail\w*|underperform\w*|declin\w*|fall\w*|drop\w*|erod\w*|deteriorat\w*|shortfall)\b/i;
+export function guardDirection(text: any, grounding: any) {
+  const t = String(text || "");
+  if (!grounding) return { violated: false };
+  // benchmark verdict: "clears" ⇒ favorable, "breaches" ⇒ unfavorable
+  if (grounding.hasBenchmark && grounding.status) {
+    const favorable = grounding.status === "clears";
+    if (favorable && DOWN_WORDS.test(t) && !UP_WORDS.test(t)) return { violated: true, reason: "framing says underperformance but the engine says it clears the benchmark" };
+    if (!favorable && UP_WORDS.test(t) && !DOWN_WORDS.test(t)) return { violated: true, reason: "framing says outperformance but the engine says it breaches the benchmark" };
+  }
+  return { violated: false };
+}
+// Deterministic, always-true fallback headline built from the engine's verdict — used when the
+// model's framing is rejected for contradicting the engine. The engine's verdict wins.
+export function engineHeadline(grounding: any) {
+  const label = grounding?.label || "Metric";
+  if (grounding?.hasBenchmark && grounding?.status) return grounding.status === "clears" ? `${label} clears its benchmark` : `${label} below its benchmark`;
+  if (grounding?.direction && grounding.direction !== "flat") return `${label} ${grounding.direction}`;
+  return `${label} — engine-computed`;
+}
+
 // The coherence validator. Pure: it takes the finding's neighborhood (from the engine),
 // the catalog, and the widget-domain map — no renderer state. This is the function the app
 // runs live AND the function the discovery-path test proves.
