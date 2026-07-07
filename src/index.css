@@ -358,7 +358,7 @@ html,body,#root{ height:100%; overflow:hidden; }
 .mt-dot{ cursor:default; }
 
 /* ===== reclaim vertical space: honesty in header, tighter chrome, constrained grid ===== */
-.hdr{ display:flex; align-items:center; gap:20px; }
+.hdr{ display:flex; align-items:center; gap:20px; flex-wrap:nowrap; }
 .hdr-l{ flex:0 0 auto; }
 .hdr-status{ flex:1 1 auto; min-width:0; font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .hdr-status.live .live-dot{ background:var(--verdant); }
@@ -476,7 +476,7 @@ html,body,#root{ height:100%; overflow:hidden; }
 .sf-val{ font-size:30px; font-weight:600; color:var(--ink); letter-spacing:-0.01em; }
 .sf-lbl{ font-size:13px; color:var(--slate-d); }
 .sf-badge{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ember); border:1px solid var(--ember); padding:2px 7px; background:rgba(168,72,60,.06); }
-.sf-ctx{ font-size:12px; color:var(--muted); font-style:italic; max-width:280px; }
+.sf-ctx{ font-size:13px; color:var(--slate-d); font-weight:500; max-width:320px; line-height:1.4; }
 
 /* query → recurate: echo card + confirm action */
 .recur-act{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:8px; padding:10px 12px; background:var(--parch); border:1px solid var(--rule); font-size:13px; color:var(--slate-d); }

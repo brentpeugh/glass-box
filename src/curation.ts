@@ -20,7 +20,7 @@ export const WIDGET_DOMAIN: Record<string, string> = {
   dumbbell_ret: "retention", heatmap_retention: "retention",
 };
 // domains a finding's widgets may draw from when the neighborhood doesn't declare lenses
-export const RELATED_DOMAINS: Record<string, string[]> = { retention: ["retention", "concentration"], efficiency: ["efficiency", "growth"], growth: ["growth", "concentration"], concentration: ["concentration", "retention"] };
+export const RELATED_DOMAINS: Record<string, string[]> = { retention: ["retention", "concentration"], efficiency: ["efficiency", "growth"], growth: ["growth", "concentration"], concentration: ["concentration", "growth"] };
 
 // model framing may not contain digits — the engine owns every number
 // headline-strip metrics the model may curate into the vital-signs scorecard (broader than the

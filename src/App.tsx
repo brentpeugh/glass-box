@@ -351,11 +351,16 @@ function SoloSpark({ vals, labels, benchmark, tone }) {
 }
 // Generic finding band — presents ANY top salient fact the way FindingCard presents masking.
 // Adding a finding type needs no new band: the fact's structure (value, benchmark, trend) drives it.
-function SalientBand({ finding, onPick }) {
+function SalientBand({ finding, role, onPick }) {
   if (!finding || !finding.mvs || !finding.mvs.length) return null;
-  const primary = finding.mvs[0];
+  const domain = (() => { try { return E.findingNeighborhood(finding).domain; } catch { return null; } })();
+  // For a concentration finding, the headline is the concentration itself (top-segment share), rising —
+  // not an arbitrary segment's ARR. This makes the value AND its sparkline tell the concentration story.
+  let primary = finding.mvs[0], sf = METRIC_SERIES[finding.metric];
+  if (domain === "concentration") {
+    try { const es = E.entShare(E.QUARTERS[E.QUARTERS.length - 1]); if (es) { primary = es; sf = (q) => { try { return E.entShare(q).value; } catch { return null; } }; } } catch {}
+  }
   const basis = primary.basis;
-  const sf = METRIC_SERIES[finding.metric];
   let spark = null;
   if (sf) { const vals = E.QUARTERS.map((q, i) => sf(q, i, primary)).filter((v) => v != null); if (vals.length > 2) spark = { vals, labels: E.QUARTERS.slice(E.QUARTERS.length - vals.length) }; }
   return (<div className="fband">
@@ -365,8 +370,7 @@ function SalientBand({ finding, onPick }) {
         <span className="sf-lbl">{primary.label}</span>
         {basis != null && <span className="sf-badge">vs {basis.thr}{primary.unit === "percent" ? "%" : ""} benchmark</span>}
       </div>
-      <span className="fband-verb">MOST ANOMALOUS</span>
-      <div className="sf-ctx">the largest standardized deviation the engine surfaced across the book</div>
+      <div className="sf-ctx">Most significant finding for {ROLE_FUNCTION[role] || "Finance"}</div>
     </div>
     {spark && <div className="fband-trend"><SoloSpark vals={spark.vals} labels={spark.labels} benchmark={basis != null ? basis.thr : null} tone="bad" /></div>}
     <button className="fband-inspect" onClick={() => onPick({ node: primary })}>inspect provenance ›</button>
@@ -762,6 +766,7 @@ const ROLE_SCOPE = {
   CRO: ["growth", "retention", "concentration"],       // pipeline/motion · renewals/expansion · segment go-to-market
 };
 const DOMAIN_LABEL = { efficiency: "capital efficiency", concentration: "revenue concentration", retention: "retention", growth: "growth" };
+const ROLE_FUNCTION = { CFO: "Finance", CRO: "Revenue" };
 const DOMAIN_OWNER = { efficiency: { org: "Finance", role: "CFO" }, growth: { org: "Revenue", role: "CRO" }, retention: { org: "Revenue", role: "CRO" }, concentration: { org: "Finance & Revenue", role: "CFO" } };
 // highest-salience finding within the role's decision-rights scope
 function roleScopedTopFinding(roleKey) {
@@ -1031,7 +1036,7 @@ function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding }) 
     {placed.map((pl, i) => (
       <div key={i} className={`tb-panel asp-${pl.region.a}`} style={{ gridColumn: `${pl.region.c[0]} / ${pl.region.c[1]}`, gridRow: `${pl.region.r[0]} / ${pl.region.r[1]}` }}>
         {pl.block.widget === "salient_band"
-          ? <div className="block emph-hero"><SalientBand finding={finding} onPick={onPick} /></div>
+          ? <div className="block emph-hero"><SalientBand finding={finding} role={role} onPick={onPick} /></div>
           : pl.block._kind === "finding_card"
           ? <Block block={pl.block} catalog={catalog} onPick={onPick} dim={null} />
           : <Widget id={pl.block.widget} catalog={catalog} onPick={onPick} dim={null} />}
