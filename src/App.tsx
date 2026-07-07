@@ -374,12 +374,12 @@ function SoloSpark({ vals, labels, benchmark, tone }) {
   const line = vals.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
   const area = `${line} L${x(vals.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
-    <defs><linearGradient id="sf-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ember)" stopOpacity="0.20" /><stop offset="100%" stopColor="var(--ember)" stopOpacity="0" /></linearGradient></defs>
+    <defs><linearGradient id="sf-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data)" stopOpacity="0.14" /><stop offset="100%" stopColor="var(--data)" stopOpacity="0" /></linearGradient></defs>
     <path d={area} fill="url(#sf-g)" />
     {benchmark != null && <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" />}
     {benchmark != null && <text x={W - padR + 4} y={y(benchmark) + 3} className="mt-bench-lab">{benchmark}</text>}
-    <path d={line} className={`mt-ln ${tone}`} />
-    {vals.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r={i === vals.length - 1 ? 3 : 2} className={`mt-dot ${tone}`} />)}
+    <path d={line} className="mt-ln" />
+    <circle cx={x(vals.length - 1)} cy={y(vals[vals.length - 1])} r={3.5} className={`mt-dot ${tone} last`} />
     <text x={x(0)} y={H - 3} className="mt-qlab" textAnchor="start">{labels[0]}</text><text x={x(vals.length - 1)} y={H - 3} className="mt-qlab" textAnchor="end">{labels[labels.length - 1]}</text>
   </svg>);
 }
@@ -553,22 +553,23 @@ function HBar({ items, benchmark, fmt, onPick, w = 420, h = 200 }) {
 }
 // Scatter — two metrics plotted against each other (relationship view). Institutional: points, no path.
 function Scatter({ points, xlab, ylab, onPick, w = 420, h = 200 }) {
-  const W = w, H = h, padL = 46, padR = 22, padT = 18, padB = 32;
+  const W = w, H = h, padL = 44, padR = 20, padT = 16, padB = 34;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
-  const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
-  const xr = (xmax - xmin) || 1, yr = (ymax - ymin) || 1;
-  const px = (v) => padL + 0.08 * plotW + ((v - xmin) / xr) * plotW * 0.84;
-  const py = (v) => padT + plotH - 0.08 * plotH - ((v - ymin) / yr) * plotH * 0.84;
+  const xsc = niceScale(Math.min(...xs), Math.max(...xs), 4), ysc = niceScale(Math.min(...ys), Math.max(...ys), 4);
+  const px = (v) => padL + ((v - xsc.min) / (xsc.max - xsc.min)) * plotW;
+  const py = (v) => padT + plotH - ((v - ysc.min) / (ysc.max - ysc.min)) * plotH;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
-    <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} className="ln-axis" />
-    <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ln-axis" />
+    {ysc.ticks.map((tv, i) => tv >= ysc.min && tv <= ysc.max && (<g key={i}><line x1={padL} x2={padL + plotW} y1={py(tv)} y2={py(tv)} className="cx-grid" /><text x={padL - 8} y={py(tv) + 3.5} className="cx-ytick" textAnchor="end">{tv % 1 === 0 ? tv : tv.toFixed(1)}</text></g>))}
+    {xsc.ticks.map((tv, i) => tv >= xsc.min && tv <= xsc.max && (<text key={i} x={px(tv)} y={padT + plotH + 14} className="cx-xtick" textAnchor="middle">{tv % 1 === 0 ? tv : tv.toFixed(2)}</text>))}
+    <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} className="cx-axis" />
+    <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="cx-axis" />
     {points.map((p, i) => (<g key={i} className="ln-pt" onClick={() => p.mv && onPick(p.mv)}>
       <circle cx={px(p.x)} cy={py(p.y)} r={i === points.length - 1 ? 5 : 3.5} className={`scat-dot ${i === points.length - 1 ? "last" : ""}`} />
       {p.label && <text x={px(p.x)} y={py(p.y) - 8} className="scat-lab" textAnchor="middle">{p.label}</text>}
     </g>))}
-    <text x={padL + plotW / 2} y={H - 4} className="ax-lab" textAnchor="middle">{xlab}</text>
-    <text x={11} y={padT + plotH / 2} className="ax-lab" textAnchor="middle" transform={`rotate(-90 11 ${padT + plotH / 2})`}>{ylab}</text>
+    <text x={padL + plotW / 2} y={H - 3} className="cx-axlab" textAnchor="middle">{xlab}</text>
+    <text x={10} y={padT + plotH / 2} className="cx-axlab" textAnchor="middle" transform={`rotate(-90 10 ${padT + plotH / 2})`}>{ylab}</text>
   </svg>);
 }
 // Pareto — sorted bars + cumulative share curve (concentration / share-of-total). General.
@@ -671,28 +672,28 @@ function GroupedBar({ groups, keys, fmt, colors, onPick, w = 420, h = 200 }) {
 }
 // Quadrant — two metrics with benchmark crosshairs dividing four labeled positioning zones.
 function Quadrant({ points, xlab, ylab, xbench, ybench, quad, onPick, w = 420, h = 200 }) {
-  const W = w, H = h, padL = 42, padR = 18, padT = 16, padB = 30;
+  const W = w, H = h, padL = 44, padR = 20, padT = 16, padB = 34;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
-  const xmin = Math.min(...xs, xbench), xmax = Math.max(...xs, xbench), ymin = Math.min(...ys, ybench), ymax = Math.max(...ys, ybench);
-  const xr = (xmax - xmin) * 1.25 || 1, yr = (ymax - ymin) * 1.25 || 1;
-  const px = (v) => padL + 0.1 * plotW + ((v - xmin) / xr) * plotW * 0.8;
-  const py = (v) => padT + plotH - 0.1 * plotH - ((v - ymin) / yr) * plotH * 0.8;
-  const bx = px(xbench), by = py(ybench);
-  const zones = quad || {};
+  const xsc = niceScale(Math.min(...xs, xbench), Math.max(...xs, xbench), 4), ysc = niceScale(Math.min(...ys, ybench), Math.max(...ys, ybench), 4);
+  const px = (v) => padL + ((v - xsc.min) / (xsc.max - xsc.min)) * plotW;
+  const py = (v) => padT + plotH - ((v - ysc.min) / (ysc.max - ysc.min)) * plotH;
+  const bx = px(xbench), by = py(ybench), zones = quad || {};
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
-    <line x1={bx} y1={padT} x2={bx} y2={padT + plotH} className="ln-bench" />
-    <line x1={padL} y1={by} x2={padL + plotW} y2={by} className="ln-bench" />
+    {ysc.ticks.map((tv, i) => tv >= ysc.min && tv <= ysc.max && (<g key={i}><line x1={padL} x2={padL + plotW} y1={py(tv)} y2={py(tv)} className="cx-grid" /><text x={padL - 8} y={py(tv) + 3.5} className="cx-ytick" textAnchor="end">{tv % 1 === 0 ? tv : tv.toFixed(1)}</text></g>))}
+    {xsc.ticks.map((tv, i) => tv >= xsc.min && tv <= xsc.max && (<text key={i} x={px(tv)} y={padT + plotH + 14} className="cx-xtick" textAnchor="middle">{tv % 1 === 0 ? tv : tv.toFixed(2)}</text>))}
+    <line x1={bx} y1={padT} x2={bx} y2={padT + plotH} className="cx-bench" />
+    <line x1={padL} y1={by} x2={padL + plotW} y2={by} className="cx-bench" />
     {zones.tr && <text x={padL + plotW - 3} y={padT + 9} className="quad-zone" textAnchor="end">{zones.tr}</text>}
     {zones.tl && <text x={padL + 3} y={padT + 9} className="quad-zone" textAnchor="start">{zones.tl}</text>}
-    {zones.br && <text x={padL + plotW - 3} y={padT + plotH - 3} className="quad-zone" textAnchor="end">{zones.br}</text>}
-    {zones.bl && <text x={padL + 3} y={padT + plotH - 3} className="quad-zone" textAnchor="start">{zones.bl}</text>}
+    {zones.br && <text x={padL + plotW - 3} y={padT + plotH - 4} className="quad-zone" textAnchor="end">{zones.br}</text>}
+    {zones.bl && <text x={padL + 3} y={padT + plotH - 4} className="quad-zone" textAnchor="start">{zones.bl}</text>}
     {points.map((p, i) => (<g key={i} className="ln-pt" onClick={() => p.mv && onPick(p.mv)}>
       <circle cx={px(p.x)} cy={py(p.y)} r={i === points.length - 1 ? 5 : 3.5} className={`scat-dot ${i === points.length - 1 ? "last" : ""}`} />
       <text x={px(p.x)} y={py(p.y) - 8} className="scat-lab" textAnchor="middle">{p.label}</text>
     </g>))}
-    <text x={padL + plotW / 2} y={H - 4} className="ax-lab" textAnchor="middle">{xlab}</text>
-    <text x={11} y={padT + plotH / 2} className="ax-lab" textAnchor="middle" transform={`rotate(-90 11 ${padT + plotH / 2})`}>{ylab}</text>
+    <text x={padL + plotW / 2} y={H - 3} className="cx-axlab" textAnchor="middle">{xlab}</text>
+    <text x={10} y={padT + plotH / 2} className="cx-axlab" textAnchor="middle" transform={`rotate(-90 10 ${padT + plotH / 2})`}>{ylab}</text>
   </svg>);
 }
 // Small multiples — one mini trend per category on a shared scale (compare shapes). General.
