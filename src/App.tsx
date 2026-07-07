@@ -279,16 +279,22 @@ function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
   const area = `M${x(0)},${padT + plotH} ` + series.map((p, i) => `L${x(i)},${y(p.value)}`).join(" ") + ` L${x(series.length - 1)},${padT + plotH} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln" preserveAspectRatio="xMidYMid meet">
     <defs><linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data)" stopOpacity="0.12" /><stop offset="100%" stopColor="var(--data)" stopOpacity="0" /></linearGradient></defs>
+    {benchmark != null && <rect x={padL} y={good === "above" ? y(benchmark) : padT} width={W - padR - padL} height={good === "above" ? (padT + plotH - y(benchmark)) : (y(benchmark) - padT)} className="cx-danger" />}
     {sc.ticks.map((tv, i) => (tv >= sc.min && tv <= sc.max && <g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="cx-grid" /><text x={padL - 10} y={y(tv) + 3.5} className="cx-ytick" textAnchor="end">{fmt(tv)}</text></g>))}
-    {benchmark != null && <><line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="cx-bench" /><text x={W - padR} y={y(benchmark) - 6} className="cx-bench-lab" textAnchor="end">benchmark {fmt(benchmark)}</text></>}
+    {benchmark != null && <><line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="cx-bench" /><text x={W - padR} y={y(benchmark) - 6} className="cx-bench-lab" textAnchor="end">TARGET {fmt(benchmark)}</text></>}
     <path d={area} fill={`url(#${areaId})`} />
     <path d={path} className="cx-line" />
     <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="cx-axis" />
-    {series.map((p, i) => { const br = benchmark != null && (good === "above" ? p.value < benchmark : p.value > benchmark); const last = i === series.length - 1; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}>
-      <circle cx={x(i)} cy={y(p.value)} r={last ? 4.5 : 3} className={`cx-dot ${benchmark == null ? "neutral" : br ? "bad" : "good"} ${last ? "last" : ""}`} />
-      {last && <text x={x(i)} y={y(p.value) - 10} className="cx-dlab" textAnchor={i === series.length - 1 ? "end" : "middle"}>{fmt(p.value)}</text>}
+    {/* invisible hit-targets keep every point traceable without drawing redundant nodes */}
+    {series.map((p, i) => (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}>
+      <rect x={x(i) - (plotW / series.length) / 2} y={padT} width={plotW / series.length} height={plotH} fill="transparent" />
       <text x={x(i)} y={H - padB + 16} className="cx-xtick" textAnchor="middle">{p.q}</text>
-    </g>); })}
+    </g>))}
+    {/* single load-bearing mark: the current value */}
+    {(() => { const p = series[series.length - 1], br = benchmark != null && (good === "above" ? p.value < benchmark : p.value > benchmark); return (<g className="ln-pt" onClick={() => onPick(p.mv)}>
+      <circle cx={x(series.length - 1)} cy={y(p.value)} r={4.5} className={`cx-dot ${benchmark == null ? "neutral" : br ? "bad" : "good"} last`} />
+      <text x={x(series.length - 1) - 8} y={y(p.value) + 4} className={`cx-dlab ${br ? "bad" : ""}`} textAnchor="end">{fmt(p.value)}</text>
+    </g>); })()}
   </svg>);
 }
 function Callout({ mv, onPick }) {
