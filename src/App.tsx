@@ -249,18 +249,46 @@ function StackedArea({ quarters, series, onPick, w = 620, h = 270 }) {
   return (<div><div className="legend">{series.slice().reverse().map((se) => (<button key={se.seg} className="chip" onClick={() => onPick(se.points[se.points.length - 1].mv)}><span className="sw" style={{ background: se.color }} />{se.seg}</button>))}</div>
     <svg viewBox={`0 0 ${W} ${H}`} className="ln"><line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bands.map((b, i) => (<polygon key={i} points={b.poly} fill={b.color} className="area" />))}{quarters.map((q, i) => (<text key={i} x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{q}</text>))}</svg></div>);
 }
+// ===== shared chart construction layer — the machinery institutional charts have and hand-drawn
+// SVG lacks: a nice-number scale so axes land on rounded values (0.4, 0.6, 0.8 — not 0.34, 0.52),
+// proper ticks, and consistent plot geometry. Every chart routes through this instead of raw
+// min/max scaling, which is what makes them read as constructed rather than sketched.
+function niceNum(range, round) {
+  const exp = Math.floor(Math.log10(range || 1));
+  const frac = (range || 1) / Math.pow(10, exp);
+  const nf = round ? (frac < 1.5 ? 1 : frac < 3 ? 2 : frac < 7 ? 5 : 10) : (frac <= 1 ? 1 : frac <= 2 ? 2 : frac <= 5 ? 5 : 10);
+  return nf * Math.pow(10, exp);
+}
+function niceScale(min, max, maxTicks = 5) {
+  if (min === max) { min -= Math.abs(min) * 0.1 || 0.5; max += Math.abs(max) * 0.1 || 0.5; }
+  const range = niceNum(max - min, false);
+  const step = niceNum(range / Math.max(1, maxTicks - 1), true);
+  const niceMin = Math.floor(min / step) * step, niceMax = Math.ceil(max / step) * step;
+  const ticks = [];
+  for (let v = niceMin; v <= niceMax + step * 0.5; v += step) ticks.push(Math.round(v / step) * step);
+  return { min: niceMin, max: niceMax, step, ticks };
+}
+
 function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
-  const W = w, H = h, padL = 40, padR = 16, padB = 34, padT = 14; const plotW = W - padL - padR, plotH = H - padT - padB;
-  const vals = series.map((p) => p.value).concat(benchmark != null ? [benchmark] : []); const lo = Math.min(...vals), hi = Math.max(...vals);
-  const pad = (hi - lo) * 0.18 || 0.1; const dMin = Math.min(lo - pad, benchmark != null ? benchmark - pad : Infinity), dMax = Math.max(hi + pad, benchmark != null ? benchmark + pad : -Infinity);
-  const x = (i) => padL + (plotW * i) / (series.length - 1); const y = (v) => padT + plotH - ((v - dMin) / (dMax - dMin)) * plotH;
+  const W = w, H = h, padL = 52, padR = 20, padB = 30, padT = 16; const plotW = W - padL - padR, plotH = H - padT - padB;
+  const vals = series.map((p) => p.value).concat(benchmark != null ? [benchmark] : []);
+  const sc = niceScale(Math.min(...vals), Math.max(...vals), 5);
+  const x = (i) => padL + (plotW * i) / (series.length - 1); const y = (v) => padT + plotH - ((v - sc.min) / (sc.max - sc.min)) * plotH;
   const path = series.map((p, i) => `${i ? "L" : "M"}${x(i)},${y(p.value)}`).join(" ");
-  const ticks = Array.from({ length: 4 }, (_, i) => dMin + ((dMax - dMin) / 3) * i);
-  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
-    {ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmt(tv)}</text></g>))}
-    {benchmark != null && <><line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="ln-bench" /><text x={W - padR} y={y(benchmark) - 5} className="ln-bench-lab" textAnchor="end">benchmark {fmt(benchmark)}</text></>}
-    <path d={path} className="ln-path" />
-    <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{series.map((p, i) => { const br = benchmark != null && (good === "above" ? p.value < benchmark : p.value > benchmark); return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={y(p.value)} r="3.5" className={benchmark == null ? "ln-dot neutral" : br ? "ln-dot bad" : "ln-dot good"} />{i === series.length - 1 && <text x={x(i)} y={y(p.value) - 9} className="dlab" textAnchor="middle">{fmt(p.value)}</text>}<text x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{p.q}</text></g>); })}
+  const areaId = `lg-${Math.abs(series.reduce((a, p, i) => a + p.value * (i + 1), 0) * 1000 | 0)}`;
+  const area = `M${x(0)},${padT + plotH} ` + series.map((p, i) => `L${x(i)},${y(p.value)}`).join(" ") + ` L${x(series.length - 1)},${padT + plotH} Z`;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln" preserveAspectRatio="xMidYMid meet">
+    <defs><linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ink)" stopOpacity="0.07" /><stop offset="100%" stopColor="var(--ink)" stopOpacity="0" /></linearGradient></defs>
+    {sc.ticks.map((tv, i) => (tv >= sc.min && tv <= sc.max && <g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="cx-grid" /><text x={padL - 10} y={y(tv) + 3.5} className="cx-ytick" textAnchor="end">{fmt(tv)}</text></g>))}
+    {benchmark != null && <><line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="cx-bench" /><text x={W - padR} y={y(benchmark) - 6} className="cx-bench-lab" textAnchor="end">benchmark {fmt(benchmark)}</text></>}
+    <path d={area} fill={`url(#${areaId})`} />
+    <path d={path} className="cx-line" />
+    <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="cx-axis" />
+    {series.map((p, i) => { const br = benchmark != null && (good === "above" ? p.value < benchmark : p.value > benchmark); const last = i === series.length - 1; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}>
+      <circle cx={x(i)} cy={y(p.value)} r={last ? 4.5 : 3} className={`cx-dot ${benchmark == null ? "neutral" : br ? "bad" : "good"} ${last ? "last" : ""}`} />
+      {last && <text x={x(i)} y={y(p.value) - 10} className="cx-dlab" textAnchor={i === series.length - 1 ? "end" : "middle"}>{fmt(p.value)}</text>}
+      <text x={x(i)} y={H - padB + 16} className="cx-xtick" textAnchor="middle">{p.q}</text>
+    </g>); })}
   </svg>);
 }
 function Callout({ mv, onPick }) {

@@ -555,3 +555,17 @@ html,body,#root{ height:100%; overflow:hidden; }
 
 /* quadrant zone labels */
 .quad-zone{ font-family:'IBM Plex Mono',monospace; font-size:7.5px; fill:var(--muted); letter-spacing:.02em; text-transform:uppercase; opacity:.65; }
+
+/* ===== chart construction layer — institutional line ===== */
+.cx-grid{ stroke:var(--rule); stroke-width:1; opacity:.45; }
+.cx-axis{ stroke:var(--rule); stroke-width:1.25; }
+.cx-ytick,.cx-xtick{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; fill:var(--muted); letter-spacing:.02em; }
+.cx-line{ fill:none; stroke:var(--ink); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+.cx-dot{ stroke:#fff; stroke-width:1.25; }
+.cx-dot.neutral{ fill:var(--slate); }
+.cx-dot.good{ fill:var(--verdant); }
+.cx-dot.bad{ fill:var(--ember); }
+.cx-dot.last{ stroke-width:2; }
+.cx-bench{ stroke:var(--slate-l); stroke-width:1; stroke-dasharray:4 3; opacity:.8; }
+.cx-bench-lab{ font-family:'IBM Plex Mono',monospace; font-size:9px; fill:var(--slate-l); letter-spacing:.03em; }
+.cx-dlab{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; fill:var(--ink); }
