@@ -552,3 +552,6 @@ html,body,#root{ height:100%; overflow:hidden; }
 .tm-val{ font-family:'IBM Plex Mono',monospace; font-size:9px; fill:rgba(255,255,255,.8); }
 .hm-cell.none{ fill:var(--rule); opacity:.4; }
 .disclose{ color:var(--brass); font-style:normal; }
+
+/* quadrant zone labels */
+.quad-zone{ font-family:'IBM Plex Mono',monospace; font-size:7.5px; fill:var(--muted); letter-spacing:.02em; text-transform:uppercase; opacity:.65; }

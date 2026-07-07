@@ -456,7 +456,7 @@ function buildCatalog() {
     dumbbell_ret: { kind: "dumbbell", polarity: "bad", desc: "Gross vs net retention per segment — the gap is the expansion contribution; where the dot moves left, contraction outweighs expansion.", data: { title: "GRR → NRR by segment", items: dumbbellRet, fmt: (v) => `${v.toFixed(0)}%` } },
     treemap_arr: { kind: "treemap", polarity: "bad", desc: "ARR share by segment as proportional area — the concentration of the book at a glance.", data: { title: "ARR share by segment", items: treemapArr, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
     grouped_growth: { kind: "grouped", polarity: "neutral", desc: "Segment ARR at the first vs latest quarter side by side — which segments actually drove the growth.", data: { title: "Segment ARR — first vs latest", groups: groupedGrowth, keys: ["24Q1", "25Q4"], colors: ["var(--slate-l)", "var(--slate-d)"], fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
-    quadrant_eff: { kind: "quadrant", polarity: "bad", desc: "Each quarter positioned by sales efficiency and growth against their benchmarks — the four zones separate efficient growth from bought growth.", data: { title: "Efficiency × growth positioning", points: quadEff, xlab: "Magic #", ylab: "QoQ growth %", xbench: E.BENCH.magic_number.threshold, ybench: 5 } },
+    quadrant_eff: { kind: "quadrant", polarity: "bad", desc: "Each quarter positioned by sales efficiency and growth against their benchmarks — the four zones separate efficient growth from bought growth.", data: { title: "Efficiency × growth positioning", points: quadEff, xlab: "Magic #", ylab: "QoQ growth %", xbench: E.BENCH.magic_number.threshold, ybench: 5, quad: { tr: "Efficient growth", tl: "Bought growth", br: "Efficient · slowing", bl: "Inefficient" } } },
     small_mult_arr: { kind: "small_multiples", polarity: "neutral", desc: "One ARR trend per segment on a shared scale — compare the growth shapes side by side.", data: { title: "ARR trend by segment", series: smArr } },
     heatmap_retention: { kind: "heatmap", polarity: "bad", desc: "NRR and GRR per segment, tone-coded against benchmark — where retention holds and where it breaches.", data: { title: "Retention by segment", ...heatmapRet } },
   };
@@ -517,30 +517,29 @@ function HBar({ items, benchmark, fmt, onPick, w = 420, h = 200 }) {
     </g>); })}
   </svg>);
 }
-// Scatter — two metrics plotted against each other (relationship view). General: any metric pair.
+// Scatter — two metrics plotted against each other (relationship view). Institutional: points, no path.
 function Scatter({ points, xlab, ylab, onPick, w = 420, h = 200 }) {
-  const W = w, H = h, padL = 40, padR = 16, padT = 16, padB = 30;
+  const W = w, H = h, padL = 46, padR = 22, padT = 18, padB = 32;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
   const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
   const xr = (xmax - xmin) || 1, yr = (ymax - ymin) || 1;
-  const px = (v) => padL + 0.06 * plotW + ((v - xmin) / xr) * plotW * 0.88;
-  const py = (v) => padT + plotH - 0.06 * plotH - ((v - ymin) / yr) * plotH * 0.88;
+  const px = (v) => padL + 0.08 * plotW + ((v - xmin) / xr) * plotW * 0.84;
+  const py = (v) => padT + plotH - 0.08 * plotH - ((v - ymin) / yr) * plotH * 0.84;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
     <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} className="ln-axis" />
     <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ln-axis" />
-    <polyline points={points.map((p) => `${px(p.x)},${py(p.y)}`).join(" ")} className="scat-path" />
     {points.map((p, i) => (<g key={i} className="ln-pt" onClick={() => p.mv && onPick(p.mv)}>
       <circle cx={px(p.x)} cy={py(p.y)} r={i === points.length - 1 ? 5 : 3.5} className={`scat-dot ${i === points.length - 1 ? "last" : ""}`} />
       {p.label && <text x={px(p.x)} y={py(p.y) - 8} className="scat-lab" textAnchor="middle">{p.label}</text>}
     </g>))}
-    <text x={padL + plotW / 2} y={H - 3} className="ax-lab" textAnchor="middle">{xlab}</text>
-    <text x={9} y={padT + plotH / 2} className="ax-lab" textAnchor="middle" transform={`rotate(-90 9 ${padT + plotH / 2})`}>{ylab}</text>
+    <text x={padL + plotW / 2} y={H - 4} className="ax-lab" textAnchor="middle">{xlab}</text>
+    <text x={11} y={padT + plotH / 2} className="ax-lab" textAnchor="middle" transform={`rotate(-90 11 ${padT + plotH / 2})`}>{ylab}</text>
   </svg>);
 }
 // Pareto — sorted bars + cumulative share curve (concentration / share-of-total). General.
 function Pareto({ items, fmt, onPick, w = 420, h = 200 }) {
-  const W = w, H = h, padL = 40, padR = 40, padT = 14, padB = 26;
+  const W = w, H = h, padL = 40, padR = 44, padT = 18, padB = 26;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const sorted = items.slice().sort((a, b) => b.value - a.value);
   const total = sorted.reduce((s, x) => s + x.value, 0) || 1;
@@ -554,7 +553,7 @@ function Pareto({ items, fmt, onPick, w = 420, h = 200 }) {
     </g>); })}
     <polyline points={cumPts.map((p) => `${p.x},${p.y}`).join(" ")} className="par-cum" />
     {cumPts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={2.5} className="par-cum-dot" />)}
-    <text x={W - 2} y={cumPts[cumPts.length - 1].y - 4} className="dlab" textAnchor="end">100%</text>
+    <text x={W - padR + 4} y={cumPts[cumPts.length - 1].y + 3} className="dlab" textAnchor="start">100%</text>
   </svg>);
 }
 // Heatmap — metric × quarter grid, tone-coded vs benchmark (dense multi-metric scan). General.
@@ -574,14 +573,14 @@ function Heatmap({ rows, cols, onPick, w = 420, h = 200 }) {
 }
 // Indexed line — series rebased to 100 at t0 (compare growth rates regardless of level). General.
 function IndexedLine({ series, quarters, onPick, w = 420, h = 200 }) {
-  const W = w, H = h, padL = 36, padR = 46, padT = 14, padB = 22;
+  const W = w, H = h, padL = 34, padR = 72, padT = 14, padB = 22;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const idx = series.map((s) => ({ ...s, pts: s.points.map((p) => ({ ...p, iv: (p.value / (s.points[0].value || 1)) * 100 })) }));
   const allv = idx.flatMap((s) => s.pts.map((p) => p.iv));
   const min = Math.min(...allv, 100), max = Math.max(...allv, 100), r = (max - min) || 1;
   const x = (i) => padL + (i / (quarters.length - 1)) * plotW, y = (v) => padT + plotH - ((v - min) / r) * plotH;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
-    <line x1={padL} y1={y(100)} x2={padL + plotW} y2={y(100)} className="ln-bench" /><text x={padL + plotW + 3} y={y(100) + 3} className="ln-bench-lab" textAnchor="start">100</text>
+    <line x1={padL} y1={y(100)} x2={padL + plotW} y2={y(100)} className="ln-bench" /><text x={padL - 4} y={y(100) + 3} className="ln-bench-lab" textAnchor="end">100</text>
     {idx.map((s, si) => (<g key={si}>
       <polyline points={s.pts.map((p, i) => `${x(i)},${y(p.iv)}`).join(" ")} className="idx-line" style={{ stroke: s.color }} />
       <text x={padL + plotW + 3} y={y(s.pts[s.pts.length - 1].iv) + 3} className="idx-lab" style={{ fill: s.color }} textAnchor="start">{s.seg}</text>
@@ -636,24 +635,30 @@ function GroupedBar({ groups, keys, fmt, colors, onPick, w = 420, h = 200 }) {
     {keys.map((k, i) => (<g key={i}><rect x={padL + i * 70} y={2} width={8} height={8} fill={colors[i]} /><text x={padL + i * 70 + 12} y={9} className="ax-lab" textAnchor="start">{k}</text></g>))}
   </svg>);
 }
-// Quadrant — two metrics with benchmark crosshairs dividing four positioning zones. Relationship.
+// Quadrant — two metrics with benchmark crosshairs dividing four labeled positioning zones.
 function Quadrant({ points, xlab, ylab, xbench, ybench, quad, onPick, w = 420, h = 200 }) {
-  const W = w, H = h, padL = 38, padR = 14, padT = 14, padB = 28;
+  const W = w, H = h, padL = 42, padR = 18, padT = 16, padB = 30;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
   const xmin = Math.min(...xs, xbench), xmax = Math.max(...xs, xbench), ymin = Math.min(...ys, ybench), ymax = Math.max(...ys, ybench);
-  const xr = (xmax - xmin) * 1.2 || 1, yr = (ymax - ymin) * 1.2 || 1;
-  const px = (v) => padL + 0.08 * plotW + ((v - xmin) / xr) * plotW * 0.84;
-  const py = (v) => padT + plotH - 0.08 * plotH - ((v - ymin) / yr) * plotH * 0.84;
+  const xr = (xmax - xmin) * 1.25 || 1, yr = (ymax - ymin) * 1.25 || 1;
+  const px = (v) => padL + 0.1 * plotW + ((v - xmin) / xr) * plotW * 0.8;
+  const py = (v) => padT + plotH - 0.1 * plotH - ((v - ymin) / yr) * plotH * 0.8;
+  const bx = px(xbench), by = py(ybench);
+  const zones = quad || {};
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
-    <line x1={px(xbench)} y1={padT} x2={px(xbench)} y2={padT + plotH} className="ln-bench" />
-    <line x1={padL} y1={py(ybench)} x2={padL + plotW} y2={py(ybench)} className="ln-bench" />
+    <line x1={bx} y1={padT} x2={bx} y2={padT + plotH} className="ln-bench" />
+    <line x1={padL} y1={by} x2={padL + plotW} y2={by} className="ln-bench" />
+    {zones.tr && <text x={padL + plotW - 3} y={padT + 9} className="quad-zone" textAnchor="end">{zones.tr}</text>}
+    {zones.tl && <text x={padL + 3} y={padT + 9} className="quad-zone" textAnchor="start">{zones.tl}</text>}
+    {zones.br && <text x={padL + plotW - 3} y={padT + plotH - 3} className="quad-zone" textAnchor="end">{zones.br}</text>}
+    {zones.bl && <text x={padL + 3} y={padT + plotH - 3} className="quad-zone" textAnchor="start">{zones.bl}</text>}
     {points.map((p, i) => (<g key={i} className="ln-pt" onClick={() => p.mv && onPick(p.mv)}>
-      <circle cx={px(p.x)} cy={py(p.y)} r={4.5} className="scat-dot last" />
+      <circle cx={px(p.x)} cy={py(p.y)} r={i === points.length - 1 ? 5 : 3.5} className={`scat-dot ${i === points.length - 1 ? "last" : ""}`} />
       <text x={px(p.x)} y={py(p.y) - 8} className="scat-lab" textAnchor="middle">{p.label}</text>
     </g>))}
-    <text x={padL + plotW / 2} y={H - 3} className="ax-lab" textAnchor="middle">{xlab}</text>
-    <text x={9} y={padT + plotH / 2} className="ax-lab" textAnchor="middle" transform={`rotate(-90 9 ${padT + plotH / 2})`}>{ylab}</text>
+    <text x={padL + plotW / 2} y={H - 4} className="ax-lab" textAnchor="middle">{xlab}</text>
+    <text x={11} y={padT + plotH / 2} className="ax-lab" textAnchor="middle" transform={`rotate(-90 11 ${padT + plotH / 2})`}>{ylab}</text>
   </svg>);
 }
 // Small multiples — one mini trend per category on a shared scale (compare shapes). General.
