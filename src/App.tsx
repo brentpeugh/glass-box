@@ -464,12 +464,8 @@ function buildCatalog() {
   const groupedGrowth = E.SEGMENTS.map((sg) => ({ label: sg, bars: [{ value: E.segArr(sg, "24Q1").value, mv: E.segArr(sg, "24Q1") }, { value: E.segArr(sg, "25Q4").value, mv: E.segArr(sg, "25Q4") }] }));
   const quadEff = Q1.map((q) => ({ x: E.magicNumber(q).value, y: E.qoqGrowth(q).value * 100, label: q, mv: E.magicNumber(q) }));
   const smArr = segSeries.map((s) => ({ seg: s.seg, color: s.color, points: s.points }));
-  // concentration analytics — kept visually and informationally distinct (no two look alike):
-  // top-10 slice growing against the rest (stacked area), and the Lorenz distribution curve.
-  const topnStack = [
-    { seg: "Top 10 accounts", color: "#1f3a5f", points: E.QUARTERS.map((q) => { const tot = E.companyArr(q).value; const sh = E.top10Share(q); return { q, value: sh.value / 100 * tot, mv: sh }; }) },
-    { seg: "Rest of book", color: "#8ba6c4", points: E.QUARTERS.map((q) => { const tot = E.companyArr(q).value; const sh = E.top10Share(q); return { q, value: tot - sh.value / 100 * tot, mv: E.companyArr(q) }; }) },
-  ];
+  // concentration analytics — the Lorenz distribution curve, a genuinely distinct form from the
+  // composition (treemap), ranking (pareto), and breakdown (table) views already on the board.
   const lorenzCurve = E.lorenz("25Q4");
   const heatmapRet = { cols: ["NRR", "GRR"], rows: E.SEGMENTS.map((sg) => { const n = E.nrr(sg, "24Q4", "25Q4"), g = E.grr(sg, "24Q4", "25Q4"); return { label: sg, cells: [{ tone: n.value >= 100 ? "good" : "bad", mv: n, text: `${n.value.toFixed(0)}` }, { tone: g.value >= 90 ? "good" : "bad", mv: g, text: `${g.value.toFixed(0)}` }] }; }) };
   return {
@@ -499,8 +495,6 @@ function buildCatalog() {
     grouped_growth: { kind: "grouped", polarity: "neutral", desc: "Segment ARR at the first vs latest quarter side by side — which segments actually drove the growth.", data: { title: "Segment ARR — first vs latest", groups: groupedGrowth, keys: ["24Q1", "25Q4"], colors: ["var(--slate-l)", "var(--slate-d)"], fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
     quadrant_eff: { kind: "quadrant", polarity: "bad", desc: "Each quarter positioned by sales efficiency and growth against their benchmarks — the four zones separate efficient growth from bought growth.", data: { title: "Efficiency × growth positioning", points: quadEff, xlab: "Magic #", ylab: "QoQ growth %", xbench: E.BENCH.magic_number.threshold, ybench: 5, quad: { tr: "Efficient growth", tl: "Bought growth", br: "Efficient · slowing", bl: "Inefficient" } } },
     small_mult_arr: { kind: "small_multiples", polarity: "neutral", desc: "One ARR trend per segment on a shared scale — compare the growth shapes side by side.", data: { title: "ARR trend by segment", series: smArr } },
-    hhi_index: { kind: "line", polarity: "bad", desc: "Herfindahl concentration index over time.", data: { title: "Concentration index (HHI)", series: E.QUARTERS.map((q) => ({ q, value: E.hhi(q).value, mv: E.hhi(q) })), benchmark: null, good: "below", fmt: (v) => `${v.toFixed(0)}` }, retired: true },
-    topn_conc: { kind: "stacked_area", polarity: "bad", desc: "Top-10 accounts' ARR as a growing slice of the book — customer (not segment) concentration; the largest logos' share rising against the rest of the book.", data: { title: "Top-10 account concentration", series: topnStack } },
     lorenz_arr: { kind: "lorenz", polarity: "bad", desc: "Cumulative ARR share by account (accounts ranked largest first) — the distribution shape; the steeper the early rise, the more the book concentrates in a few accounts.", data: { title: "ARR distribution (Lorenz)", curve: lorenzCurve.curve, mv: lorenzCurve } },
     heatmap_retention: { kind: "heatmap", polarity: "bad", desc: "NRR and GRR per segment, tone-coded against benchmark — where retention holds and where it breaches.", data: { title: "Retention by segment", ...heatmapRet } },
   };

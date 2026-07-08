@@ -15,7 +15,7 @@ export const WIDGET_DOMAIN: Record<string, string> = {
   efficiency_combo: "efficiency", magic_line: "efficiency", metric_matrix: "efficiency", efficiency_bullets: "efficiency",
   accel_line: "growth", segment_stack: "growth",
   segment_table: "concentration", pareto_arr: "concentration", treemap_arr: "concentration",
-  topn_conc: "concentration", lorenz_arr: "concentration",
+  lorenz_arr: "concentration",
   scatter_eff_growth: "efficiency", heatmap_metrics: "efficiency", quadrant_eff: "efficiency",
   indexed_arr: "growth", grouped_growth: "growth", small_mult_arr: "growth",
   dumbbell_ret: "retention", heatmap_retention: "retention",
