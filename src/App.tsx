@@ -464,6 +464,10 @@ function buildCatalog() {
   const groupedGrowth = E.SEGMENTS.map((sg) => ({ label: sg, bars: [{ value: E.segArr(sg, "24Q1").value, mv: E.segArr(sg, "24Q1") }, { value: E.segArr(sg, "25Q4").value, mv: E.segArr(sg, "25Q4") }] }));
   const quadEff = Q1.map((q) => ({ x: E.magicNumber(q).value, y: E.qoqGrowth(q).value * 100, label: q, mv: E.magicNumber(q) }));
   const smArr = segSeries.map((s) => ({ seg: s.seg, color: s.color, points: s.points }));
+  // concentration analytics (three genuinely distinct facets)
+  const hhiSeries = E.QUARTERS.map((q) => ({ q, value: E.hhi(q).value, mv: E.hhi(q) }));
+  const topnConcSeries = E.QUARTERS.map((q) => ({ q, value: E.top10Share(q).value, mv: E.top10Share(q) }));
+  const lorenzCurve = E.lorenz("25Q4");
   const heatmapRet = { cols: ["NRR", "GRR"], rows: E.SEGMENTS.map((sg) => { const n = E.nrr(sg, "24Q4", "25Q4"), g = E.grr(sg, "24Q4", "25Q4"); return { label: sg, cells: [{ tone: n.value >= 100 ? "good" : "bad", mv: n, text: `${n.value.toFixed(0)}` }, { tone: g.value >= 90 ? "good" : "bad", mv: g, text: `${g.value.toFixed(0)}` }] }; }) };
   return {
     masking_card: { kind: "finding_card", polarity: "bad", desc: "Blended NRR looks healthy but conceals an underwater segment (SMB).", data: { finding: masking } },
@@ -492,6 +496,9 @@ function buildCatalog() {
     grouped_growth: { kind: "grouped", polarity: "neutral", desc: "Segment ARR at the first vs latest quarter side by side — which segments actually drove the growth.", data: { title: "Segment ARR — first vs latest", groups: groupedGrowth, keys: ["24Q1", "25Q4"], colors: ["var(--slate-l)", "var(--slate-d)"], fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
     quadrant_eff: { kind: "quadrant", polarity: "bad", desc: "Each quarter positioned by sales efficiency and growth against their benchmarks — the four zones separate efficient growth from bought growth.", data: { title: "Efficiency × growth positioning", points: quadEff, xlab: "Magic #", ylab: "QoQ growth %", xbench: E.BENCH.magic_number.threshold, ybench: 5, quad: { tr: "Efficient growth", tl: "Bought growth", br: "Efficient · slowing", bl: "Inefficient" } } },
     small_mult_arr: { kind: "small_multiples", polarity: "neutral", desc: "One ARR trend per segment on a shared scale — compare the growth shapes side by side.", data: { title: "ARR trend by segment", series: smArr } },
+    hhi_index: { kind: "line", polarity: "bad", desc: "Herfindahl concentration index over time — a single measure of how concentrated the book is; rising means the revenue base is tightening into fewer segments.", data: { title: "Concentration index (HHI)", series: hhiSeries, benchmark: null, good: "below", fmt: (v) => `${v.toFixed(0)}` } },
+    topn_conc: { kind: "line", polarity: "bad", desc: "Top-10 accounts' share of ARR over time — customer (not segment) concentration; rising means more revenue rides on the largest logos.", data: { title: "Top-10 account concentration", series: topnConcSeries, benchmark: null, good: "below", fmt: (v) => `${v.toFixed(1)}%` } },
+    lorenz_arr: { kind: "lorenz", polarity: "bad", desc: "Cumulative ARR share by account (accounts ranked largest first) — the distribution shape; the steeper the early rise, the more the book concentrates in a few accounts.", data: { title: "ARR distribution (Lorenz)", curve: lorenzCurve.curve, mv: lorenzCurve } },
     heatmap_retention: { kind: "heatmap", polarity: "bad", desc: "NRR and GRR per segment, tone-coded against benchmark — where retention holds and where it breaches.", data: { title: "Retention by segment", ...heatmapRet } },
   };
 }
@@ -549,6 +556,28 @@ function HBar({ items, benchmark, fmt, onPick, w = 420, h = 200 }) {
       <rect x={padL} y={cy - bh / 2} width={Math.max(x(it.value) - padL, 1)} height={bh} className={`hbar ${it.tone || ""}`} />
       <text x={x(it.value) + 6} y={cy + 4} className="dlab" textAnchor="start">{fmt(it.value)}</text>
     </g>); })}
+  </svg>);
+}
+// Lorenz curve — cumulative ARR share vs cumulative account share (accounts ranked largest first).
+// The gold diagonal is perfect equality; the more the data-blue curve bows above it, the more
+// concentrated the book. A genuine distribution-shape view distinct from segment/customer charts.
+function LorenzCurve({ curve, onPick, w = 420, h = 200 }) {
+  const W = w, H = h, padL = 42, padR = 18, padT = 16, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const x = (v) => padL + (v / 100) * plotW, y = (v) => padT + plotH - (v / 100) * plotH;
+  const ticks = [0, 25, 50, 75, 100];
+  const path = curve.map((p, i) => `${i ? "L" : "M"}${x(p.acc)},${y(p.arr)}`).join(" ");
+  const area = `${path} L${x(100)},${y(0)} Z`;
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln" onClick={onPick}>
+    <defs><linearGradient id="lz-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data)" stopOpacity="0.12" /><stop offset="100%" stopColor="var(--data)" stopOpacity="0" /></linearGradient></defs>
+    {ticks.map((t, i) => (<g key={i}><line x1={padL} x2={padL + plotW} y1={y(t)} y2={y(t)} className="cx-grid" /><text x={padL - 8} y={y(t) + 3.5} className="cx-ytick" textAnchor="end">{t}</text><text x={x(t)} y={padT + plotH + 14} className="cx-xtick" textAnchor="middle">{t}</text></g>))}
+    <line x1={x(0)} y1={y(0)} x2={x(100)} y2={y(100)} className="cx-bench" /><text x={x(100)} y={y(100) + 12} className="cx-bench-lab" textAnchor="end">EQUALITY</text>
+    <path d={area} fill="url(#lz-g)" />
+    <path d={path} className="cx-line" />
+    <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} className="cx-axis" />
+    <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="cx-axis" />
+    <text x={padL + plotW / 2} y={H - 3} className="cx-axlab" textAnchor="middle">CUMULATIVE ACCOUNTS %</text>
+    <text x={10} y={padT + plotH / 2} className="cx-axlab" textAnchor="middle" transform={`rotate(-90 10 ${padT + plotH / 2})`}>CUMULATIVE ARR %</text>
   </svg>);
 }
 // Scatter — two metrics plotted against each other (relationship view). Institutional: points, no path.
@@ -785,6 +814,7 @@ function Widget({ id, catalog, onPick, dim }) {
   if (w.kind === "indexed") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <IndexedLine series={d.series} quarters={d.quarters} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "dumbbell") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Dumbbell items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "treemap") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Treemap items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "lorenz") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: d.mv })} /><Fill render={(cw, ch) => <LorenzCurve curve={d.curve} onPick={() => onPick({ node: d.mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "grouped") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <GroupedBar groups={d.groups} keys={d.keys} colors={d.colors} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "quadrant") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Quadrant points={d.points} xlab={d.xlab} ylab={d.ylab} xbench={d.xbench} ybench={d.ybench} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (w.kind === "small_multiples") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <SmallMultiples series={d.series} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
@@ -951,6 +981,7 @@ const PANEL_ASPECTS = {
   hbar: ["third", "half"],
   bullet: ["third", "half"],
   scatter: ["half", "third"],
+  lorenz: ["half", "third"],
   pareto: ["half", "third"],
   heatmap: ["twothird", "half"],
   indexed: ["half", "third"],
@@ -961,7 +992,7 @@ const PANEL_ASPECTS = {
   small_multiples: ["twothird", "half"],
 };
 // information density a panel justifies (heavy grids earn a dominant region; trends are light)
-const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bullet: 2, pareto: 2, heatmap: 2, dumbbell: 2, treemap: 2, grouped: 2, small_multiples: 2, scatter: 1, indexed: 1, quadrant: 1, line: 1, stacked_area: 1 };
+const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bullet: 2, pareto: 2, heatmap: 2, dumbbell: 2, treemap: 2, grouped: 2, small_multiples: 2, scatter: 1, indexed: 1, quadrant: 1, line: 1, stacked_area: 1, lorenz: 1 };
 const CHART_ASPECTS = new Set(["twothird", "half", "third"]);
 // regions carry a weight `w` (space they want); a big region can `split` into lighter sub-regions
 const PARTITIONS = {
@@ -1083,7 +1114,7 @@ function fillPartition(p, findings, charts, tables, role) {
   }
   return placed;
 }
-const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar", "bullet", "matrix", "scatter", "pareto", "heatmap", "indexed", "dumbbell", "treemap", "grouped", "quadrant", "small_multiples"]);
+const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar", "bullet", "matrix", "scatter", "pareto", "heatmap", "indexed", "dumbbell", "treemap", "grouped", "quadrant", "small_multiples", "lorenz"]);
 // the full analytical menu the engine can render (salience-ordered). The model frames the
 // lead finding; the board is filled from this ranked menu, so there is always surplus to
 // fill a dense partition — a well-built board every time, regardless of how much the model curated.
