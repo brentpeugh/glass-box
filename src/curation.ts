@@ -28,7 +28,11 @@ export const RELATED_DOMAINS: Record<string, string[]> = { retention: ["retentio
 // read's neighborhood — vitals are orientation, not the analytical claim, so not neighborhood-gated)
 export const HEADLINE_KEYS = ["nrr", "grr", "gross_margin", "magic_number", "cac_payback", "rule_of_40", "qoq_growth", "net_new_arr", "ent_share"];
 
-export function guardFraming(text: any) { const t = String(text || ""); const violated = /\d/.test(t); return { text: violated ? "" : t, violated }; }
+// Reject digits, unicode fractions, and figure-like spelled numbers ("twenty-one", "sixty percent",
+// "two million") — but NOT ordinary determiners ("one segment", "three quarters"). The model is
+// never given figures to verbalize, so this only catches an *invented* word-number; reject-not-strip.
+const NUMWORD = /[\u00bc-\u00be\u2150-\u215e]|\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion)\b|\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)[\s-](percent|points?|times|fold|basis|months?|dollars?|thirds?|halves|half|fourths?|fifths?|sixths?|sevenths?|eighths?|ninths?|tenths?)\b/i;
+export function guardFraming(text: any) { const t = String(text || ""); const violated = /\d/.test(t) || NUMWORD.test(t); return { text: violated ? "" : t, violated }; }
 
 // Directional coherence: the engine owns the VERDICT (does the metric clear/breach its benchmark,
 // is it rising/falling) exactly as it owns the numbers. A framing whose direction language

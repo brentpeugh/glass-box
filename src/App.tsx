@@ -37,8 +37,9 @@ async function callModel(task, messages, max_tokens, model) {
   return res.json();
 }
 // The one high-judgment call — thesis formation + coherent curation — routes to the strongest
-// model. Everything else stays on the cheap path. (The Netlify function maps this to Opus.)
-const CURATION_MODEL = "claude-opus-4-8";
+// model. Everything else stays on the cheap path. NOTE: the model field is advisory only — the
+// Netlify function is server-authoritative and pins curate → Sonnet (it ignores this value).
+const CURATION_MODEL = "claude-sonnet-4-6";
 
 const fmtM = (v) => `$${(v / 1e6).toFixed(2)}M`;
 const fmtK = (v) => (Math.abs(v) >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : `$${(v / 1e3).toFixed(1)}K`);
@@ -48,7 +49,7 @@ function fmtMV(mv) { switch (mv.unit) { case "usd": return fmtM(mv.value); case 
 // ================= trace =================
 function RowsLeaf({ leaf, parentVal }) {
   const r = useMemo(() => E.resolveLeaf(leaf.selector), [leaf]);
-  let body, stat, note, recon;
+  let body, stat, note, recon, reconciles = null; const RTOL = (a, b) => Math.abs(a - b) <= Math.max(1, Math.abs(b) * 1e-6);
   if (r.kind === "retention") {
     const movers = [...r.churned.map((x) => ({ ...x, k: "ch" })), ...r.contracted.map((x) => ({ ...x, k: "co" })), ...r.expanded.map((x) => ({ ...x, k: "ex" }))].sort((a, b) => (b[r.sc] - b[r.ec]) - (a[r.sc] - a[r.ec]));
     const begin = r.churned.concat(r.contracted, r.expanded).reduce((s, x) => s + x[r.sc], 0);
@@ -62,25 +63,29 @@ function RowsLeaf({ leaf, parentVal }) {
     body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.col.slice(4)} ARR</th></tr></thead><tbody>{r.rows.map((x) => (<tr key={x.id}><td className="mono">{x.id}</td><td className="mono">{fmtK(x.v)}</td></tr>))}</tbody></table>);
     note = `summed live over all ${r.n} rows`;
     recon = <>Σ {r.n} rows = <b className="mono">{fmtK(sum)}</b> — reconciles to {parentVal ? fmtMV(parentVal) : "the value above"}</>;
+    reconciles = parentVal ? RTOL(sum, parentVal.value) : null;
   } else if (r.kind === "delta") {
     const sum = r.rows.reduce((s, x) => s + (x.b - x.a), 0);
     stat = (<span><b>{r.n}</b> accounts with positive ARR change · full audit trail</span>);
     body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.from}</th><th>{r.to}</th><th>Δ</th></tr></thead><tbody>{r.rows.map((x) => (<tr key={x.id}><td className="mono">{x.id}</td><td className="mono">{x.a === 0 ? "new" : fmtK(x.a)}</td><td className="mono">{fmtK(x.b)}</td><td className="mono pos">+{fmtK(x.b - x.a).slice(1)}</td></tr>))}</tbody></table>);
     note = `new logos + expansion, summed live`;
     recon = <>Σ {r.n} positive deltas = <b className="mono">{fmtK(sum)}</b> — reconciles to {parentVal ? fmtMV(parentVal) : "the value above"}</>;
+    reconciles = parentVal ? RTOL(sum, parentVal.value) : null;
   } else if (r.kind === "opps") {
     stat = (<span><b>{r.won}</b> won / <b>{r.n}</b> closed deals · full audit trail</span>);
     body = (<table className="rows-tbl"><thead><tr><th>deal</th><th>segment</th><th>stage</th></tr></thead><tbody>{r.rows.map((o, i) => (<tr key={i}><td className="mono">{o.opp_id}</td><td className="mono">{o.segment}</td><td className={`mono ${o.stage === "won" ? "pos" : "neg"}`}>{o.stage}</td></tr>))}</tbody></table>);
     note = `closed opportunities, resolved live from the pipeline`;
     recon = <>{r.won} won ÷ {r.n} closed = <b className="mono">{r.n ? (r.won / r.n * 100).toFixed(1) : "—"}%</b> — reconciles to the value above</>;
+    reconciles = parentVal && r.n ? RTOL(r.won / r.n * 100, parentVal.value) : null;
   } else {
     const sum = r.rows.reduce((s, o) => s + (o[r.field] || 0), 0);
     stat = (<span><b>{r.rows.length}</b> opex rows · {r.field} · full audit trail</span>);
     body = (<table className="rows-tbl"><thead><tr><th>segment</th><th>quarter</th><th>{r.field}</th></tr></thead><tbody>{r.rows.map((o, i) => (<tr key={i}><td className="mono">{o.segment}</td><td className="mono">{o.quarter}</td><td className="mono">{fmtK(o[r.field])}</td></tr>))}</tbody></table>);
     note = `operating expense at segment×quarter grain — its natural grain`;
     recon = <>Σ {r.rows.length} rows = <b className="mono">{fmtK(sum)}</b> — reconciles to {parentVal ? fmtMV(parentVal) : "the value above"}</>;
+    reconciles = parentVal ? RTOL(sum, parentVal.value) : null;
   }
-  return (<div className="rows"><div className="rows-stat">{stat}</div><div className="rows-scroll">{body}</div>{recon && <div className="rows-recon">✓ {recon}</div>}<div className="anno">{note}</div></div>);
+  return (<div className="rows"><div className="rows-stat">{stat}</div><div className="rows-scroll">{body}</div>{recon && <div className={`rows-recon ${reconciles === false ? "bad" : ""}`}><span className="recon-mark">{reconciles === true ? "\u2713" : reconciles === false ? "\u2717" : "\u00b7"}</span> {recon}</div>}<div className="anno">{note}</div></div>);
 }
 function TraceNode({ node, depth, isFinding }) {
   const kids = node.provenance?.inputs?.length;
@@ -504,17 +509,6 @@ function buildCatalog() {
 // rows so every row is complete (no dead space). The model chooses widgets; layout is
 // by rule. Variation is generative — different widget mixes pack into different rows —
 // while every result is organized. =====
-const SLOT_ELIG = {
-  finding_card: ["hero"],
-  combo: ["full", "pair", "major"],
-  stacked_area: ["full", "pair", "major"],
-  line: ["full", "major"],
-  waterfall: ["pair", "full"],
-  callout: ["strip", "minor"],
-};
-const elig = (k, t) => (SLOT_ELIG[k] || []).includes(t);
-// viewBox dimensions per slot — wide/short when a chart spans, squarer when paired
-const DIM = { full: { w: 1360, h: 264 }, pair: { w: 676, h: 236 }, major: { w: 1000, h: 264 } };
 
 function ChartHeader({ title, tag, tagTone, onTrace }) {
   return (<div className="chart-h">
@@ -846,10 +840,6 @@ function roleScopedTopFinding(roleKey) {
 // the engine (via widgets/values). Any numeral in model-authored text is an attempt to author a
 // value, which the thesis forbids — so we strip it deterministically after generation. The prompt
 // asks; this enforces. (Same discipline as the WA validator: reject, don't trust.)
-const AUTHORED_NUM = /\$?\d[\d,.]*\s*(%|x|pp|mo|bps|[MK]\b)?/gi;
-function stripAuthoredNumbers(text) {
-  return String(text || "").replace(AUTHORED_NUM, "").replace(/\(\s*\)/g, "").replace(/\s{2,}/g, " ").replace(/\s+([.,;:—-])/g, "$1").replace(/\s+$/, "").trim();
-}
 
 // ===== the unified curation contract validator. A model curation is admissible only if it is
 // COHERENT: everything it cites is inside the anchoring finding's neighborhood, it picks at least

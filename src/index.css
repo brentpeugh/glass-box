@@ -606,3 +606,7 @@ html,body,#root{ height:100%; overflow:hidden; }
 .dbg-h .dbg-meta{ color:#8b98ab; }
 .dbg-close{ background:none; border:none; color:#aeb9c9; font-size:14px; cursor:pointer; margin-left:auto; padding:0 0 0 12px; }
 .dbg-close:hover{ color:#fff; }
+
+/* computed reconcile mark (trust UI — ✓ verified / ✗ mismatch / · descriptive) */
+.rows-recon .recon-mark{ color:var(--verdant); font-weight:600; }
+.rows-recon.bad .recon-mark{ color:var(--ember); }

@@ -8,7 +8,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { createEngine } from "../src/engine-core";
-import { validateCurationCore, WIDGET_DOMAIN, guardDirection, engineHeadline } from "../src/curation";
+import { validateCurationCore, WIDGET_DOMAIN, guardDirection, engineHeadline, guardFraming } from "../src/curation";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -88,6 +88,15 @@ ok("4. masking is NOT the selected top finding",
     contradictBreach === true && contradictClear === true && honestBreach === false &&
     guardDirection(fbBreach, breachG).violated === false && guardDirection(fbClear, clearG).violated === false,
     `contradictBreach=${contradictBreach} contradictClear=${contradictClear} honestBreach=${honestBreach} fb="${fbBreach}"`);
+}
+
+// 9 — the numeral guard covers word-form figures and unicode fractions, not just digits,
+//     while leaving ordinary determiners ("one segment", fiscal "quarters") admissible
+{
+  const rejects = ["twenty-one months over target", "sixty percent of ARR", "two thirds of the book", "\u2154 of accounts"].every((t) => guardFraming(t).violated);
+  const allows = ["one segment is lagging", "three quarters showed decline", "Enterprise carrying the number"].every((t) => !guardFraming(t).violated);
+  ok("9. numeral guard covers word-form figures + fractions, not determiners", rejects && allows,
+    `rejects=${rejects} allows=${allows}`);
 }
 
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — discovery path: ${pass}/${pass + fail} thesis-critical assertions`);

@@ -1,43 +1,64 @@
 /**
- * Caliper trust-architecture artifact — LOCKED CONTRACT
- * =====================================================
- * The single source of types for every layer. The headless engine produces the
- * substance objects; the renderer consumes specs; the AI layers are fenced into
- * composition and interpretation. If a change would violate an invariant below,
- * the change is wrong — not the invariant.
+ * Caliper trust-architecture artifact — THE HONESTY CONTRACT
+ * =========================================================
+ * The types the shipped build actually runs. `engine-core.ts` produces the substance
+ * objects (MetricValue, Finding, Provenance); `curation.ts` validates the model's output
+ * against the engine's neighborhood; `App.tsx` renders from engine-owned catalog data.
  *
- * HONESTY INVARIANTS (load-bearing — the architecture exists to enforce these)
- * ---------------------------------------------------------------------------
- * I1. Substance lives ONLY in engine-produced objects (MetricValue, Finding).
- *     The model never emits a number. There is no field on a model-produced
- *     object into which a value could be injected.
- * I2. Higher layers REFERENCE lower objects by id; they never copy values.
- *     Finding -> MetricValue ids. Block -> Finding/MetricValue ids. One source
- *     of truth per number, one trace per number.
- * I3. Provenance is emitted at COMPUTE TIME, never reconstructed. Two layers:
- *     a MetricValue traces HOW a number was computed; a Finding additionally
- *     traces WHY it was judged notable (slope, t-stat, gate cleared).
- * I4. The renderer owns all chart axis scales deterministically from data
- *     ranges. The model may choose WHICH metrics and WHICH chart type; it has
- *     no authority over scale, baseline, or axis bounds. (Combo charts most of
- *     all — the dual-axis misleading-scale failure is closed by construction.)
- * I5. The only probabilistic number in the system is Intent.confidence — the
- *     L1 interpretation of a user query. Computed metrics are "deterministic"
- *     (or honestly labeled "proxy"); their honesty artifact is provenance, not
- *     a confidence score.
- * I6. Open-ended input that exceeds the deterministic substrate is DECLINED or
- *     DEGRADED, never generated past. QueryResult carries an explicit failure
- *     branch. Refusal is a demonstrated feature, not a hidden error.
- * I7. Composition is initiation-agnostic: entry (engine-initiated) and query
- *     (user-initiated) produce the SAME Block/Section types. Layout placement
- *     of a query result is decided by RULE (relatesTo), not by the model.
+ * This file is the honesty document, so it states the claims PRECISELY — including where a
+ * guarantee is structural and where it is layered defense. Overclaiming here would itself be
+ * a thesis violation (the medium is the message), so the line is drawn exactly where the code
+ * draws it.
+ *
+ * WHAT IS STRUCTURAL (no channel exists for the model to violate these)
+ * --------------------------------------------------------------------
+ * S1. Every rendered NUMBER is a MetricValue computed engine-side from raw rows. The model
+ *     emits JSON of ids + prose only; there is no field on any model-produced object into
+ *     which a value flows to the screen. (Verified: buildCatalog/resolveKpi/resolveQuery are
+ *     the only sources of rendered figures.)
+ * S2. Every number REFERENCES its inputs by id down to raw-row leaves; provenance is emitted
+ *     at compute time and the trace RE-RESOLVES leaves live (RowSelector re-filters the rows
+ *     and recomputes the sum), never reconstructs or decorates.
+ * S3. All chart SCALES, axes, and baselines are computed by the renderer from engine data via
+ *     niceScale. The model selects a widget id from a catalog whose data and scales are
+ *     engine-produced; it has no channel that touches an axis. (There is no ChartSpec; the
+ *     model cannot emit one.)
+ * S4. LAYOUT is a deterministic rule-based packer over a shape derived from the composition's
+ *     weight distribution. The model's one hint (partitionPref ∈ three values) only reinforces
+ *     the derived shape; no coordinate ever crosses the boundary.
+ * S5. COMPARISONS/verdicts (clears vs breaches, delta) live in MetricValue.basis, computed
+ *     engine-side. The model never authors a benchmark verdict.
+ *
+ * WHAT IS LAYERED DEFENSE (not a single structural wall — the engine's verdict wins on detection)
+ * ----------------------------------------------------------------------------------------------
+ * L1. Prose VALENCE honesty is three layers, not a wall: (a) the narrate prompt is given only
+ *     qualitative grounding (label, clears/breaches, rising/falling) and forbidden from success
+ *     language on a breach; (b) guardDirection rejects framing whose direction contradicts the
+ *     engine's verdict; (c) on rejection the headline is replaced by engineHeadline() — the
+ *     engine's own verdict. A flat contradiction ("exceeds" on a breach) is caught; a purely
+ *     euphemistic gloss with no directional claim can pass. The engine verdict is always shown
+ *     alongside, so prose cannot invert what the number says — but "mechanically impossible" is
+ *     reserved for S1–S5; prose valence is defense-in-depth.
+ * L2. Digit leakage: guardFraming rejects any model string containing a digit (reject-and-
+ *     fallback, not strip). Word-form numerals ("twenty-one") are prompt-forbidden and the model
+ *     is never given figures to verbalize, so a word-number would have to be INVENTED to leak —
+ *     blocked for every form that could be correct, layered for the invented-word edge.
+ *
+ * WHAT THE ENGINE DECIDES, NOT THE MODEL
+ * --------------------------------------
+ * - WHAT IS TRUE: MetricValue (deterministic or honestly "proxy"); honesty artifact is provenance.
+ * - WHAT IS ANOMALOUS: computeSalience ranks facts by neutral effect size — role-agnostic.
+ * - WHAT IS ADMISSIBLE: validateCurationCore drops fabricated/off-neighborhood ids and rejects a
+ *   curation with no falsifier (advocacy is structurally inadmissible) or an authored numeral.
+ * The model decides only WHAT MATTERS (which in-neighborhood evidence/widgets to foreground for
+ * the role) and phrases the read — within the validator's bounds.
  */
 
 // ============================================================================
 // 0. SHARED PRIMITIVES
 // ============================================================================
 export type Grain = "company" | "segment" | "account";
-export type Unit = "usd" | "percent" | "ratio" | "months" | "count" | "number";
+export type Unit = "usd" | "percent" | "ratio" | "months" | "count" | "number" | "pp";
 
 export interface Scope {
   grain: Grain;
@@ -47,7 +68,7 @@ export interface Scope {
 }
 
 // ============================================================================
-// 1. PROVENANCE  (invariants I2, I3)
+// 1. PROVENANCE  (S2)
 // ============================================================================
 /** A reference held by provenance: either another computed value (drill down)
  *  or a leaf row set that resolves against the raw tables. */
@@ -59,10 +80,9 @@ export type ProvRef =
       predicate: string;       // human-readable filter, e.g. "segment=SMB AND arr_25q4>0"
       count: number;           // how many rows matched
       idsSample?: string[];    // a few ids for the trace UI; full set resolved on demand
-      selector?: RowSelector;  // structured, serializable filter so the trace can resolve
-                               // leaves to rows WITHOUT parsing `predicate` prose. In the
-                               // browser it filters the loaded rows; in production it
-                               // re-queries the warehouse. (Added in the trace-port slice.)
+      selector?: RowSelector;  // structured, serializable filter so the trace resolves leaves
+                               // to rows WITHOUT parsing prose. In the browser it filters the
+                               // loaded rows; in production it re-queries the warehouse.
     };
 
 /** Machine-resolvable row filter. Kept deliberately small; extend per fact as needed. */
@@ -82,38 +102,39 @@ export interface RowSelector {
 }
 
 export interface Provenance {
-  op: string;                  // machine id: "sum" | "ratio" | "cohort_retention" | "linear_trend" | ...
+  op: string;                  // machine id: "sum" | "ratio" | "cohort_retention" | "hhi" | ...
   description: string;         // human: "Sum of ARR across 412 SMB accounts active in 25Q4"
   inputs: ProvRef[];           // recurses through MetricValues down to RowSet leaves
-  configRefs?: string[];       // defined constants used: "benchmark.magic_number", "cohort.window_def"
+  configRefs?: string[];       // defined constants used: "benchmark.magic_number"
 }
 
 // ============================================================================
-// 2. METRIC VALUE  — engine-produced, self-interpreting number  (I1)
+// 2. METRIC VALUE — engine-produced, self-interpreting number  (S1, S5)
 // ============================================================================
 export interface MetricValue {
   id: string;
-  metric: string;              // "magic_number" | "nrr" | "arr" | "win_rate" | ...
+  metric: string;              // "magic_number" | "nrr" | "arr" | "ent_share" | ...
   label: string;               // "SaaS Magic Number"
   scope: Scope;
   value: number;
   unit: Unit;
-  format: string;              // renderer format string: "$0.0M" | "0.0%" | "0.00x" | "0 mo"
+  format: string;              // renderer format string
   goodWhen: "higher" | "lower" | "neutral";   // metric POLARITY (config) — NOT role valence
-  basis?: {                    // computed comparison context, itself sourced
+  basis?: {                    // computed comparison context, itself sourced (S5)
     kind: "benchmark" | "prior_period" | "peer_median";
-    ref: string | { metricId: string };       // config id, or another MetricValue
-    thr?: number;              // the threshold compared against (config)
-    good?: "above" | "below";  // which side of the threshold is favorable (config)
+    ref: string | { metricId: string };
+    thr?: number;              // threshold compared against (config)
+    good?: "above" | "below";  // which side is favorable (config)
     delta?: number;            // value - reference (engine-computed)
   };
   epistemic: "deterministic" | "proxy";        // "proxy" => e.g. Rule of 40; carries note
   note?: string;               // disclosure when epistemic === "proxy"
   provenance: Provenance;      // HOW this number was computed
+  curve?: { acc: number; arr: number }[];      // distribution curves (Lorenz) carry their points
 }
 
 // ============================================================================
-// 3. FINDING — engine-produced notable pattern  (I1, I3)
+// 3. FINDING — engine-produced notable pattern  (S1, and the salience ranking)
 // ============================================================================
 export type FindingType =
   | "benchmark_breach"
@@ -128,118 +149,80 @@ export interface Finding {
   type: FindingType;
   metric: string;
   scope: Scope;
-  summary: string;             // engine-authored, factual: "Blended NRR 106% masks SMB at 80%"
-  values: string[];            // MetricValue ids composing it — NO copied numbers (I2)
+  summary: string;             // engine-authored, factual (engine layer — carries numbers by design)
+  values: string[];            // MetricValue ids composing it — NO copied numbers
   salience: number;            // 0..1 role-AGNOSTIC notability (effect size / breach mag / gap)
   polarity: "good" | "bad" | "neutral";        // metric-polarity direction — NOT role framing
-  evidence: Record<string, number>;            // why it fired: { t: -6.3, effect: -0.56, gate: 2.5 }
+  evidence: Record<string, number>;            // why it fired: { t: -6.3, effect: -0.56 }
   provenance: Provenance;      // WHY it was judged notable (distinct from value provenance)
 }
 
 // ============================================================================
-// 4. COMPOSITION — model-produced, bounded  (I1, I4, I7)
-//    Composition -> Section -> Block. Blocks are LEAVES (two-level nesting).
+// 4. THE CURATION CONTRACT — the model's ONLY output channel
+//    The model returns ids + prose. The validator (validateCurationCore) filters every id
+//    against the engine's finding neighborhood and rejects non-viable reads. This is the whole
+//    surface across which model judgment reaches the board.
 // ============================================================================
 
-/** Structured framing for callouts, cards, and charts. The model authors these
- *  strings; the trace labels them as the model layer. Substance is never here. */
-export interface StructuredFraming {
-  headline: string;            // short, role-specific
-  caption?: string;            // one line of context
-  soWhat?: string;             // the role-relevant implication
+/** What the model returns for a board (raw, pre-validation). Every array is ids the validator
+ *  checks against the neighborhood; every string is prose the guards check for digits/valence.
+ *  There is no numeric or coordinate field — by construction. */
+export interface CurationRequest {
+  thesis: string;              // prose, no digits (guardFraming)
+  whyRole: string;             // prose, no digits
+  evidenceIds: string[];       // must be in the finding's metric neighborhood
+  testIds: string[];           // must include >= 1 falsifier, or the read is not viable
+  widgetIds: string[];         // must be catalog ids in the finding's related domains
+  partitionPref?: "analytical" | "hero" | "balanced" | null;  // advisory only (S4)
+  scorecardKeys: string[];     // headline-strip metric keys
+  rationaleTags?: string[];    // short non-numeric tags
 }
 
-export type BlockKind =
-  | "narrative"        // prose briefing over referenced findings — uses `prose`, free string
-  | "metric_callout"   // one MetricValue, large, with its basis — uses `framing`
-  | "callout_strip"    // compact row of several callouts (e.g. the CFO breach stack)
-  | "finding_card"     // a Finding: summary + values + drill-down affordance
-  | "chart"            // renders a ChartSpec (type selects the visual)
-  | "comparison_table"; // segments × metrics grid (later)
-
-export type ChartType =
-  | "line"             // metric over quarters, optional benchmark reference line
-  | "stacked_area"     // ARR by segment over time (growth AND concentration)
-  | "grouped_bar"      // segment comparison at a point (segment NRR vs benchmark)
-  | "waterfall"        // retention bridge / net-new decomposition (the masking visual)
-  | "combo"            // S&M bars + magic-number line — efficiency tension in one frame (I4)
-  | "treemap";         // concentration as share (later)
-
-export interface ChartSpec {
-  type: ChartType;
-  /** Each series references a MetricValue (or a series of them); the renderer
-   *  pulls values and OWNS all axis scaling (I4). The model picks metrics +
-   *  type + encoding role only. */
-  series: { metricRef: string; encode: "x" | "y" | "y2" | "color" | "size" | "value" }[];
-  benchmarkRef?: string;       // optional threshold reference line (config id)
-}
-
-export interface Block {
-  id: string;
-  kind: BlockKind;
-  refs: string[];              // Finding / MetricValue ids presented — NEVER raw values (I2)
-  emphasis: "hero" | "standard" | "compact";   // composition weight, not content
-  framing?: StructuredFraming; // metric_callout | callout_strip | finding_card | chart
-  prose?: string;              // narrative only
-  chartSpec?: ChartSpec;       // present iff kind === "chart"
-  /** Query-absorption hook (I7): the Finding/MetricValue this block answers about.
-   *  The dashboard places the block adjacent to / expanded-from whatever already
-   *  presents that ref; if nothing matches, it opens a fixed "Your questions"
-   *  section. The model supplies the ref it already has — never a coordinate. */
-  relatesTo?: string;
-}
-
-export interface Section {
-  id: string;
-  heading?: string;            // role-distinctive grouping: "Retention", "Efficiency", "Growth"
-  blocks: Block[];             // leaves only — no deeper nesting
-}
-
-export interface Composition {
-  source:
-    | { kind: "entry"; role: string }
-    | { kind: "query"; intentId: string };
-  sections: Section[];
-  rev: number;                 // stateful: a query bumps rev and merges its blocks by rule
+/** What the validator emits. `viable:false` => the deterministic fallback curation renders,
+ *  so the board always composes fully whether the model succeeded, partially fired, or failed. */
+export interface CurationResult {
+  viable: boolean;
+  violations: string[];        // human-readable record of every drop/rejection (shown in the log)
+  curation:
+    | (CurationRequest & { source: "live" | "fallback" })
+    | null;                    // null iff not viable → caller uses the fallback
 }
 
 // ============================================================================
-// 5. QUERY BOUNDARY — L1 intent + the decline branch  (I5, I6)
+// 5. QUERY BOUNDARY — the router, the grounding, the decline branch
+//    A user query is CLASSIFIED (server-side), then either answered (engine computes the value,
+//    model narrates the verdict's direction), re-orients the board around a discovered finding,
+//    or is DECLINED. Refusal is a displayed feature, never a silent guess.
 // ============================================================================
-export type IntentType =
-  | "current_state"
-  | "segment_breakdown"
-  | "ranking"
-  | "comparison"
-  | "trend"
-  | "metric_lookup";
+export type QueryMode = "answer" | "both" | "reorient" | "unsupported";
 
-export interface Intent {
-  type: IntentType;
-  params: Record<string, unknown>;
+export interface QueryClassification {
+  mode: QueryMode;
   echo: string;                // "what I understood you asked" — shown back to the user
-  confidence: number;          // 0..1 — the ONLY probabilistic number in the system (I5)
+  confidence: "low" | "medium" | "high";
+  domain?: string;             // for reorientation: which finding-domain the interest maps to
+  intent?: unknown;            // for answer: the resolvable metric request
+  reason?: string;             // for unsupported: why it's out of the data contract
 }
 
-export type QueryResult =
-  | { ok: true; intent: Intent; blocks: Block[] }       // blocks merge into the live dashboard
-  | {
-      ok: false;
-      reason: "unsupported_metric" | "no_primitive" | "out_of_scope";
-      message: string;         // decline/degrade, never generate off-substrate (I6)
-    };
+/** The ONLY thing the narration model is given about a computed answer — qualitative, never the
+ *  number. The model cannot leak what it was never shown (S1); it can only phrase the verdict,
+ *  and guardDirection + engineHeadline keep even that consistent with the engine (L1). */
+export interface NarrateGrounding {
+  label: string;
+  hasBenchmark: boolean;
+  status: "clears" | "breaches" | null;
+  direction: "rising" | "falling" | "flat" | null;
+  proxy: boolean;
+}
 
 // ============================================================================
 // NOT IN THIS CONTRACT (by design)
 // ----------------------------------------------------------------------------
-// - No stored metrics or findings in the shipped dataset (raw rows + config only).
-// - No model-authored numbers, axis scales, or layout coordinates.
-// - No forecasting / projection types — the engine is deterministic; such asks
-//   take the QueryResult decline branch.
-//
-// NEXT STEP: build the headless TypeScript engine that PRODUCES MetricValue and
-// Finding from caliper_dataset.json. It is correct iff it reproduces the metric
-// panel and the 14 findings in findings_validation.json (the oracle). No UI, no
-// AI, no renderer yet — substance and provenance first, proven against ground
-// truth, one vertical slice end to end before going wide.
+// - No stored metrics or findings in the shipped dataset (raw rows + config only; verified).
+// - No model-authored numbers, comparisons, axis scales, or layout coordinates (S1–S5).
+// - No forecasting/projection — the engine is deterministic; such asks take the decline branch.
+// - The neighborhood/domain/test menus are hand-authored for this closed world. In production
+//   they would be derived from a metric registry and verified by the oracle generalized — the
+//   engine already demonstrates the pattern (every semantic relation has an executable check).
 // ============================================================================
