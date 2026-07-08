@@ -99,5 +99,17 @@ ok("4. masking is NOT the selected top finding",
     `rejects=${rejects} allows=${allows}`);
 }
 
+// 10 — the numeral guard whitelists engine-named labels (naming "Rule of 40" is referencing an
+//      engine object, not authoring a value) while a bare digit outside a label still trips
+{
+  const L = ["Rule of 40", "Top-10 ARR Share"];
+  const namesOk = !guardFraming("Rule of 40 sits below its benchmark", L).violated
+    && !guardFraming("top-10 arr share keeps climbing", L).violated;              // case-insensitive
+  const digitStillTrips = guardFraming("Rule of 40 is 27, under target", L).violated;  // bare 27
+  const stripIsRequired = guardFraming("Rule of 40 declining", []).violated;      // without whitelist the label's 40 trips
+  ok("10. numeral guard whitelists engine labels; bare digits still trip", namesOk && digitStillTrips && stripIsRequired,
+    `namesOk=${namesOk} digitStillTrips=${digitStillTrips} stripIsRequired=${stripIsRequired}`);
+}
+
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — discovery path: ${pass}/${pass + fail} thesis-critical assertions`);
 if (fail > 0) process.exit(1);

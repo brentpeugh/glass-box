@@ -838,8 +838,10 @@ function roleScopedTopFinding(roleKey) {
 }
 // The model authors framing PROSE only — never numbers. Every number on the board comes from
 // the engine (via widgets/values). Any numeral in model-authored text is an attempt to author a
-// value, which the thesis forbids — so we strip it deterministically after generation. The prompt
-// asks; this enforces. (Same discipline as the WA validator: reject, don't trust.)
+// value, which the thesis forbids — so guardFraming (in curation.ts) REJECTS such framing and the
+// deterministic fallback renders instead (reject, don't strip; don't trust). Engine-named metric
+// labels that contain digits ("Rule of 40") are whitelisted — naming them is referencing, not
+// authoring. The prompt asks; the guard enforces.
 
 // ===== the unified curation contract validator. A model curation is admissible only if it is
 // COHERENT: everything it cites is inside the anchoring finding's neighborhood, it picks at least
@@ -867,7 +869,11 @@ function fallbackCuration(fact) {
   };
 }
 function validateCuration(cur, finding, catalog) {
-  return validateCurationCore(cur, E.findingNeighborhood(finding), catalog, WIDGET_DOMAIN);
+  const nb = E.findingNeighborhood(finding);
+  // the model may NAME any metric it was shown as evidence — those engine labels (some contain
+  // digits, e.g. "Rule of 40") are references, not authored values, so they're whitelisted.
+  const evidenceLabels = (nb.metricIds || []).map((id: string) => { try { return E.store.get(id)?.label; } catch { return null; } }).filter(Boolean);
+  return validateCurationCore(cur, nb, catalog, WIDGET_DOMAIN, evidenceLabels);
 }
 function buildCurationPrompt(focus, finding, nb, catalog) {
   const metricMenu = nb.metricIds.map((id) => ({ id, label: E.store.get(id).label }));
@@ -1247,8 +1253,9 @@ async function narrate(q, desc) {
     const data = await callModel("narrate", [{ role: "user", content: buildNarratePrompt(q, desc) }], 200);
     const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
     const p = JSON.parse(raw.replace(/```json|```/g, "").trim());
-    let headline = guardFraming(String(p.headline || "").slice(0, 80)).text;
-    let soWhat = guardFraming(String(p.soWhat || "").slice(0, 220)).text;
+    const gl = desc.grounding?.label ? [desc.grounding.label] : [];
+    let headline = guardFraming(String(p.headline || "").slice(0, 80), gl).text;
+    let soWhat = guardFraming(String(p.soWhat || "").slice(0, 220), gl).text;
     // directional admissibility: if the model's framing contradicts the engine's verdict, the
     // engine's verdict wins — the headline is replaced, the contradicting soWhat is dropped.
     const g = desc.grounding;

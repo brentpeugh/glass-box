@@ -32,7 +32,19 @@ export const HEADLINE_KEYS = ["nrr", "grr", "gross_margin", "magic_number", "cac
 // "two million") — but NOT ordinary determiners ("one segment", "three quarters"). The model is
 // never given figures to verbalize, so this only catches an *invented* word-number; reject-not-strip.
 const NUMWORD = /[\u00bc-\u00be\u2150-\u215e]|\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion)\b|\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)[\s-](percent|points?|times|fold|basis|months?|dollars?|thirds?|halves|half|fourths?|fifths?|sixths?|sevenths?|eighths?|ninths?|tenths?)\b/i;
-export function guardFraming(text: any) { const t = String(text || ""); const violated = /\d/.test(t) || NUMWORD.test(t); return { text: violated ? "" : t, violated }; }
+export function guardFraming(text: any, allowedLabels: string[] = []) {
+  const original = String(text || "");
+  let probe = original;
+  // Engine-named objects (e.g. "Rule of 40", "Top-10 ARR Share") legitimately contain digits.
+  // NAMING one is REFERENCING an engine object, not authoring a value — so exact label strings
+  // (case-insensitive) are stripped before the numeral test, and the guard checks what remains.
+  // A bare digit outside a known label still trips, so no value can be smuggled in.
+  for (const lab of allowedLabels) {
+    if (lab && lab.length > 1) probe = probe.replace(new RegExp(lab.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), " ");
+  }
+  const violated = /\d/.test(probe) || NUMWORD.test(probe);
+  return { text: violated ? "" : original, violated };
+}
 
 // Directional coherence: the engine owns the VERDICT (does the metric clear/breach its benchmark,
 // is it rising/falling) exactly as it owns the numbers. A framing whose direction language
@@ -63,7 +75,7 @@ export function engineHeadline(grounding: any) {
 // The coherence validator. Pure: it takes the finding's neighborhood (from the engine),
 // the catalog, and the widget-domain map — no renderer state. This is the function the app
 // runs live AND the function the discovery-path test proves.
-export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDomain: Record<string, string> = WIDGET_DOMAIN) {
+export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDomain: Record<string, string> = WIDGET_DOMAIN, allowedLabels: string[] = []) {
   const mSet = new Set(nb.metricIds), tSet = new Set(nb.testIds), fSet = new Set(nb.falsifierIds);
   const rel = nb.lenses || RELATED_DOMAINS[nb.domain] || [nb.domain];
   const violations: string[] = [];
@@ -75,7 +87,7 @@ export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDoma
   if (widgetIds.length < (cur.widgetIds || []).length) violations.push("off-domain widget(s) — dropped");
   const hasFalsifier = testIds.some((id: string) => fSet.has(id));
   if (!hasFalsifier) violations.push("no falsifying test selected — a read must be able to fail");
-  const tG = guardFraming(cur.thesis || ""), wG = guardFraming(cur.whyRole || "");
+  const tG = guardFraming(cur.thesis || "", allowedLabels), wG = guardFraming(cur.whyRole || "", allowedLabels);
   if (tG.violated || wG.violated) violations.push("authored numerals stripped from prose");
   const scorecardKeys = (cur.scorecardKeys || []).filter((k: string) => HEADLINE_KEYS.includes(k)).slice(0, 6);
   const partitionPref = ["analytical", "hero", "balanced"].includes(cur.partitionPref) ? cur.partitionPref : null;
