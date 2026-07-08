@@ -3,8 +3,10 @@
   publish = "dist"
   functions = "netlify/functions"
 
-[functions]
-  node_bundler = "esbuild"
+# NOTE: no node_bundler override. curate.ts is a Functions 2.0 handler (default export,
+# Request/Response); the modern runtime bundles it natively AND injects the Netlify Blobs
+# connection context. Forcing the legacy esbuild bundler kept the function off that pipeline,
+# which is what silently starved the Blobs rate limiter of its configuration.
 
 [dev]
   command = "vite"
