@@ -14,12 +14,19 @@ data is generated; the point is the architecture, not the company.
 
 Two moments, one rule — the model interprets, the engine computes:
 
-- **Entry curation.** Pick a role (CFO / CRO). The engine runs its detector battery and
-  exposes a catalog of pre-verified widgets. A model call *curates* them into a
-  role-specific dashboard — selecting, ordering, framing. The same findings produce
-  opposite dashboards for the two roles (rising Enterprise concentration reads as
-  *fragility* to the CFO and *strength* to the CRO). A validator rejects any widget id the
-  engine didn't produce, so a hallucinated finding cannot reach the screen.
+- **Entry curation.** Pick a role (CFO / CRO). The engine ranks every fact by neutral
+  salience (role-agnostic effect size) and derives the finding's *neighborhood* — the
+  evidence, falsification tests, and widgets that are legible for it. Each role **leads with
+  the highest-salience finding in a domain where it holds decision rights**: the CFO owns
+  capital efficiency, the CRO owns revenue motion; shared concerns (retention, concentration)
+  surface for both. Objective #1 is always disclosed and led-with only when it's in the role's
+  remit. A model call then curates the board *around that lead* — selecting, ordering, and
+  framing widgets from the neighborhood — and a validator drops any id the engine didn't
+  produce, rejects a read with no falsifier, and rejects framing that contradicts the engine's
+  verdict. The two roles **diverge** when their leading finding differs and **converge** when
+  it's shared — there is no role-tilted framing of the same fact, only role-scoped leads with
+  full disclosure. (Perturb the data and watch it: improving efficiency drops it from the top,
+  concentration becomes the shared lead, and the two boards converge on their own.)
 
 - **Query.** Ask a question. **L1** (model) maps it onto a fixed metric vocabulary — it
   cannot invent a metric; unanswerable questions (forecasts, unlisted metrics, off-topic)
@@ -28,7 +35,24 @@ Two moments, one rule — the model interprets, the engine computes:
   number. The only probabilistic value in the whole system is L1's *intent confidence* —
   which is about interpreting the question, never about the answer.
 
+A query can also **re-orient** the whole board: focus a discovered finding and the dashboard
+re-curates around it (same engine, new lead). Answers appear as cards; the ambiguous case
+shows the engine-computed value immediately and waits for you to confirm before the model
+frames it — *facts are free, interpretations are confirmed.*
+
 Click any value, in either path, and the provenance drawer walks it to the rows.
+
+### What's structural, and what's layered
+
+Precision matters here, because overclaiming would itself violate the thesis. **Numbers,
+comparisons, chart scales, and layout coordinates are *structural*:** the model has no channel
+that can emit them, so it cannot invent or distort them — full stop. **Prose *valence* (the
+tone of a headline) is *layered defense*,** not a wall: the model is given only qualitative
+direction (clears/breaches, rising/falling), a validator rejects framing whose direction
+contradicts the engine's verdict, and on rejection the engine's own verdict replaces the
+headline. A flatly contradictory headline ("exceeds" on a breach) is caught; a merely
+euphemistic one can slip — but the engine's verdict is always shown beside it, so prose can
+never *invert* what the number says. The line sits exactly where the code draws it.
 
 ## One engine, two consumers
 
@@ -40,7 +64,7 @@ Two things consume it, so it can't drift:
 
 ```
 npm install
-npm run validate     # 113/113 panel checks, 14/14 findings vs the oracle
+npm run validate     # oracle (113/113 panel, 14/14 findings) + discovery proof (9/9 thesis assertions)
 npm run dev          # app (curation/query fall back locally without the function)
 npm run dev:live     # netlify dev — runs the function locally with your key
 npm run build        # production build → dist/
@@ -50,12 +74,13 @@ npm run build        # production build → dist/
 
 ```
 src/
-  engine-core.ts     the verified engine: metric panel + 6-detector battery + resolveLeaf
-  contract.ts        the honesty contract (provenance types, invariants)
+  engine-core.ts     the verified engine: metric panel + salience ranking + neighborhood + resolveLeaf
+  contract.ts        the honesty contract (substance types, curation contract, structural/layered invariants)
   App.tsx            React UI: entry curation, query path, provenance drawer
   index.css
 scripts/
-  validate.ts        oracle proof  →  npm run validate
+  validate.ts             oracle proof (metric panel + legacy detectors)
+  validate-discovery.ts   the live discovery path: 9 thesis-critical assertions
   findings_validation.json
 netlify/functions/
   curate.ts          the only server-side code: holds the key, forwards to Anthropic
@@ -75,16 +100,19 @@ only three tasks and maps each to a fixed model:
 | intent  | Claude Haiku             | bounded classification into a fixed vocabulary |
 | narrate | Claude Haiku             | one grounded sentence, no numbers |
 
-It validates the request shape and rejects unknown tasks or oversized payloads. Running
+The client's model field is advisory only — the function is server-authoritative and pins
+each task to its model regardless of what the client sends. It validates the request shape and
+rejects unknown tasks or oversized payloads. Running
 plain `vite` without the function, the model calls fail and the UI degrades to captured
 compositions and graceful declines — the engine, charts, and provenance still work.
 
 ## Key hygiene
 
-The key lives only in Netlify's environment config, never in the repo. Set a hard spend
-cap in the Anthropic console as the real backstop. The origin/shape checks in the function
-are a first line; add stateful rate-limiting (Netlify Blobs) before exposing the URL
-widely.
+The key lives only in Netlify's environment config, never in the repo. The function requires
+a **recognized Origin** (a missing or unlisted Origin is rejected — closing the empty-Origin
+proxy path) and applies **per-IP rate limiting** via Netlify Blobs (fail-open, so a store
+hiccup degrades to allow rather than break the demo). The **hard spend cap** in the Anthropic
+console is the ultimate backstop.
 
 ## What generalizes, and what's demo-scale
 
