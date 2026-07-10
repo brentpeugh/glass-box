@@ -110,13 +110,9 @@ compositions and graceful declines — the engine, charts, and provenance still 
 
 The key lives only in Netlify's environment config, never in the repo. The function requires
 a **recognized Origin** (a missing or unlisted Origin is rejected — closing the empty-Origin
-proxy path) and applies **per-IP rate limiting in two layers**: an in-memory per-instance
-counter that has no dependencies and cannot fail, plus Netlify Blobs (strong consistency) for
-cross-instance state, which fails open-but-loud so a store hiccup degrades to the in-memory
-layer rather than breaking the demo. The limiter is verified empirically, not assumed:
-`bash scripts/probe-limit.sh` sends 45 minimal calls and must see a 429 at #41 — the only
-evidence that counts, since a fail-open limiter looks identical alive or dead from the code.
-The **hard spend cap** in the Anthropic console is the ultimate backstop.
+proxy path) and applies **per-IP rate limiting** via Netlify Blobs (fail-open, so a store
+hiccup degrades to allow rather than break the demo). The **hard spend cap** in the Anthropic
+console is the ultimate backstop.
 
 ## What generalizes, and what's demo-scale
 
@@ -142,9 +138,6 @@ scale.
 5. Deploy. Verify live: open the site, pick a role, confirm the honesty bar reads
    *"curated live by the model"* (not the fallback), then run a query and confirm it
    answers, declines out-of-scope questions, and traces to rows.
-6. Verify the rate limiter empirically: `bash scripts/probe-limit.sh https://<your-site>` —
-   expect **429 at request #41**. Then check the function log: if it shows the Blobs layer
-   failing open, the 429 came from the in-memory layer (you're covered, but L2 needs a look).
 
 Local live testing before deploy: `npm run dev:live` (netlify dev) runs the function on
 your machine against your key.

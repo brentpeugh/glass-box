@@ -1269,7 +1269,7 @@ async function narrate(q, desc) {
 function QueryBar({ onAsk, busy }) {
   const [v, setV] = useState("");
   const go = () => { if (v.trim() && !busy) { onAsk(v.trim()); setV(""); } };
-  return (<div className="qbar"><input className="qin" value={v} placeholder="Ask or explore — “how is efficiency?” (re-orient), “what\u2019s SMB\u2019s magic number?” (answer), or an ambiguous one gets both" onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") go(); }} /><button className="qbtn" disabled={busy || !v.trim()} onClick={go}>{busy ? "…" : "Map"}</button></div>);
+  return (<div className="qbar"><input className="qin" value={v} placeholder="Ask or explore — “how is efficiency?” (re-orient), “what’s SMB’s magic number?” (answer), or an ambiguous one gets both" onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") go(); }} /><button className="qbtn" disabled={busy || !v.trim()} onClick={go}>{busy ? "…" : "Map"}</button></div>);
 }
 function QueryWidget({ desc, onPick }) {
   if (desc.kind === "callout") return (<div className="strip"><div className="block"><Callout mv={desc.data.mv} onPick={(mv) => onPick({ node: mv })} /></div></div>);
@@ -1313,11 +1313,11 @@ function AnswerCard({ item, onPick, onRecurate, onAnswerFully }) {
 
 function DebugPanel({ d, onClose }) {
   const [showPrompt, setShowPrompt] = useState(false);
-  if (!d || !d.curation) return (<div className="dbg"><div className="dbg-h">CURATION LOG <span className="dbg-meta">no curation yet</span>{onClose && <button className="dbg-close" onClick={onClose}>✕</button>}</div></div>);
+  if (!d || !d.curation) return (<div className="dbg"><div className="dbg-h"><span className="dbg-title">CURATION LOG <span className="dbg-meta">no curation yet</span></span>{onClose && <button className="dbg-close" onClick={onClose}>✕</button>}</div></div>);
   const c = d.curation, v = d.violations || [];
   const isLive = c.source === "live";
   return (<div className="dbg">
-    <div className="dbg-h">CURATION LOG · {d.role} <span className="dbg-meta">source: {c.source}{d.model ? ` · ${d.model}` : ""} · {v.length} validator action(s)</span>{onClose && <button className="dbg-close" onClick={onClose}>✕</button>}</div>
+    <div className="dbg-h"><span className="dbg-title">CURATION LOG · {d.role} <span className="dbg-meta">source: {c.source}{d.model ? ` · ${d.model}` : ""} · {v.length} validator action(s)</span></span>{onClose && <button className="dbg-close" onClick={onClose}>✕</button>}</div>
     {v.length > 0 && <div className="dbg-rej">validator: {v.join(" · ")}</div>}
     <div className="dbg-cols">
       <div className="dbg-col"><div className="dbg-cap">① model proposed (judgment)</div><pre className="dbg-pre">{JSON.stringify({ thesis: c.thesis, evidence: c.evidenceIds, tests: c.testIds, widgets: c.widgetIds, partition: c.partitionPref }, null, 1)}</pre></div>

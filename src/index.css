@@ -610,3 +610,8 @@ html,body,#root{ height:100%; overflow:hidden; }
 /* computed reconcile mark (trust UI — ✓ verified / ✗ mismatch / · descriptive) */
 .rows-recon .recon-mark{ color:var(--verdant); font-weight:600; }
 .rows-recon.bad .recon-mark{ color:var(--ember); }
+
+/* benchmark/target label — white halo so it stays legible where a data line crosses it */
+.cx-bench-lab{ paint-order:stroke; stroke:var(--panel); stroke-width:3px; stroke-linejoin:round; }
+/* curation-log header: keep role + source on one line (left), close button right */
+.dbg-title{ display:inline; }

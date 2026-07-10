@@ -11,44 +11,24 @@ const MODEL: Record<string, string> = {
 };
 const MAX: Record<string, number> = { curate: 1200, intent: 400, narrate: 300 };
 
-// ===== per-IP rate limiting — TWO LAYERS, so the limit cannot silently not-exist =====
-// The prior two revisions each shipped a limiter that never worked in production (first invisibly,
-// then visibly). The lesson: a single fail-open dependency means "working" and "dead" look
-// identical from outside. So the limit is now layered:
-//
-//   L1 — in-memory, per warm function instance. Zero dependencies, zero configuration, cannot
-//        fail. Sequential farming reuses the warm instance, so this layer alone passes the
-//        acceptance test (scripts/probe-limit.sh). Best-effort across concurrent instances.
-//   L2 — Netlify Blobs, cross-instance, STRONG consistency (the default "eventual" can serve
-//        stale counts under rapid fire, which would never accumulate). Fails OPEN but LOUD:
-//        a store error logs and the request proceeds — L1 still holds the line, and the hard
-//        spend cap in the Anthropic console remains the ultimate backstop.
-//
-// Scale notes (fine at demo scale): L2's read-modify-write is racy under high concurrency, and
-// Blobs keys don't expire — add a TTL/sweep if this ever runs hot. L1 self-prunes.
-const WINDOW_MS = 60_000, LIMIT = 40;
-
-const mem = new Map<string, { count: number; reset: number }>();
-function memLimited(ip: string): boolean {
-  const now = Date.now();
-  if (mem.size > 1000) for (const [k, v] of mem) if (now >= v.reset) mem.delete(k);
-  const rec = mem.get(ip);
-  if (rec && now < rec.reset) { rec.count++; return rec.count > LIMIT; }
-  mem.set(ip, { count: 1, reset: now + WINDOW_MS });
-  return false;
-}
-
-async function blobLimited(ip: string): Promise<boolean> {
+// Stateful per-IP rate limit (Netlify Blobs). This is a Functions 2.0 handler specifically so the
+// Blobs context auto-configures (the legacy Handler signature does NOT reliably provide it, which
+// silently broke this limiter in the prior revision). Fails OPEN but LOUD: on any store error the
+// request proceeds AND the error is logged, so a broken limiter is visible in function logs rather
+// than an invisible no-op. The hard spend cap in the Anthropic console is the ultimate backstop.
+// (Notes for later scale: the read-modify-write is racy under high concurrency — fine at demo
+// scale — and keys don't expire; add a TTL/sweep if this ever runs hot.)
+async function rateLimited(ip: string): Promise<boolean> {
   try {
-    const store = getStore({ name: "ratelimit", consistency: "strong" });
-    const now = Date.now();
+    const store = getStore("ratelimit");
+    const now = Date.now(), windowMs = 60_000, limit = 40;
     const rec = (await store.get(`rl:${ip}`, { type: "json" })) as { count: number; reset: number } | null;
-    let count = 1, reset = now + WINDOW_MS;
+    let count = 1, reset = now + windowMs;
     if (rec && now < rec.reset) { count = rec.count + 1; reset = rec.reset; }
     await store.setJSON(`rl:${ip}`, { count, reset });
-    return count > LIMIT;
+    return count > limit;
   } catch (e) {
-    console.error("[curate] Blobs rate-limit layer unavailable — failing OPEN (in-memory layer still active):", e);
+    console.error("[curate] rate-limit store error — failing OPEN:", e);
     return false;
   }
 }
@@ -76,7 +56,7 @@ export default async (req: Request, _context: Context): Promise<Response> => {
   if (JSON.stringify(messages).length > 12000) return new Response("payload too large", { status: 413 });
 
   const ip = (req.headers.get("x-nf-client-connection-ip") || req.headers.get("x-forwarded-for") || "unknown").split(",")[0].trim();
-  if (memLimited(ip) || (await blobLimited(ip))) return new Response("rate limited", { status: 429 });
+  if (await rateLimited(ip)) return new Response("rate limited", { status: 429 });
 
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return new Response("server not configured", { status: 500 });
