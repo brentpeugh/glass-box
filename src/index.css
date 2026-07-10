@@ -611,7 +611,10 @@ html,body,#root{ height:100%; overflow:hidden; }
 .rows-recon .recon-mark{ color:var(--verdant); font-weight:600; }
 .rows-recon.bad .recon-mark{ color:var(--ember); }
 
-/* benchmark/target label — white halo so it stays legible where a data line crosses it */
-.cx-bench-lab{ paint-order:stroke; stroke:var(--panel); stroke-width:3px; stroke-linejoin:round; }
+/* Text-over-data occlusion is a DEFECT for a renderer whose claim is honest presentation, and the
+   perturb button guarantees the data moves — so every in-plot label carves its own channel with a
+   panel-colored halo (paint-order lays the stroke first). Occlusion is made impossible, not merely
+   currently-avoided, in every data configuration and role. */
+.cx-bench-lab, .mt-bench-lab, .ln-bench-lab, .cx-dlab, .dlab{ paint-order:stroke; stroke:var(--panel); stroke-width:3px; stroke-linejoin:round; }
 /* curation-log header: keep role + source on one line (left), close button right */
 .dbg-title{ display:inline; }
