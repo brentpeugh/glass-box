@@ -139,7 +139,7 @@ function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
       <div className="brief-thesis">{read.thesis}</div>
       <div className="brief-why"><span className="brief-lbl">Why it matters for the {role}</span>{read.whyRole}</div>
       <div className="brief-sec">
-        <div className="brief-lbl">Evidence — model-selected, engine-computed, every value traceable</div>
+        <div className="brief-lbl">Evidence — {read.source === "live" ? "model-selected" : "deterministic selection"}, engine-computed, every value traceable</div>
         <div className="brief-ev">
           {evidence.map((mv, i) => (
             <button key={i} className="ev-card" onClick={() => onPick({ node: mv })}>
@@ -150,7 +150,7 @@ function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
         </div>
       </div>
       <div className="brief-sec">
-        <div className="brief-lbl">What would change this read — model-proposed, engine-run</div>
+        <div className="brief-lbl">What would change this read — {read.source === "live" ? "model-proposed" : "deterministic"}, engine-run</div>
         <div className="brief-tests">
           {tests.map((t) => {
             const r = verdicts[t.id];
@@ -197,10 +197,10 @@ function TrustPanel({ audit, onClose }) {
       </div>
     </div>
     <div className="brief-sec">
-      <div className="brief-lbl">AI audit log — every model decision this session, and how the engine governed it</div>
+      <div className="brief-lbl">AI audit log — every model/engine action this session, and how the engine governed it</div>
       <div className="tc-audit">
-        {audit.length === 0 ? <div className="tc-empty">No model actions yet this session.</div>
-          : audit.map((e, i) => (<div key={i} className={`tc-row ${e.kind}`}><span className="tc-kind">{e.kind}</span><span className="tc-detail">{e.kind === "curation" && e.finding ? <><b>{e.finding}</b> — </> : ""}{e.detail}</span></div>))}
+        {audit.length === 0 ? <div className="tc-empty">No actions yet this session.</div>
+          : audit.map((e, i) => (<div key={i} className={`tc-row ${e.kind}`}><span className="tc-kind">{e.kind}</span><span className="tc-detail">{e.kind === "curation" && e.finding ? <><b>{e.finding}</b> — </> : ""}{e.detail}{e.kind === "curation" && e.source && e.source !== "live" ? <em> · deterministic fallback, no model</em> : ""}</span></div>))}
       </div>
     </div>
   </div>);
@@ -861,7 +861,7 @@ function fallbackCuration(fact) {
   const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => (nb.lenses || RELATED_DOMAINS[nb.domain] || [nb.domain]).includes(WIDGET_DOMAIN[id]));
   const evidenceIds = [...new Set([...(fact.mvs || []).map((m) => m.id), ...nb.metricIds])].slice(0, 6);
   return {
-    thesis: `The most statistically anomalous signal in the book is ${fact.label.toLowerCase()} — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.`,
+    thesis: `The most statistically anomalous signal in the book is ${fact.label} — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.`,
     whyRole: "It is the largest deviation the engine surfaced from the data, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
     evidenceIds, testIds: nb.testIds, widgetIds, partitionPref: null,
     scorecardKeys: FALLBACK_SCORECARD[nb.domain] || FALLBACK_SCORECARD.efficiency,
@@ -950,10 +950,10 @@ const FALLBACK = {
 };
 
 // ================= composition rendering =================
-function Block({ block, catalog, onPick, dim }) {
+function Block({ block, catalog, onPick, dim, source }) {
   const hasFrame = block.headline || block.soWhat;
   return (<div className={`block emph-${block.emphasis}`}>
-    {hasFrame && <div className="frame"><span className="frame-tick">curated</span>{block.headline && <span className="frame-h">{block.headline}</span>}{block.soWhat && <span className="frame-sw">{block.soWhat}</span>}</div>}
+    {hasFrame && <div className="frame"><span className="frame-tick">{source === "live" ? "curated" : "deterministic"}</span>{block.headline && <span className="frame-h">{block.headline}</span>}{block.soWhat && <span className="frame-sw">{block.soWhat}</span>}</div>}
     <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={dim} />
   </div>);
 }
@@ -1112,7 +1112,7 @@ const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar
 // lead finding; the board is filled from this ranked menu, so there is always surplus to
 // fill a dense partition — a well-built board every time, regardless of how much the model curated.
 const CHART_MENU = ["metric_matrix", "efficiency_combo", "bridge_smb", "bridge_enterprise", "accel_line", "segment_stack", "hbar_nrr", "magic_line", "efficiency_bullets"];
-function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding }) {
+function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding, source }) {
   const kind = (id) => catalog[id]?.kind;
   const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]).map((b) => ({ ...b, _kind: kind(b.widget) }));
   const findings = all.filter((b) => b._kind === "finding_card");
@@ -1141,7 +1141,7 @@ function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding }) 
         {pl.block.widget === "salient_band"
           ? <div className="block emph-hero"><SalientBand finding={finding} role={role} onPick={onPick} /></div>
           : pl.block._kind === "finding_card"
-          ? <Block block={pl.block} catalog={catalog} onPick={onPick} dim={null} />
+          ? <Block block={pl.block} catalog={catalog} onPick={onPick} dim={null} source={source} />
           : <Widget id={pl.block.widget} catalog={catalog} onPick={onPick} dim={null} />}
       </div>))}
   </div>);
@@ -1150,7 +1150,7 @@ function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding }) 
 function EntryScreen({ onEnter }) {
   return (<div className="entry">
     <div className="entry-mark">⟡ CALIPER</div>
-    <div className="entry-sub">Caliper Systems · synthetic · ~$40M ARR vertical SaaS. The engine has computed the quarter. Enter as a role — the dashboard is curated live for what you're accountable for, from the same findings.</div>
+    <div className="entry-sub">Caliper Systems · synthetic · ~$40M ARR vertical SaaS. The engine has computed the quarter. Enter as a role — the dashboard is curated for what you're accountable for (live when the model is reachable, deterministic otherwise), from the same findings.</div>
     <div className="entry-roles">
       {Object.entries(ROLES).map(([k, r]) => (<button key={k} className="role" onClick={() => onEnter(k)}><span className="role-k">{k}</span><span className="role-l">{r.label}</span><span className="role-f">{r.focus}</span></button>))}
     </div>
@@ -1320,7 +1320,7 @@ function DebugPanel({ d, onClose }) {
     <div className="dbg-h"><span className="dbg-title">CURATION LOG · {d.role} <span className="dbg-meta">source: {c.source}{d.model ? ` · ${d.model}` : ""} · {v.length} validator action(s)</span></span>{onClose && <button className="dbg-close" onClick={onClose}>✕</button>}</div>
     {v.length > 0 && <div className="dbg-rej">validator: {v.join(" · ")}</div>}
     <div className="dbg-cols">
-      <div className="dbg-col"><div className="dbg-cap">① model proposed (judgment)</div><pre className="dbg-pre">{JSON.stringify({ thesis: c.thesis, evidence: c.evidenceIds, tests: c.testIds, widgets: c.widgetIds, partition: c.partitionPref }, null, 1)}</pre></div>
+      <div className="dbg-col"><div className="dbg-cap">① {isLive ? "model proposed (judgment)" : "deterministic fallback — no model"}</div><pre className="dbg-pre">{JSON.stringify({ thesis: c.thesis, evidence: c.evidenceIds, tests: c.testIds, widgets: c.widgetIds, partition: c.partitionPref }, null, 1)}</pre></div>
       <div className="dbg-col"><div className="dbg-cap">② engine enforced (truth)</div><pre className="dbg-pre">{`evidence:  ${c.evidenceIds.length} values, every one traceable
 tests:     ${c.testIds.length} (${c.testIds.length ? "incl. falsifier" : "none"})
 widgets:   ${c.widgetIds.length} on-domain, engine-computed
@@ -1524,7 +1524,7 @@ function AppInner() {
 
       <div className={`workarea ${picked ? "drawer-open" : ""}`}>
         <main className="stage">
-          {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} finding={state.curation && state.curation.finding} /></>}
+          {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} finding={state.curation && state.curation.finding} source={state.source} /></>}
         </main>
         <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
       </div>

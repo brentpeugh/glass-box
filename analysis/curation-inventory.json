@@ -1,0 +1,771 @@
+{
+  "generated": "static — no model runs (see blockers)",
+  "run_counts": {
+    "total_attempted": 0,
+    "live": 0,
+    "fallback": 0,
+    "excluded_fallback": 0,
+    "note": "no run could execute; see blockers B1/B2/B3"
+  },
+  "blockers": {
+    "B1_module_boundary": {
+      "finding": "the shipped curation path is in src/App.tsx and unexported (App.tsx exports only `default App`)",
+      "needed_but_unexported": [
+        "curate",
+        "buildCurationPrompt",
+        "callModel",
+        "CURATION_MODEL",
+        "PERTURBATIONS",
+        "perturbedDataset",
+        "buildCatalog",
+        "PARTITIONS",
+        "deriveShape",
+        "selectPartition",
+        "fallbackCuration",
+        "FALLBACK",
+        "CHART_MENU"
+      ],
+      "why_not_routed_around": "guardrails forbid editing App.tsx to export, and forbid writing a parallel prompt"
+    },
+    "B2_no_model_key": {
+      "finding": "ANTHROPIC_API_KEY is not in the repo (Netlify env only); callModel would throw and every run would fall back"
+    },
+    "B3_one_perturbation": {
+      "finding": "PERTURBATIONS = { improve_cac } — 1 state, not the 20 the harness is sized for",
+      "available_states": [
+        "improve_cac"
+      ]
+    }
+  },
+  "base_state_candidate_set": {
+    "state": "base (unperturbed)",
+    "finding_count": 23,
+    "salience_shape": {
+      "scored_findings": 23,
+      "top1_share": 0.1182,
+      "top3_share": 0.4109,
+      "hhi_concentration": 0.1331
+    },
+    "candidates": [
+      {
+        "rank": 1,
+        "id": "S0",
+        "label": "CAC Payback vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "cac",
+        "polarity": null,
+        "salience_score": 0.7618251347786268,
+        "domain": "efficiency",
+        "lenses": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_form_domains": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_forms": [
+          "efficiency_combo",
+          "magic_line",
+          "metric_matrix",
+          "efficiency_bullets",
+          "accel_line",
+          "segment_stack",
+          "scatter_eff_growth",
+          "heatmap_metrics",
+          "quadrant_eff",
+          "indexed_arr",
+          "grouped_growth",
+          "small_mult_arr"
+        ]
+      },
+      {
+        "rank": 2,
+        "id": "S1",
+        "label": "ARR spread across segments",
+        "kind_of_fact": "dispersion",
+        "metric": "arr",
+        "polarity": null,
+        "salience_score": 1.4331683067003218,
+        "domain": "concentration",
+        "lenses": [
+          "concentration",
+          "retention"
+        ],
+        "eligible_form_domains": [
+          "concentration",
+          "retention"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 3,
+        "id": "S2",
+        "label": "Magic # vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "magic",
+        "polarity": null,
+        "salience_score": 0.45355189726775946,
+        "domain": "efficiency",
+        "lenses": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_form_domains": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_forms": [
+          "efficiency_combo",
+          "magic_line",
+          "metric_matrix",
+          "efficiency_bullets",
+          "accel_line",
+          "segment_stack",
+          "scatter_eff_growth",
+          "heatmap_metrics",
+          "quadrant_eff",
+          "indexed_arr",
+          "grouped_growth",
+          "small_mult_arr"
+        ]
+      },
+      {
+        "rank": 4,
+        "id": "S3",
+        "label": "NRR blended vs worst segment",
+        "kind_of_fact": "divergence",
+        "metric": "nrr",
+        "polarity": null,
+        "salience_score": 0.24144334868212933,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 5,
+        "id": "S4",
+        "label": "Magic # adverse trend",
+        "kind_of_fact": "trend",
+        "metric": "magic",
+        "polarity": null,
+        "salience_score": 0.9160942919854324,
+        "domain": "efficiency",
+        "lenses": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_form_domains": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_forms": [
+          "efficiency_combo",
+          "magic_line",
+          "metric_matrix",
+          "efficiency_bullets",
+          "accel_line",
+          "segment_stack",
+          "scatter_eff_growth",
+          "heatmap_metrics",
+          "quadrant_eff",
+          "indexed_arr",
+          "grouped_growth",
+          "small_mult_arr"
+        ]
+      },
+      {
+        "rank": 6,
+        "id": "S5",
+        "label": "CAC Payback adverse trend",
+        "kind_of_fact": "trend",
+        "metric": "cac",
+        "polarity": null,
+        "salience_score": 0.9151111168793074,
+        "domain": "efficiency",
+        "lenses": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_form_domains": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_forms": [
+          "efficiency_combo",
+          "magic_line",
+          "metric_matrix",
+          "efficiency_bullets",
+          "accel_line",
+          "segment_stack",
+          "scatter_eff_growth",
+          "heatmap_metrics",
+          "quadrant_eff",
+          "indexed_arr",
+          "grouped_growth",
+          "small_mult_arr"
+        ]
+      },
+      {
+        "rank": 7,
+        "id": "S6",
+        "label": "Rule of 40 vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "r40",
+        "polarity": null,
+        "salience_score": 0.32689920777042747,
+        "domain": "efficiency",
+        "lenses": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_form_domains": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_forms": [
+          "efficiency_combo",
+          "magic_line",
+          "metric_matrix",
+          "efficiency_bullets",
+          "accel_line",
+          "segment_stack",
+          "scatter_eff_growth",
+          "heatmap_metrics",
+          "quadrant_eff",
+          "indexed_arr",
+          "grouped_growth",
+          "small_mult_arr"
+        ]
+      },
+      {
+        "rank": 8,
+        "id": "S7",
+        "label": "SMB NRR vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "nrr",
+        "polarity": null,
+        "salience_score": 0.19835429632541535,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 9,
+        "id": "S8",
+        "label": "SMB GRR vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "grr",
+        "polarity": null,
+        "salience_score": 0.14932474591325504,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 10,
+        "id": "S9",
+        "label": "ARR concentration (top segment)",
+        "kind_of_fact": "concentration",
+        "metric": "arr",
+        "polarity": null,
+        "salience_score": 0.27557755509672227,
+        "domain": "concentration",
+        "lenses": [
+          "concentration",
+          "retention"
+        ],
+        "eligible_form_domains": [
+          "concentration",
+          "retention"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 11,
+        "id": "S10",
+        "label": "Win rate spread across segments",
+        "kind_of_fact": "dispersion",
+        "metric": "winRate",
+        "polarity": null,
+        "salience_score": 0.5629150349054999,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 12,
+        "id": "S11",
+        "label": "Mid-Market GRR vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "grr",
+        "polarity": null,
+        "salience_score": 0.04834509491773136,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 13,
+        "id": "S12",
+        "label": "Blended GRR vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "grr",
+        "polarity": null,
+        "salience_score": 0.045983623657801176,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 14,
+        "id": "S13",
+        "label": "NRR spread across segments",
+        "kind_of_fact": "dispersion",
+        "metric": "nrr",
+        "polarity": null,
+        "salience_score": 0.41122921653085953,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 15,
+        "id": "S14",
+        "label": "Mid-Market NRR vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "nrr",
+        "polarity": null,
+        "salience_score": 0.02328277990686857,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 16,
+        "id": "S15",
+        "label": "Enterprise GRR vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "grr",
+        "polarity": null,
+        "salience_score": 0.0022520503857630086,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 17,
+        "id": "S16",
+        "label": "Gross Margin adverse trend",
+        "kind_of_fact": "trend",
+        "metric": "grossMargin",
+        "polarity": null,
+        "salience_score": 0.051779936302493224,
+        "domain": "efficiency",
+        "lenses": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_form_domains": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_forms": [
+          "efficiency_combo",
+          "magic_line",
+          "metric_matrix",
+          "efficiency_bullets",
+          "accel_line",
+          "segment_stack",
+          "scatter_eff_growth",
+          "heatmap_metrics",
+          "quadrant_eff",
+          "indexed_arr",
+          "grouped_growth",
+          "small_mult_arr"
+        ]
+      },
+      {
+        "rank": 18,
+        "id": "S17",
+        "label": "Gross Margin vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "grossMargin",
+        "polarity": null,
+        "salience_score": -0.006666666640264225,
+        "domain": "efficiency",
+        "lenses": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_form_domains": [
+          "efficiency",
+          "growth"
+        ],
+        "eligible_forms": [
+          "efficiency_combo",
+          "magic_line",
+          "metric_matrix",
+          "efficiency_bullets",
+          "accel_line",
+          "segment_stack",
+          "scatter_eff_growth",
+          "heatmap_metrics",
+          "quadrant_eff",
+          "indexed_arr",
+          "grouped_growth",
+          "small_mult_arr"
+        ]
+      },
+      {
+        "rank": 19,
+        "id": "S18",
+        "label": "Blended NRR vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "nrr",
+        "polarity": null,
+        "salience_score": -0.05680400044196261,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 20,
+        "id": "S19",
+        "label": "GRR blended vs worst segment",
+        "kind_of_fact": "divergence",
+        "metric": "grr",
+        "polarity": null,
+        "salience_score": 0.10832216806557853,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 21,
+        "id": "S20",
+        "label": "GRR spread across segments",
+        "kind_of_fact": "dispersion",
+        "metric": "grr",
+        "polarity": null,
+        "salience_score": 0.15757349239596877,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      },
+      {
+        "rank": 22,
+        "id": "S21",
+        "label": "QoQ growth adverse trend",
+        "kind_of_fact": "trend",
+        "metric": "qoq",
+        "polarity": null,
+        "salience_score": -0.3621732127374235,
+        "domain": "growth",
+        "lenses": [
+          "growth",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "growth",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "accel_line",
+          "segment_stack",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "indexed_arr",
+          "grouped_growth",
+          "small_mult_arr"
+        ]
+      },
+      {
+        "rank": 23,
+        "id": "S22",
+        "label": "Enterprise NRR vs benchmark",
+        "kind_of_fact": "benchmark",
+        "metric": "nrr",
+        "polarity": null,
+        "salience_score": -0.21148304164244153,
+        "domain": "retention",
+        "lenses": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_form_domains": [
+          "retention",
+          "concentration"
+        ],
+        "eligible_forms": [
+          "masking_card",
+          "bridge_smb",
+          "bridge_enterprise",
+          "bridge_blended",
+          "hbar_nrr",
+          "segment_table",
+          "pareto_arr",
+          "treemap_arr",
+          "lorenz_arr",
+          "dumbbell_ret",
+          "heatmap_retention"
+        ]
+      }
+    ]
+  },
+  "measurable_note": "Only the engine-side candidate denominator for the base state is observable without the model. Selection/partition/role-divergence statistics require the live model + the unexported path and were not measured."
+}
