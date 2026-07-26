@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "validate": "tsx scripts/validate.ts && tsx scripts/validate-discovery.ts",
     "validate:discovery": "tsx scripts/validate-discovery.ts",
-    "validate:all": "tsx scripts/validate.ts && tsx scripts/validate-discovery.ts"
+    "validate:curation": "tsx scripts/validate-curation.ts",
+    "validate:all": "tsx scripts/validate.ts && tsx scripts/validate-discovery.ts && tsx scripts/validate-curation.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

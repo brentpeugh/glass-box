@@ -1,45 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 
-import { createEngine } from "./engine-core";
-import { WIDGET_DOMAIN, RELATED_DOMAINS, guardFraming, guardDirection, engineHeadline, validateCurationCore, HEADLINE_KEYS } from "./curation";
+import { WIDGET_DOMAIN, RELATED_DOMAINS, guardFraming, guardDirection, engineHeadline } from "./curation";
+import { E, initEngine, setBaseDS, BASE_DS } from "./engine";
+import { buildCatalog, CHART_MENU } from "./catalog";
+import { PARTITIONS, selectPartition, fillPartition } from "./layout";
+import { curate, callModel, FALLBACK } from "./curate";
+import { PERTURBATIONS, perturbedDataset } from "./perturbations";
 
-// The engine is created once from the dataset fetched at runtime (see App bootstrap).
-// One engine, two consumers: this same engine-core is what scripts/validate.ts proves
-// against the oracle. The browser never hand-edits it.
-let E;
-let BASE_DS = null;   // retained so perturbations transform a copy and reset restores the original
-function initEngine(ds) {
-  E = createEngine({ customers: ds.facts.customers, opex: ds.facts.opex, quarters: ds.meta.quarters, segments: ds.meta.segments, benchmarks: ds.benchmarks, opportunities: ds.facts.opportunities });
-}
-// ===== PERTURBATION: prove discovery is real, not scripted. Apply a transparent, SINGLE-AXIS change
-// to the real data — not a re-authored dataset — then recompute salience from scratch. The finding
-// re-orders on its own and the whole app re-orients, with no code change. Verified blind: cutting
-// recent S&M removes the CAC/efficiency anomaly and the engine surfaces ARR concentration as the new
-// top risk — unprompted. (Discipline: change the input condition, never the output finding.) =====
-const PERTURBATIONS = {
-  improve_cac: {
-    label: "Improve go-to-market efficiency",
-    note: "Cut S&M spend ~40% in the last three quarters — a more efficient acquisition motion.",
-    apply: (d) => { for (const o of d.facts.opex) if (["25Q2", "25Q3", "25Q4"].includes(o.quarter)) o.sm_spend *= 0.6; },
-  },
-};
-function perturbedDataset(name) {
-  const d = JSON.parse(JSON.stringify(BASE_DS));
-  PERTURBATIONS[name].apply(d);
-  return d;
-}
-// All model calls go through one seam. In production this hits the Netlify function
-// holding the key server-side; running plain `vite` (no function) it throws and the
-// callers fall back to captured compositions / graceful declines.
-async function callModel(task, messages, max_tokens, model) {
-  const res = await fetch("/.netlify/functions/curate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ task, messages, max_tokens, model }) });
-  if (!res.ok) throw new Error("model " + res.status);
-  return res.json();
-}
-// The one high-judgment call — thesis formation + coherent curation — routes to the strongest
-// model. Everything else stays on the cheap path. NOTE: the model field is advisory only — the
-// Netlify function is server-authoritative and pins curate → Sonnet (it ignores this value).
-const CURATION_MODEL = "claude-sonnet-4-6";
 
 const fmtM = (v) => `$${(v / 1e6).toFixed(2)}M`;
 const fmtK = (v) => (Math.abs(v) >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : `$${(v / 1e3).toFixed(1)}K`);
@@ -440,70 +407,6 @@ function FindingCard({ finding, onPick }) {
   </div>);
 }
 
-// ================= widget catalog (engine offering; pre-verified) =================
-function buildCatalog() {
-  const Q1 = E.QUARTERS.slice(1);
-  const masking = E.detectMasking("24Q4", "25Q4");
-  const segSeries = [
-    { seg: "SMB", color: "#8ba6c4", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("SMB", q).value, mv: E.segArr("SMB", q) })) },
-    { seg: "Mid-Market", color: "#4a7ba8", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Mid-Market", q).value, mv: E.segArr("Mid-Market", q) })) },
-    { seg: "Enterprise", color: "#1f3a5f", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Enterprise", q).value, mv: E.segArr("Enterprise", q) })) },
-  ];
-  const smBars = Q1.map((q) => ({ q, value: E.smTotal(q).value, mv: E.smTotal(q) }));
-  const magicLine = Q1.map((q) => ({ q, value: E.magicNumber(q).value, mv: E.magicNumber(q) }));
-  const accelLine = Q1.map((q) => ({ q, value: E.qoqGrowth(q).value * 100, mv: E.qoqGrowth(q) }));
-  // ---- batch-1 general charts (relationship / cumulative / heatmap / indexed / start-vs-end) ----
-  const scatterEG = Q1.map((q) => ({ x: E.magicNumber(q).value, y: E.qoqGrowth(q).value * 100, label: q, mv: E.magicNumber(q) }));
-  const paretoArr = E.SEGMENTS.map((sg) => ({ label: sg, value: E.segArr(sg, "25Q4").value, mv: E.segArr(sg, "25Q4") }));
-  const hmRows = [
-    { label: "Magic #", f: (q) => E.magicNumber(q), thr: E.BENCH.magic_number.threshold, good: "above" },
-    { label: "CAC (mo)", f: (q) => E.cacPayback(q), thr: E.BENCH.cac_payback_mo.threshold, good: "below" },
-    { label: "Rule of 40", f: (q) => E.ruleOf40(q), thr: E.BENCH.rule_of_40.threshold, good: "above" },
-    { label: "Gross Mgn", f: (q) => E.grossMargin(q), thr: E.BENCH.gross_margin.threshold, good: "above" },
-  ];
-  const heatmapMetrics = { cols: Q1, rows: hmRows.map((m) => ({ label: m.label, cells: Q1.map((q) => { const mv = m.f(q); if (!mv) return { tone: "none", mv: null, text: "" }; const ok = m.good === "above" ? mv.value >= m.thr : mv.value <= m.thr; return { tone: ok ? "good" : "bad", mv, text: "" }; }) })) };
-  const indexedArr = { series: segSeries.map((s) => ({ seg: s.seg, color: s.color, points: s.points })), quarters: E.QUARTERS };
-  const dumbbellRet = E.SEGMENTS.map((sg) => { const g = E.grr(sg, "24Q4", "25Q4"), n = E.nrr(sg, "24Q4", "25Q4"); return { label: sg, a: g.value, b: n.value, mv: n }; });
-  // ---- batch-2 general charts (share-of-total / comparison / positioning / small-multiples) ----
-  const treemapArr = E.SEGMENTS.map((sg) => ({ label: sg, value: E.segArr(sg, "25Q4").value, mv: E.segArr(sg, "25Q4") }));
-  const groupedGrowth = E.SEGMENTS.map((sg) => ({ label: sg, bars: [{ value: E.segArr(sg, "24Q1").value, mv: E.segArr(sg, "24Q1") }, { value: E.segArr(sg, "25Q4").value, mv: E.segArr(sg, "25Q4") }] }));
-  const quadEff = Q1.map((q) => ({ x: E.magicNumber(q).value, y: E.qoqGrowth(q).value * 100, label: q, mv: E.magicNumber(q) }));
-  const smArr = segSeries.map((s) => ({ seg: s.seg, color: s.color, points: s.points }));
-  // concentration analytics — the Lorenz distribution curve, a genuinely distinct form from the
-  // composition (treemap), ranking (pareto), and breakdown (table) views already on the board.
-  const lorenzCurve = E.lorenz("25Q4");
-  const heatmapRet = { cols: ["NRR", "GRR"], rows: E.SEGMENTS.map((sg) => { const n = E.nrr(sg, "24Q4", "25Q4"), g = E.grr(sg, "24Q4", "25Q4"); return { label: sg, cells: [{ tone: n.value >= 100 ? "good" : "bad", mv: n, text: `${n.value.toFixed(0)}` }, { tone: g.value >= 90 ? "good" : "bad", mv: g, text: `${g.value.toFixed(0)}` }] }; }) };
-  return {
-    masking_card: { kind: "finding_card", polarity: "bad", desc: "Blended NRR looks healthy but conceals an underwater segment (SMB).", data: { finding: masking } },
-    salient_band: { kind: "finding_card", polarity: "bad", title: "Top salient anomaly", desc: "The most statistically anomalous signal the engine surfaced.", data: {} },
-    bridge_smb: { kind: "waterfall", polarity: "bad", desc: "SMB retention bridge — churn and contraction outweigh expansion.", data: { bridge: E.cohortBridge("SMB", "24Q4", "25Q4"), title: "SMB retention bridge", mv: E.nrr("SMB", "24Q4", "25Q4") } },
-    bridge_enterprise: { kind: "waterfall", polarity: "good", desc: "Enterprise retention bridge — the expansion engine; net retention well above 100%.", data: { bridge: E.cohortBridge("Enterprise", "24Q4", "25Q4"), title: "Enterprise retention bridge", mv: E.nrr("Enterprise", "24Q4", "25Q4") } },
-    bridge_blended: { kind: "waterfall", polarity: "neutral", desc: "Company-wide retention bridge across all segments.", data: { bridge: E.cohortBridge(null, "24Q4", "25Q4"), title: "Blended retention bridge", mv: E.nrr(null, "24Q4", "25Q4") } },
-    efficiency_combo: { kind: "combo", polarity: "bad", desc: "Sales & marketing spend climbing while sales efficiency (magic number) falls through its benchmark.", data: { title: "S&M spend vs magic number", bars: smBars, line: magicLine, benchmark: E.BENCH.magic_number.threshold, good: E.BENCH.magic_number.good } },
-    magic_line: { kind: "line", polarity: "bad", desc: "Magic number trend crossing its 0.75 benchmark.", data: { title: "SaaS magic number", series: magicLine, benchmark: E.BENCH.magic_number.threshold, good: "above", fmt: (v) => `${v.toFixed(2)}x` } },
-    accel_line: { kind: "line", polarity: "good", desc: "Quarter-over-quarter ARR growth accelerating.", data: { title: "Quarter-over-quarter ARR growth", series: accelLine, benchmark: null, good: "above", fmt: (v) => `${v.toFixed(1)}%` } },
-    callout_magic: { kind: "callout", polarity: "bad", desc: "SaaS magic number vs benchmark.", data: { mv: E.magicNumber("25Q4") } },
-    callout_cac: { kind: "callout", polarity: "bad", desc: "CAC payback (months) vs benchmark.", data: { mv: E.cacPayback("25Q4") } },
-    callout_r40: { kind: "callout", polarity: "bad", desc: "Rule of 40 vs benchmark.", data: { mv: E.ruleOf40("25Q4") } },
-    callout_grr: { kind: "callout", polarity: "bad", desc: "Gross revenue retention vs benchmark.", data: { mv: E.grr(null, "24Q4", "25Q4") } },
-    segment_stack: { kind: "stacked_area", polarity: "neutral", desc: "ARR by segment over time — topline growth and rising Enterprise concentration.", data: { title: "ARR by segment", series: segSeries } },
-    segment_table: { kind: "table", polarity: "neutral", desc: "Per-segment ARR, share of ARR, NRR and GRR — the concentration and durability breakdown in one grid.", data: {} },
-    hbar_nrr: { kind: "hbar", polarity: "bad", desc: "Net revenue retention ranked by segment against the 100% benchmark — shows the retention spread at a glance.", data: { title: "NRR by segment", benchmark: 100, fmt: (v) => `${v.toFixed(0)}%`, items: E.SEGMENTS.map((sg) => { const mv = E.nrr(sg, "24Q4", "25Q4"); return { label: sg, value: mv.value, mv, tone: mv.value >= 100 ? "good" : "bad" }; }) } },
-    metric_matrix: { kind: "matrix", polarity: "bad", desc: "Every efficiency and durability metric by quarter — the full time-series grid, tone-coded against benchmark. The densest single view of the trajectory.", data: {} },
-    efficiency_bullets: { kind: "bullet", polarity: "bad", desc: "Capital-efficiency metrics (magic number, CAC payback, Rule of 40) against their benchmarks as bullet gauges.", data: { title: "Efficiency vs targets", items: (() => { const mag = E.magicNumber("25Q4"), cac = E.cacPayback("25Q4"), r40 = E.ruleOf40("25Q4"); return [{ label: "Magic #", mv: mag, value: mag.value, target: mag.basis.thr, good: mag.basis.good, max: 1.0, fmt: (v) => `${v.toFixed(2)}x` }, { label: "CAC (mo)", mv: cac, value: cac.value, target: cac.basis.thr, good: cac.basis.good, max: 30, fmt: (v) => `${v.toFixed(0)}mo` }, { label: "Rule of 40", mv: r40, value: r40.value, target: r40.basis.thr, good: r40.basis.good, max: 60, fmt: (v) => `${v.toFixed(0)}` }]; })() } },
-    scatter_eff_growth: { kind: "scatter", polarity: "bad", desc: "Sales efficiency (magic number) plotted against ARR growth, quarter by quarter — shows whether growth is being bought with declining efficiency.", data: { title: "Efficiency vs growth", points: scatterEG, xlab: "Magic #", ylab: "QoQ growth %" } },
-    pareto_arr: { kind: "pareto", polarity: "bad", desc: "ARR by segment, ranked, with the cumulative share curve — how concentrated revenue is in the top segment.", data: { title: "ARR concentration (Pareto)", items: paretoArr, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
-    heatmap_metrics: { kind: "heatmap", polarity: "bad", desc: "Every efficiency metric across every quarter, tone-coded against benchmark — the fastest scan of where and when the book breaches.", data: { title: "Efficiency heatmap", ...heatmapMetrics } },
-    indexed_arr: { kind: "indexed", polarity: "neutral", desc: "Segment ARR rebased to 100 at the first quarter — compares growth rates across segments regardless of size.", data: { title: "Indexed ARR growth by segment", ...indexedArr } },
-    dumbbell_ret: { kind: "dumbbell", polarity: "bad", desc: "Gross vs net retention per segment — the gap is the expansion contribution; where the dot moves left, contraction outweighs expansion.", data: { title: "GRR → NRR by segment", items: dumbbellRet, fmt: (v) => `${v.toFixed(0)}%` } },
-    treemap_arr: { kind: "treemap", polarity: "bad", desc: "ARR share by segment as proportional area — the concentration of the book at a glance.", data: { title: "ARR share by segment", items: treemapArr, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
-    grouped_growth: { kind: "grouped", polarity: "neutral", desc: "Segment ARR at the first vs latest quarter side by side — which segments actually drove the growth.", data: { title: "Segment ARR — first vs latest", groups: groupedGrowth, keys: ["24Q1", "25Q4"], colors: ["var(--slate-l)", "var(--slate-d)"], fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
-    quadrant_eff: { kind: "quadrant", polarity: "bad", desc: "Each quarter positioned by sales efficiency and growth against their benchmarks — the four zones separate efficient growth from bought growth.", data: { title: "Efficiency × growth positioning", points: quadEff, xlab: "Magic #", ylab: "QoQ growth %", xbench: E.BENCH.magic_number.threshold, ybench: 5, quad: { tr: "Efficient growth", tl: "Bought growth", br: "Efficient · slowing", bl: "Inefficient" } } },
-    small_mult_arr: { kind: "small_multiples", polarity: "neutral", desc: "One ARR trend per segment on a shared scale — compare the growth shapes side by side.", data: { title: "ARR trend by segment", series: smArr } },
-    lorenz_arr: { kind: "lorenz", polarity: "bad", desc: "Cumulative ARR share by account (accounts ranked largest first) — the distribution shape; the steeper the early rise, the more the book concentrates in a few accounts.", data: { title: "ARR distribution (Lorenz)", curve: lorenzCurve.curve, mv: lorenzCurve } },
-    heatmap_retention: { kind: "heatmap", polarity: "bad", desc: "NRR and GRR per segment, tone-coded against benchmark — where retention holds and where it breaches.", data: { title: "Retention by segment", ...heatmapRet } },
-  };
-}
 
 // ===== row grammar: widgets declare eligible templates; a deterministic packer fills
 // rows so every row is complete (no dead space). The model chooses widgets; layout is
@@ -843,111 +746,8 @@ function roleScopedTopFinding(roleKey) {
 // labels that contain digits ("Rule of 40") are whitelisted — naming them is referencing, not
 // authoring. The prompt asks; the guard enforces.
 
-// ===== the unified curation contract validator. A model curation is admissible only if it is
-// COHERENT: everything it cites is inside the anchoring finding's neighborhood, it picks at least
-// one genuine falsifier, its widgets are on-domain, and its prose is numeral-free. Violations are
-// dropped; if what remains isn't viable, we fall back to the deterministic (always-coherent) read.
-// This makes "the thesis is gospel" a structural guarantee, not a request.
-// deterministic fallback vital-signs per finding domain (used only when the model curation
-// is unavailable) — finding-weighted, so even the fallback strip orients to what surfaced
-const FALLBACK_SCORECARD = {
-  efficiency: ["cac_payback", "magic_number", "rule_of_40", "gross_margin", "net_new_arr", "nrr"],
-  retention: ["nrr", "grr", "gross_margin", "net_new_arr", "magic_number", "cac_payback"],
-  growth: ["qoq_growth", "net_new_arr", "ent_share", "nrr", "magic_number", "cac_payback"],
-  concentration: ["ent_share", "nrr", "net_new_arr", "qoq_growth", "gross_margin", "cac_payback"],
-};
-function fallbackCuration(fact) {
-  const nb = E.findingNeighborhood(fact);
-  const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => (nb.lenses || RELATED_DOMAINS[nb.domain] || [nb.domain]).includes(WIDGET_DOMAIN[id]));
-  const evidenceIds = [...new Set([...(fact.mvs || []).map((m) => m.id), ...nb.metricIds])].slice(0, 6);
-  return {
-    thesis: `The most statistically anomalous signal in the book is ${fact.label} — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.`,
-    whyRole: "It is the largest deviation the engine surfaced from the data, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
-    evidenceIds, testIds: nb.testIds, widgetIds, partitionPref: null,
-    scorecardKeys: FALLBACK_SCORECARD[nb.domain] || FALLBACK_SCORECARD.efficiency,
-    rationaleTags: ["top salient anomaly", nb.domain], source: "fallback",
-  };
-}
-function validateCuration(cur, finding, catalog) {
-  const nb = E.findingNeighborhood(finding);
-  // the model may NAME any metric it was shown as evidence — those engine labels (some contain
-  // digits, e.g. "Rule of 40") are references, not authored values, so they're whitelisted.
-  const evidenceLabels = (nb.metricIds || []).map((id: string) => { try { return E.store.get(id)?.label; } catch { return null; } }).filter(Boolean);
-  return validateCurationCore(cur, nb, catalog, WIDGET_DOMAIN, evidenceLabels);
-}
-function buildCurationPrompt(focus, finding, nb, catalog) {
-  const metricMenu = nb.metricIds.map((id) => ({ id, label: E.store.get(id).label }));
-  const testMenu = nb.testIds.map((id) => { const t = E.TEST_MENU.find((x) => x.id === id); return { id, question: t.label, falsifier: nb.falsifierIds.includes(id) }; });
-  const widgetMenu = Object.keys(catalog).filter((id) => (RELATED_DOMAINS[nb.domain] || []).includes(WIDGET_DOMAIN[id])).map((id) => ({ id, label: catalog[id].title || id }));
-  const headlineMenu = HEADLINE_KEYS;
-  // Domain-conditional composition guidance. Some findings (concentration especially) are served
-  // by segment-based widgets the model may not recognize as "the board" — naming the complementary
-  // views a complete board of that kind contains helps it compose fully without forcing a count.
-  const DOMAIN_HINT = {
-    concentration: "For a concentration finding, a complete board typically shows: the segment composition (treemap or stacked share), the ranking/Pareto of segments, the share trend over time (indexed or stacked-over-time), and the segment breakdown table. These segment-based views ARE the concentration story — select the complementary ones that build the full picture.",
-    efficiency: "For an efficiency finding, a complete board typically shows: the metric trend vs benchmark, the spend-vs-output relationship, the positioning against peers/quadrant, and the supporting metric matrix.",
-    retention: "For a retention finding, a complete board typically shows: the cohort/NRR bridge, the segment retention comparison, and the trend against benchmark.",
-    growth: "For a growth finding, a complete board typically shows: the growth trend, the segment contribution, and the acceleration/composition over time.",
-  };
-  const domainHint = DOMAIN_HINT[nb.domain] ? "\n" + DOMAIN_HINT[nb.domain] : "";
-  return `You are the analytical-judgment layer of a governed analytics system, briefing the ${focus.role}.
-An engine has DETECTED this finding (you did not compute it; you may foreground and FRAME it): "${finding.label}".
-Form the decision-relevant READ for the ${focus.role}. The engine surfaced this top statistical fact from a neutral scan; its finding neighborhood (the menus below) defines what is legible. Do NOT assume the issue is retention, growth, efficiency, or concentration — let the neighborhood and the evidence decide. Choose the framing and widgets most decision-relevant FOR THE ${focus.role}: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Compose a COMPLETE board: select the set of widgets that give a full analytical view of this finding from complementary angles (e.g. the trend over time, the segment/component breakdown, the composition or share, a comparison against benchmark) — typically 5-6 panels, ordered most important first. Prefer a fuller board that examines the finding from several angles over a sparse one; only select fewer if the finding genuinely cannot support more.${domainHint} Select ONLY from the menus below — you may not invent metrics, tests, or widgets, and you may not write any digit in your prose (the engine owns all numbers).
-
-EVIDENCE (metric ids you may cite): ${JSON.stringify(metricMenu)}
-TESTS (you MUST include at least one marked falsifier:true, so your read can fail): ${JSON.stringify(testMenu)}
-WIDGETS (charts you may select, prioritized): ${JSON.stringify(widgetMenu)}
-HEADLINE (metric keys for the vital-signs strip — pick 6 that matter to the ${focus.role} for THIS finding): ${JSON.stringify(headlineMenu)}
-
-Return ONLY this JSON, nothing around it:
-{"thesis":"1-2 sentences, NO numbers — the story that matters for the ${focus.role}","whyRole":"1 sentence, NO numbers — why it matters to the ${focus.role}","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["5-6 ids from WIDGETS composing a complete board — complementary views, most important first"],"partitionPref":"one of: analytical (dense data-grid lead) | hero (one dominant panel + rail) | balanced","scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
-}
-async function curate(focus, catalog, targetFinding) {
-  const finding = targetFinding || E.topFinding();   // re-orient around a chosen discovered finding, or the top salient one
-  if (!finding) return null;
-  const nb = E.findingNeighborhood(finding);
-  const prompt = buildCurationPrompt(focus, finding, nb, catalog);
-  try {
-    const data = await callModel("curate", [{ role: "user", content: prompt }], 600, CURATION_MODEL);
-    const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-    const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
-    const { viable, curation, violations } = validateCuration(parsed, finding, catalog);
-    if (viable) return { ...curation, finding, violations, _debug: { prompt, raw, model: data.model } };
-    return { ...fallbackCuration(finding), finding, violations: [...violations, "incoherent — fell back to deterministic read"], _debug: { prompt, raw, model: data.model } };
-  } catch (e) {
-    return { ...fallbackCuration(finding), finding, violations: ["model unavailable — deterministic read"], _debug: { prompt, raw: String(e).slice(0, 200), model: null } };
-  }
-}
 
 
-// captured fallback per role (labeled), used only when the model is unavailable
-const FALLBACK = {
-  CFO: { sections: [
-    { heading: "Retention quality", blocks: [
-      { widget: "masking_card", emphasis: "hero", headline: "The headline hides the rot", soWhat: "Net retention only looks healthy because expansion masks an underwater segment." },
-      { widget: "bridge_smb", emphasis: "standard", headline: "Where revenue leaks", soWhat: "In the worst segment, churn and contraction overwhelm expansion." }] },
-    { heading: "Efficiency & durability", blocks: [
-      { widget: "callout_magic", emphasis: "compact", headline: "", soWhat: "" },
-      { widget: "callout_cac", emphasis: "compact", headline: "", soWhat: "" },
-      { widget: "callout_r40", emphasis: "compact", headline: "", soWhat: "" },
-      { widget: "efficiency_combo", emphasis: "standard", headline: "Spending more to grow less", soWhat: "Sales spend is climbing while each dollar buys less growth." },
-      { widget: "metric_matrix", emphasis: "standard", headline: "The full trajectory", soWhat: "Every efficiency metric, every quarter — the deterioration is systemic." },
-      { widget: "efficiency_bullets", emphasis: "standard", headline: "Efficiency vs targets", soWhat: "Every efficiency metric sits below its benchmark." }] },
-    { heading: "Concentration", blocks: [
-      { widget: "segment_stack", emphasis: "standard", headline: "Enterprise concentration is rising", soWhat: "The base is tilting toward a few large accounts." },
-      { widget: "segment_table", emphasis: "standard", headline: "The segment breakdown", soWhat: "Retention and share, segment by segment." },
-      { widget: "hbar_nrr", emphasis: "standard", headline: "Retention spread", soWhat: "SMB sits far below the benchmark the others clear." }] },
-  ] },
-  CRO: { sections: [
-    { heading: "Growth", blocks: [
-      { widget: "segment_stack", emphasis: "hero", headline: "Enterprise carrying the number", soWhat: "Topline is growing and the Enterprise motion is doing the heavy lifting." },
-      { widget: "accel_line", emphasis: "standard", headline: "Momentum is building", soWhat: "Quarter-over-quarter growth is speeding up, not flattening." }] },
-    { heading: "Expansion", blocks: [
-      { widget: "bridge_enterprise", emphasis: "standard", headline: "The expansion engine", soWhat: "Existing Enterprise accounts keep growing well past what they started at." },
-      { widget: "callout_grr", emphasis: "compact", headline: "", soWhat: "" },
-      { widget: "segment_table", emphasis: "standard", headline: "The segment breakdown", soWhat: "Retention and share, segment by segment." }] },
-  ] },
-};
 
 // ================= composition rendering =================
 function Block({ block, catalog, onPick, dim, source }) {
@@ -957,161 +757,7 @@ function Block({ block, catalog, onPick, dim, source }) {
     <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={dim} />
   </div>);
 }
-// ===== aspect-based partition layout =====
-// Each panel declares the aspect SHAPES it reads well as (roster-proof: a new chart just
-// declares its aspects, no layout change). Partitions are region maps of a fixed canvas,
-// each region tagged with an aspect. Selection scores partitions for best fit; fill matches
-// panels to regions by aspect. A panel budget keeps every screen legible.
-const PANEL_ASPECTS = {
-  finding_card: ["band"],
-  salient_band: ["band"],
-  table: ["tall", "twothird", "half"],
-  matrix: ["twothird", "half"],
-  combo: ["half", "third"],
-  line: ["half", "twothird", "third"],
-  stacked_area: ["half", "third"],
-  waterfall: ["third", "half"],
-  hbar: ["third", "half"],
-  bullet: ["third", "half"],
-  scatter: ["half", "third"],
-  lorenz: ["half", "third"],
-  pareto: ["half", "third"],
-  heatmap: ["twothird", "half"],
-  indexed: ["half", "third"],
-  dumbbell: ["third", "half"],
-  treemap: ["half", "third"],
-  grouped: ["half", "third"],
-  quadrant: ["half", "third"],
-  small_multiples: ["twothird", "half"],
-};
-// information density a panel justifies (heavy grids earn a dominant region; trends are light)
-const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bullet: 2, pareto: 2, heatmap: 2, dumbbell: 2, treemap: 2, grouped: 2, small_multiples: 2, scatter: 1, indexed: 1, quadrant: 1, line: 1, stacked_area: 1, lorenz: 1 };
-const CHART_ASPECTS = new Set(["twothird", "half", "third"]);
-// regions carry a weight `w` (space they want); a big region can `split` into lighter sub-regions
-const PARTITIONS = {
-  band_hero: { asym: true, rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 4], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_hero_row: { asym: true, rowsT: "auto minmax(0, 230px) minmax(0, 230px) minmax(0, 230px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 4], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }, { a: "third", c: [1, 5], r: [4, 5], w: 1 }, { a: "third", c: [5, 9], r: [4, 5], w: 1 }, { a: "third", c: [9, 13], r: [4, 5], w: 1 }] },
-  band_pair_trio: { rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_lead_matrix: { asym: true, rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 3], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_trio_trio: { rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_trio_pair: { rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 2 }, { a: "half", c: [7, 13], r: [3, 4], w: 1 }] },
-  grid_six: { rowsT: "minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "third", c: [1, 5], r: [1, 2], w: 2 }, { a: "third", c: [5, 9], r: [1, 2], w: 1 }, { a: "third", c: [9, 13], r: [1, 2], w: 1 }, { a: "third", c: [1, 5], r: [2, 3], w: 1 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
-  split_table: { rowsT: "minmax(0, 300px)", regions: [{ a: "half", c: [1, 8], r: [1, 2], w: 2 }, { a: "tall", c: [8, 13], r: [1, 2] }] },
-  band_solo: { rowsT: "auto minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 13], r: [2, 3], w: 2 }] },
-  band_pair: { rowsT: "auto minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }] },
-  band_trio: { rowsT: "auto minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
-  band_duo_table: { rowsT: "auto minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "tall", c: [7, 13], r: [2, 3] }] },
-  pair: { rowsT: "minmax(0, 300px)", regions: [{ a: "half", c: [1, 7], r: [1, 2], w: 2 }, { a: "half", c: [7, 13], r: [1, 2], w: 2 }] },
-};
-// each widget belongs to an analytical domain; each role prioritizes domains differently,
-// so the same content arranges differently per role (CRO leads growth, CFO leads durability)
-const ROLE_DOMAIN_PRIORITY = {
-  CFO: ["efficiency", "retention", "concentration", "growth"],
-  CRO: ["growth", "retention", "concentration", "efficiency"],
-};
-const PANEL_BUDGET = 6;
-function partCapacity(p) {
-  const band = p.regions.filter((r) => r.a === "band").length;
-  const tall = p.regions.filter((r) => r.a === "tall").length;
-  const chart = p.regions.filter((r) => CHART_ASPECTS.has(r.a)).length;
-  return { band, tall, chart, total: p.regions.length };
-}
-function fitScore(p, F, C, T) {
-  const cap = partCapacity(p);
-  const seatFinding = F > 0 && cap.band > 0 ? 1 : 0;
-  const chartsSeated = Math.min(C, cap.chart);
-  const bandLeft = cap.band - seatFinding;
-  const tableSeated = T > 0 && (cap.tall > 0 || bandLeft > 0) ? 1 : 0;
-  const used = seatFinding + chartsSeated + tableSeated;
-  const empty = cap.total - used;
-  const dropped = Math.max(0, C - chartsSeated) + Math.max(0, F - seatFinding) + Math.max(0, T - tableSeated);
-  return used * 10 - empty * 7 - dropped * 2;
-}
-// Roles declare an INTENT (weighted preference over layout characters); partitions declare
-// their CHARACTER. The selector matches intent to character generically — adding a role is a
-// line of intent, adding a partition is a line of character, no per-role lists to maintain.
-const PARTITION_CHARACTER = {
-  band_lead_matrix: ["analytical"], band_hero: ["hero"], band_hero_row: ["hero", "dense"],
-  band_pair_trio: ["balanced", "dense"], band_trio_trio: ["grid", "dense"], band_trio_pair: ["grid"],
-  band_pair: ["compact"], band_trio: ["compact"], band_duo_table: ["analytical", "compact"], band_solo: ["compact"], grid_six: ["grid"], split_table: ["analytical"], pair: ["compact"],
-};
-// (ROLE_INTENT removed — layout is now derived from composition shape, not a role→layout prior)
-// Derive the board's SHAPE from the weight distribution of the model's actual selection — role
-// absent. A composition with one dominant heavy panel wants a hero layout; several heavy panels
-// want a dense analytical grid; comparable-weight panels want a balanced/grid. The layout is a
-// CONSEQUENCE of what was composed, so two roles diverge in layout exactly when their compositions
-// differ in shape — never because a role→layout table said so.
-function deriveShape(charts) {
-  const weights = charts.map((c) => PANEL_WEIGHT[c._kind] || 2);
-  const n = weights.length;
-  if (n <= 2) return "compact";
-  const heavy = weights.filter((w) => w >= 3).length;
-  const maxW = Math.max(...weights);
-  if (heavy >= 2) return "analytical";            // multiple heavy panels → dense data-grid
-  if (maxW >= 3 && heavy === 1) return "hero";    // one dominant heavy panel + support → hero
-  return n >= 5 ? "grid" : "balanced";            // comparable-weight panels
-}
-function selectPartition(F, modelCharts, allCharts, T, partitionPref) {
-  const C = allCharts.length;
-  // shape from the model's own composition (its compositional intent); fall back to the full board
-  // only if the model picked too few to have a discernible shape.
-  const shape = deriveShape(modelCharts.length >= 3 ? modelCharts : allCharts);
-  const prefChar = partitionPref && ["hero", "analytical", "balanced"].includes(partitionPref) ? partitionPref : null;
-  let best = "pair", bs = -Infinity;
-  for (const [k, p] of Object.entries(PARTITIONS)) {
-    const cp = partCapacity(p);
-    let s = fitScore(p, F, C, T);
-    if (p.asym) s += 8;
-    const chartEmpty = Math.max(0, cp.chart - Math.min(C, cp.chart));
-    if (chartEmpty <= 1) {
-      const chars = PARTITION_CHARACTER[k] || [];
-      if (chars.includes(shape)) s += 30;                         // derived shape is primary
-      if (prefChar && chars.includes(prefChar)) s += 10;          // model's stated pref reinforces
-    }
-    if (s > bs) { bs = s; best = k; }
-  }
-  return best;
-}
-// pick the chart that best fits the region's weight; the LEAD region prefers the role's
-// top-priority domain (so the boards diverge in what leads), rest tie-break by domain.
-function pickChart(pool, want, aspect, drank, leadByDomain) {
-  if (!pool.length) return null;
-  let cands = pool.filter((c) => c.asp.includes(aspect));
-  if (!cands.length) cands = pool.slice();
-  if (leadByDomain) cands.sort((a, b) => a.mo - b.mo || b.w - a.w || drank(a) - drank(b));
-  else cands.sort((a, b) => Math.abs(a.w - want) - Math.abs(b.w - want) || a.mo - b.mo || drank(a) - drank(b));
-  const chosen = cands[0]; pool.splice(pool.indexOf(chosen), 1); return chosen;
-}
-// Layout placement. The MODEL'S widget ORDER dominates (charts arrive model-first, then menu
-// top-up); role domain priority is a TIE-BREAKER for presentation validity only, never a re-ranking
-// of the model's analytical choices. `mo` = model order; `drank` (role prior) only breaks ties.
-function fillPartition(p, findings, charts, tables, role) {
-  const prio = ROLE_DOMAIN_PRIORITY[role] || ROLE_DOMAIN_PRIORITY.CFO;
-  const drank = (c) => { const d = WIDGET_DOMAIN[c.b.widget]; const i = prio.indexOf(d); return i < 0 ? 99 : i; };
-  const pool = charts.slice(0, PANEL_BUDGET).map((b, i) => ({ b, w: PANEL_WEIGHT[b._kind] || 2, asp: PANEL_ASPECTS[b._kind] || [], mo: i }));
-  const fQ = [...findings], tQ = [...tables];
-  const placed = []; let leadDone = false;
-  for (const region of p.regions) {
-    if (region.a === "band") { if (fQ.length) placed.push({ region, block: fQ.shift() }); continue; }
-    if (region.a === "tall") { const b = tQ.shift(); if (b) placed.push({ region, block: b }); continue; }
-    if (!pool.length) continue;
-    const want = region.w || 2;
-    const heaviest = Math.max(...pool.map((c) => c.w));
-    if (want >= 3 && heaviest < 3 && region.split) {
-      for (const sub of region.split) { const pick = pickChart(pool, sub.w || 1, sub.a, drank, false); if (pick) placed.push({ region: sub, block: pick.b }); }
-      continue;
-    }
-    const isLead = !leadDone; leadDone = true;
-    const pick = pickChart(pool, want, region.a, drank, isLead);
-    if (pick) placed.push({ region, block: pick.b });
-  }
-  return placed;
-}
 const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar", "bullet", "matrix", "scatter", "pareto", "heatmap", "indexed", "dumbbell", "treemap", "grouped", "quadrant", "small_multiples", "lorenz"]);
-// the full analytical menu the engine can render (salience-ordered). The model frames the
-// lead finding; the board is filled from this ranked menu, so there is always surplus to
-// fill a dense partition — a well-built board every time, regardless of how much the model curated.
-const CHART_MENU = ["metric_matrix", "efficiency_combo", "bridge_smb", "bridge_enterprise", "accel_line", "segment_stack", "hbar_nrr", "magic_line", "efficiency_bullets"];
 function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding, source }) {
   const kind = (id) => catalog[id]?.kind;
   const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]).map((b) => ({ ...b, _kind: kind(b.widget) }));
@@ -1557,7 +1203,7 @@ export default function App() {
   React.useEffect(() => {
     fetch(import.meta.env.BASE_URL + "caliper_dataset.json")
       .then((r) => r.json())
-      .then((ds) => { BASE_DS = ds; initEngine(ds); setReady(true); })
+      .then((ds) => { setBaseDS(ds); initEngine(ds); setReady(true); })
       .catch(() => setFailed(true));
   }, []);
   if (failed) return <div className="caliper"><div className="loading">could not load dataset</div></div>;
