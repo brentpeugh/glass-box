@@ -106,6 +106,21 @@ function TraceNode({ node, depth, isFinding }) {
     </div>
   );
 }
+// DRIFT SEAM (see scripts/validate-surface.ts): the engine owns each metric value's raw `basis`
+// (kind / threshold / good-direction) but exports NO grounding deriver, so the surface must turn
+// basis → {status: clears|breaches} itself. That derivation is centralised HERE — the ONE seam —
+// so it is not reimplemented per-caller. If the engine ever exports this, the surface consumes it.
+function deriveGrounding(mv) {
+  const b = mv && mv.basis;
+  const bench = !!(b && b.kind === "benchmark");
+  return {
+    label: mv ? mv.label : "Metric",
+    hasBenchmark: bench,
+    status: bench ? ((b.good === "above" ? mv.value >= b.thr : mv.value <= b.thr) ? "clears" : "breaches") : null,
+    direction: null,
+    proxy: mv ? mv.epistemic === "proxy" : false,
+  };
+}
 // ===== Analyst Read: the investigation layer. A thesis (model-authored prose, numeral-free),
 // an evidence chain (engine values, each traceable), and falsification tests (from the engine's
 // bounded menu). The user runs a test; the engine computes a verdict; the thesis holds or weakens.
@@ -128,6 +143,9 @@ function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
   const ran = Object.values(verdicts);
   const status = ran.length === 0 ? "untested" : ran.some((r) => r.verdict === "uniform") ? "weakened" : "holds";
   const statusLabel = { untested: "UNTESTED", holds: "HOLDS", weakened: "WEAKENED" }[status];
+  // engine verdict for the read surface — the engine's own short string, never model prose.
+  const fmv = read.finding && read.finding.mvs && read.finding.mvs[0];
+  const verdict = fmv ? engineHeadline(deriveGrounding(fmv)) : "Engine-computed read";
   return (
     <div className="brief">
       <div className="brief-head">
@@ -136,10 +154,15 @@ function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
         <span className={`brief-status ${status}`}>{statusLabel}</span>
         <button className="brief-x" onClick={onClose}>✕</button>
       </div>
-      <div className="brief-thesis">{read.thesis}</div>
-      <div className="brief-why"><span className="brief-lbl">Why it matters for the {role}</span>{read.whyRole}</div>
+      {/* engine verdict — computed, off-plane */}
+      <div className="read-verdict">{verdict}</div>
+      {/* model narrative — authored prose, so it sits on --plane (lightness = "a model wrote this") */}
+      <div className="read-plane">
+        <div className="brief-thesis">{read.thesis}</div>
+        <div className="brief-why"><span className="brief-lbl">Why it matters for the {role}</span>{read.whyRole}</div>
+      </div>
       <div className="brief-sec">
-        <div className="brief-lbl">Evidence — model-selected, engine-computed, every value traceable</div>
+        <div className="brief-lbl">Evidence — {read.source === "live" ? "model-selected" : "deterministic selection"}, engine-computed, every value traceable</div>
         <div className="brief-ev">
           {evidence.map((mv, i) => (
             <button key={i} className="ev-card" onClick={() => onPick({ node: mv })}>
@@ -150,7 +173,7 @@ function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
         </div>
       </div>
       <div className="brief-sec">
-        <div className="brief-lbl">What would change this read — model-proposed, engine-run</div>
+        <div className="brief-lbl">What would change this read — {read.source === "live" ? "model-proposed" : "deterministic"}, engine-run</div>
         <div className="brief-tests">
           {tests.map((t) => {
             const r = verdicts[t.id];
@@ -197,10 +220,10 @@ function TrustPanel({ audit, onClose }) {
       </div>
     </div>
     <div className="brief-sec">
-      <div className="brief-lbl">AI audit log — every model decision this session, and how the engine governed it</div>
+      <div className="brief-lbl">AI audit log — every model/engine action this session, and how the engine governed it</div>
       <div className="tc-audit">
-        {audit.length === 0 ? <div className="tc-empty">No model actions yet this session.</div>
-          : audit.map((e, i) => (<div key={i} className={`tc-row ${e.kind}`}><span className="tc-kind">{e.kind}</span><span className="tc-detail">{e.kind === "curation" && e.finding ? <><b>{e.finding}</b> — </> : ""}{e.detail}</span></div>))}
+        {audit.length === 0 ? <div className="tc-empty">No actions yet this session.</div>
+          : audit.map((e, i) => (<div key={i} className={`tc-row ${e.kind}`}><span className="tc-kind">{e.kind}</span><span className="tc-detail">{e.kind === "curation" && e.finding ? <><b>{e.finding}</b> — </> : ""}{e.detail}{e.kind === "curation" && e.source && e.source !== "live" ? <em> · deterministic fallback, no model</em> : ""}</span></div>))}
       </div>
     </div>
   </div>);
@@ -209,10 +232,24 @@ function TraceDrawer({ picked, onClose }) {
   if (!picked) return null;
   const node = picked.node;
   const ptype = picked.isFinding ? "FINDING" : node.epistemic === "proxy" ? "MODELED" : (node.provenance?.inputs || []).some((i) => i.kind === "metric") ? "CALCULATED" : "EXTRACTED";
+  // R8 two-line provenance peek — same shape for all four tiers: line 1 the answer/formula,
+  // line 2 the sources with tier. The peek IS this drawer (R1's "provenance peek" and the
+  // TraceDrawer are one feature); the recursive decomposition follows below.
+  const val = picked.isFinding ? `${node.value.toFixed(0)} pp` : fmtMV(node);
+  const formula = node.provenance?.description;
+  const inputs = node.provenance?.inputs || [];
+  const srcParts = inputs.map((inp) => inp.kind === "metric" ? (E.store.get(inp.id)?.label || inp.id) : `${inp.n || (inp.rows && inp.rows.length) || ""} source rows`.trim());
+  const sources = [...srcParts, ...(node.provenance?.configRefs || [])].filter(Boolean).join(" · ") || "read directly from the source rows";
   return (
     <aside className="drawer">
       <div className="drawer-bar"><span className={`ptype ${ptype.toLowerCase()}`}>{ptype}</span><span className="drawer-t">{node.label}</span><button className="drawer-x" onClick={onClose}>✕</button></div>
-      <div className="drawer-body"><div className="anno anno-top">Every value decomposes into extracted or calculated values, all the way to the source rows. The model arranged this board — it did not produce these numbers.</div><TraceNode node={picked.node} depth={0} isFinding={picked.isFinding} /></div>
+      <div className="drawer-body">
+        <div className="peek">
+          <div className="peek-1">{node.label}{formula ? <> = <span className="peek-formula">{formula}</span></> : ""} = <b>{val}</b></div>
+          <div className="peek-2">SOURCES · {sources} · <b>{ptype}</b> tier</div>
+        </div>
+        <TraceNode node={picked.node} depth={0} isFinding={picked.isFinding} />
+      </div>
     </aside>
   );
 }
@@ -221,7 +258,7 @@ function TraceDrawer({ picked, onClose }) {
 function Waterfall({ c, w = 440, h = 260 }) {
   const steps = [{ k: "Beginning", t: "anchor", v: c.beginning }, { k: "Expansion", t: "up", v: c.expansionGain }, { k: "Contraction", t: "down", v: c.contractionLoss }, { k: "Churn", t: "down", v: c.churnLoss }, { k: "Ending", t: "anchor", v: c.ending }];
   const W = w, H = h, padL = 40, padR = 14, padB = 42, padT = 16; const plotW = W - padL - padR, plotH = H - padT - padB;
-  const domainMax = (c.beginning + c.expansionGain) * 1.08; const y = (v) => padT + plotH - (v / domainMax) * plotH; const bw = (plotW / steps.length) * 0.44, gap = plotW / steps.length;
+  const domainMax = (c.beginning + c.expansionGain) / 0.85; const y = (v) => padT + plotH - (v / domainMax) * plotH; const bw = (plotW / steps.length) * 0.44, gap = plotW / steps.length;
   let run = 0; const bars = []; steps.forEach((s, i) => { const x = padL + gap * i + (gap - bw) / 2; let top, bot; if (s.t === "anchor") { top = s.v; bot = 0; run = s.v; } else if (s.t === "up") { bot = run; top = run + s.v; run = top; } else { top = run; bot = run - s.v; run = bot; } bars.push({ ...s, x, yTop: y(Math.max(top, bot)), h: Math.abs(y(top) - y(bot)), cy: y(run) }); });
   return (<svg viewBox={`0 0 ${W} ${H}`} className="wf"><line x1={padL} y1={padT} x2={padL} y2={H - padB} className="ax" /><line x1={padL} y1={H - padB} x2={W - padR} y2={H - padB} className="ax" />{Array.from({ length: 5 }, (_, i) => (domainMax / 4) * i).map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bars.map((b, i) => (<g key={i}>{i > 0 && <line x1={bars[i - 1].x + bw} x2={b.x} y1={bars[i - 1].cy} y2={bars[i - 1].cy} className="wf-conn" />}<rect x={b.x} y={b.yTop} width={bw} height={Math.max(b.h, 1)} className={`wf-bar wf-${b.t}`} /><text x={b.x + bw / 2} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{b.k}</text><text x={b.x + bw / 2} y={H - padB + 28} className="wf-xval" textAnchor="middle">{b.t === "anchor" ? fmtM(b.v) : (b.t === "up" ? "+" : "−") + fmtM(b.v).slice(1)}</text></g>))}</svg>);
 }
@@ -239,7 +276,7 @@ function Combo({ bars, line, benchmark, good, onPick, fmtL, fmtR, w = 620, h = 2
     <line x1={padL} x2={W - padR} y1={yR(benchmark)} y2={yR(benchmark)} className="cx-bench" /><text x={padL + 2} y={yR(benchmark) - 6} className="cx-bench-lab" textAnchor="start">TARGET {fmtR(benchmark)}</text>
     <path d={path} className="cx-line" />
     <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="cx-axis" />
-    {line.map((p, i) => { const br = good === "above" ? p.value < benchmark : p.value > benchmark; const last = i === line.length - 1; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={yR(p.value)} r={last ? 4 : 2.5} className={`cx-dot ${br ? "bad" : "good"} ${last ? "last" : ""}`} /></g>); })}
+    {line.map((p, i) => { const br = good === "above" ? p.value < benchmark : p.value > benchmark; const last = i === line.length - 1; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}>{last ? <rect x={x(i) - 3.5} y={yR(p.value) - 3.5} width={7} height={7} className={`cx-dot ${br ? "bad" : "good"} last`} /> : <circle cx={x(i)} cy={yR(p.value)} r={6} fill="transparent" />}</g>); })}
     {bars.map((b, i) => (<text key={i} x={x(i)} y={H - padB + 16} className="cx-xtick" textAnchor="middle">{b.q}</text>))}
     <text x={padL - 8} y={padT - 6} className="cx-axlab" textAnchor="end">S&M $</text><text x={W - padR + 8} y={padT - 6} className="cx-axlab" textAnchor="start">MAGIC</text>
   </svg>);
@@ -247,12 +284,11 @@ function Combo({ bars, line, benchmark, good, onPick, fmtL, fmtR, w = 620, h = 2
 function StackedArea({ quarters, series, onPick, w = 620, h = 270 }) {
   const W = w, H = h, padL = 42, padR = 14, padB = 34, padT = 12; const plotW = W - padL - padR, plotH = H - padT - padB;
   const totals = quarters.map((_, i) => series.reduce((s, se) => s + se.points[i].value, 0));
-  const maxY = Math.max(...totals) * 1.06; const x = (i) => padL + (plotW * i) / (quarters.length - 1), y = (v) => padT + plotH - (v / maxY) * plotH;
+  const maxY = Math.max(...totals) / 0.85; const x = (i) => padL + (plotW * i) / (quarters.length - 1), y = (v) => padT + plotH - (v / maxY) * plotH;
   const ticks = Array.from({ length: 4 }, (_, i) => (maxY / 3) * i);
   let cum = quarters.map(() => 0); const bands = [];
-  for (const se of series) { const lower = cum.slice(), upper = cum.map((c, i) => c + se.points[i].value); const up = upper.map((v, i) => `${x(i)},${y(v)}`).join(" "); const lo = lower.map((v, i) => `${x(i)},${y(v)}`).reverse().join(" "); bands.push({ seg: se.seg, color: se.color, poly: `${up} ${lo}` }); cum = upper; }
-  return (<div><div className="legend">{series.slice().reverse().map((se) => (<button key={se.seg} className="chip" onClick={() => onPick(se.points[se.points.length - 1].mv)}><span className="sw" style={{ background: se.color }} />{se.seg}</button>))}</div>
-    <svg viewBox={`0 0 ${W} ${H}`} className="ln"><line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bands.map((b, i) => (<polygon key={i} points={b.poly} fill={b.color} className="area" />))}{quarters.map((q, i) => (<text key={i} x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{q}</text>))}</svg></div>);
+  for (const se of series) { const lower = cum.slice(), upper = cum.map((c, i) => c + se.points[i].value); const up = upper.map((v, i) => `${x(i)},${y(v)}`).join(" "); const lo = lower.map((v, i) => `${x(i)},${y(v)}`).reverse().join(" "); const li = lower.length - 1; bands.push({ seg: se.seg, color: se.color, poly: `${up} ${lo}`, midY: y((lower[li] + upper[li]) / 2), mv: se.points[se.points.length - 1].mv }); cum = upper; }
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln"><line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bands.map((b, i) => (<polygon key={i} points={b.poly} style={{ fill: b.color }} className="area" onClick={() => onPick(b.mv)} />))}{/* direct end-labels on every band — no legend (F9), no swatches */}{bands.map((b, i) => (<text key={"l" + i} x={W - padR - 4} y={b.midY + 3} className="area-lab" textAnchor="end">{b.seg}</text>))}{quarters.map((q, i) => (<text key={i} x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{q}</text>))}</svg>);
 }
 // ===== shared chart construction layer — the machinery institutional charts have and hand-drawn
 // SVG lacks: a nice-number scale so axes land on rounded values (0.4, 0.6, 0.8 — not 0.34, 0.52),
@@ -268,7 +304,12 @@ function niceScale(min, max, maxTicks = 5) {
   if (min === max) { min -= Math.abs(min) * 0.1 || 0.5; max += Math.abs(max) * 0.1 || 0.5; }
   const range = niceNum(max - min, false);
   const step = niceNum(range / Math.max(1, maxTicks - 1), true);
-  const niceMin = Math.floor(min / step) * step, niceMax = Math.ceil(max / step) * step;
+  const niceMin = Math.floor(min / step) * step;
+  let niceMax = Math.ceil(max / step) * step;
+  // R11: hard-cap the max data point at 85% of plot height. niceNum rounding gives *some*
+  // headroom but does not enforce it, so bump the top by whole steps until the data max
+  // sits at ≤85% of the range (≥15% headroom above the tallest point).
+  while (niceMax > niceMin && (max - niceMin) / (niceMax - niceMin) > 0.85) niceMax += step;
   const ticks = [];
   for (let v = niceMin; v <= niceMax + step * 0.5; v += step) ticks.push(Math.round(v / step) * step);
   return { min: niceMin, max: niceMax, step, ticks };
@@ -283,11 +324,8 @@ function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
   const areaId = `lg-${Math.abs(series.reduce((a, p, i) => a + p.value * (i + 1), 0) * 1000 | 0)}`;
   const area = `M${x(0)},${padT + plotH} ` + series.map((p, i) => `L${x(i)},${y(p.value)}`).join(" ") + ` L${x(series.length - 1)},${padT + plotH} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln" preserveAspectRatio="xMidYMid meet">
-    <defs><linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data)" stopOpacity="0.12" /><stop offset="100%" stopColor="var(--data)" stopOpacity="0" /></linearGradient></defs>
-    {benchmark != null && <rect x={padL} y={good === "above" ? y(benchmark) : padT} width={W - padR - padL} height={good === "above" ? (padT + plotH - y(benchmark)) : (y(benchmark) - padT)} className="cx-danger" />}
     {sc.ticks.map((tv, i) => (tv >= sc.min && tv <= sc.max && <g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="cx-grid" /><text x={padL - 10} y={y(tv) + 3.5} className="cx-ytick" textAnchor="end">{fmt(tv)}</text></g>))}
     {benchmark != null && <><line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="cx-bench" /><text x={W - padR} y={y(benchmark) - 6} className="cx-bench-lab" textAnchor="end">TARGET {fmt(benchmark)}</text></>}
-    <path d={area} fill={`url(#${areaId})`} />
     <path d={path} className="cx-line" />
     <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="cx-axis" />
     {/* invisible hit-targets keep every point traceable without drawing redundant nodes */}
@@ -297,7 +335,7 @@ function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
     </g>))}
     {/* single load-bearing mark: the current value */}
     {(() => { const p = series[series.length - 1], br = benchmark != null && (good === "above" ? p.value < benchmark : p.value > benchmark); return (<g className="ln-pt" onClick={() => onPick(p.mv)}>
-      <circle cx={x(series.length - 1)} cy={y(p.value)} r={4.5} className={`cx-dot ${benchmark == null ? "neutral" : br ? "bad" : "good"} last`} />
+      <rect x={x(series.length - 1) - 3.5} y={y(p.value) - 3.5} width={7} height={7} className={`cx-dot ${benchmark == null ? "neutral" : br ? "bad" : "good"} last`} />
       <text x={x(series.length - 1)} y={y(p.value) - 12} className={`cx-dlab ${br ? "bad" : ""}`} textAnchor="end">{fmt(p.value)}</text>
     </g>); })()}
   </svg>);
@@ -346,10 +384,7 @@ function MiniTrend({ a, b, benchmark, labels = [], w = 680, h = 66 }) {
   const dots = (s, tone) => s.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r={i === s.length - 1 ? 3 : 2} className={`mt-dot ${tone}`}><title>{labels[i] || ""} · {v.toFixed(1)}%</title></circle>);
   return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
     <defs>
-      <linearGradient id="mt-good" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--verdant)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--verdant)" stopOpacity="0" /></linearGradient>
-      <linearGradient id="mt-bad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ember)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--ember)" stopOpacity="0" /></linearGradient>
     </defs>
-    <path d={area(a)} fill="url(#mt-good)" /><path d={area(b)} fill="url(#mt-bad)" />
     <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" />
     <text x={W - padR + 4} y={y(benchmark) + 3} className="mt-bench-lab">{benchmark}%</text>
     <path d={line(a)} className="mt-ln good" /><path d={line(b)} className="mt-ln bad" />
@@ -379,8 +414,6 @@ function SoloSpark({ vals, labels, benchmark, tone }) {
   const line = vals.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
   const area = `${line} L${x(vals.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
-    <defs><linearGradient id="sf-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data)" stopOpacity="0.14" /><stop offset="100%" stopColor="var(--data)" stopOpacity="0" /></linearGradient></defs>
-    <path d={area} fill="url(#sf-g)" />
     {benchmark != null && <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" />}
     {benchmark != null && <text x={W - padR + 4} y={y(benchmark) + 3} className="mt-bench-lab">{benchmark}</text>}
     <path d={line} className="mt-ln" />
@@ -445,9 +478,11 @@ function buildCatalog() {
   const Q1 = E.QUARTERS.slice(1);
   const masking = E.detectMasking("24Q4", "25Q4");
   const segSeries = [
-    { seg: "SMB", color: "#8ba6c4", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("SMB", q).value, mv: E.segArr("SMB", q) })) },
-    { seg: "Mid-Market", color: "#4a7ba8", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Mid-Market", q).value, mv: E.segArr("Mid-Market", q) })) },
-    { seg: "Enterprise", color: "#1f3a5f", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Enterprise", q).value, mv: E.segArr("Enterprise", q) })) },
+    /* series are monochrome (F1): a token ink-ramp, not colour — distinguished by ink value
+       + stack position + direct end-labels. Enterprise (largest) darkest. */
+    { seg: "SMB", color: "var(--scribe-strong)", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("SMB", q).value, mv: E.segArr("SMB", q) })) },
+    { seg: "Mid-Market", color: "var(--ink-mute)", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Mid-Market", q).value, mv: E.segArr("Mid-Market", q) })) },
+    { seg: "Enterprise", color: "var(--ink)", points: E.QUARTERS.map((q) => ({ q, value: E.segArr("Enterprise", q).value, mv: E.segArr("Enterprise", q) })) },
   ];
   const smBars = Q1.map((q) => ({ q, value: E.smTotal(q).value, mv: E.smTotal(q) }));
   const magicLine = Q1.map((q) => ({ q, value: E.magicNumber(q).value, mv: E.magicNumber(q) }));
@@ -497,7 +532,7 @@ function buildCatalog() {
     indexed_arr: { kind: "indexed", polarity: "neutral", desc: "Segment ARR rebased to 100 at the first quarter — compares growth rates across segments regardless of size.", data: { title: "Indexed ARR growth by segment", ...indexedArr } },
     dumbbell_ret: { kind: "dumbbell", polarity: "bad", desc: "Gross vs net retention per segment — the gap is the expansion contribution; where the dot moves left, contraction outweighs expansion.", data: { title: "GRR → NRR by segment", items: dumbbellRet, fmt: (v) => `${v.toFixed(0)}%` } },
     treemap_arr: { kind: "treemap", polarity: "bad", desc: "ARR share by segment as proportional area — the concentration of the book at a glance.", data: { title: "ARR share by segment", items: treemapArr, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
-    grouped_growth: { kind: "grouped", polarity: "neutral", desc: "Segment ARR at the first vs latest quarter side by side — which segments actually drove the growth.", data: { title: "Segment ARR — first vs latest", groups: groupedGrowth, keys: ["24Q1", "25Q4"], colors: ["var(--slate-l)", "var(--slate-d)"], fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
+    grouped_growth: { kind: "grouped", polarity: "neutral", desc: "Segment ARR at the first vs latest quarter side by side — which segments actually drove the growth.", data: { title: "Segment ARR — first vs latest", groups: groupedGrowth, keys: ["24Q1", "25Q4"], colors: ["var(--ink-mute)", "var(--ink)"], fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
     quadrant_eff: { kind: "quadrant", polarity: "bad", desc: "Each quarter positioned by sales efficiency and growth against their benchmarks — the four zones separate efficient growth from bought growth.", data: { title: "Efficiency × growth positioning", points: quadEff, xlab: "Magic #", ylab: "QoQ growth %", xbench: E.BENCH.magic_number.threshold, ybench: 5, quad: { tr: "Efficient growth", tl: "Bought growth", br: "Efficient · slowing", bl: "Inefficient" } } },
     small_mult_arr: { kind: "small_multiples", polarity: "neutral", desc: "One ARR trend per segment on a shared scale — compare the growth shapes side by side.", data: { title: "ARR trend by segment", series: smArr } },
     lorenz_arr: { kind: "lorenz", polarity: "bad", desc: "Cumulative ARR share by account (accounts ranked largest first) — the distribution shape; the steeper the early rise, the more the book concentrates in a few accounts.", data: { title: "ARR distribution (Lorenz)", curve: lorenzCurve.curve, mv: lorenzCurve } },
@@ -524,8 +559,12 @@ function useSize() {
   const [size, setSize] = useState({ w: 0, h: 0 });
   useEffect(() => {
     const el = ref.current; if (!el) return;
-    const ro = new ResizeObserver((es) => { const r = es[0].contentRect; setSize({ w: Math.round(r.width), h: Math.round(r.height) }); });
-    ro.observe(el); return () => ro.disconnect();
+    const measure = () => { const r = el.getBoundingClientRect(); setSize({ w: Math.round(r.width), h: Math.round(r.height) }); };
+    const ro = new ResizeObserver(measure); ro.observe(el);
+    // fallback: a bare ResizeObserver can miss the INITIAL measurement in some engines, leaving
+    // every Fill-based chart blank on first paint. A one-shot deferred measure catches settled layout.
+    const t = setTimeout(measure, 120);
+    return () => { clearTimeout(t); ro.disconnect(); };
   }, []);
   return [ref, size];
 }
@@ -560,10 +599,8 @@ function LorenzCurve({ curve, onPick, w = 420, h = 200 }) {
   const path = curve.map((p, i) => `${i ? "L" : "M"}${x(p.acc)},${y(p.arr)}`).join(" ");
   const area = `${path} L${x(100)},${y(0)} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln" onClick={onPick}>
-    <defs><linearGradient id="lz-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data)" stopOpacity="0.12" /><stop offset="100%" stopColor="var(--data)" stopOpacity="0" /></linearGradient></defs>
     {ticks.map((t, i) => (<g key={i}><line x1={padL} x2={padL + plotW} y1={y(t)} y2={y(t)} className="cx-grid" /><text x={padL - 8} y={y(t) + 3.5} className="cx-ytick" textAnchor="end">{t}</text><text x={x(t)} y={padT + plotH + 14} className="cx-xtick" textAnchor="middle">{t}</text></g>))}
     <line x1={x(0)} y1={y(0)} x2={x(100)} y2={y(100)} className="cx-bench" /><text x={x(100)} y={y(100) + 12} className="cx-bench-lab" textAnchor="end">EQUALITY</text>
-    <path d={area} fill="url(#lz-g)" />
     <path d={path} className="cx-line" />
     <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} className="cx-axis" />
     <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="cx-axis" />
@@ -639,7 +676,10 @@ function IndexedLine({ series, quarters, onPick, w = 420, h = 200 }) {
     {idx.map((s, si) => (<g key={si}>
       <polyline points={s.pts.map((p, i) => `${x(i)},${y(p.iv)}`).join(" ")} className="idx-line" style={{ stroke: s.color }} />
       <text x={padL + plotW + 3} y={y(s.pts[s.pts.length - 1].iv) + 3} className="idx-lab" style={{ fill: s.color }} textAnchor="start">{s.seg}</text>
-      {s.pts.map((p, i) => <circle key={i} cx={x(i)} cy={y(p.iv)} r={2} style={{ fill: s.color }} className="ln-pt" onClick={() => p.mv && onPick(p.mv)} />)}
+      {/* one terminal square per series (R11); intermediate points are invisible hit-targets (F9: no redundant nodes) */}
+      {s.pts.map((p, i) => { const last = i === s.pts.length - 1; return last
+        ? <rect key={i} x={x(i) - 3} y={y(p.iv) - 3} width={6} height={6} style={{ fill: s.color }} className="ln-pt" onClick={() => p.mv && onPick(p.mv)} />
+        : <circle key={i} cx={x(i)} cy={y(p.iv)} r={6} fill="transparent" className="ln-pt" onClick={() => p.mv && onPick(p.mv)} />; })}
     </g>))}
   </svg>);
 }
@@ -665,10 +705,10 @@ function Treemap({ items, fmt, onPick, w = 420, h = 200 }) {
   const W = w, H = h, pad = 3;
   const total = items.reduce((s, x) => s + x.value, 0) || 1;
   const sorted = items.slice().sort((a, b) => b.value - a.value);
-  let x0 = 0; const shades = ["#1f3a5f", "#4a7ba8", "#8ba6c4", "#b8c8da"];
+  let x0 = 0; const shades = ["var(--ink)", "var(--ink-mute)", "var(--scribe-strong)", "var(--scribe)"];
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
     {sorted.map((it, i) => { const ww = (it.value / total) * W; const rect = (<g key={i} className="ln-pt" onClick={() => it.mv && onPick(it.mv)}>
-      <rect x={x0 + pad} y={pad} width={Math.max(ww - pad * 2, 1)} height={H - pad * 2} fill={shades[i % shades.length]} />
+      <rect x={x0 + pad} y={pad} width={Math.max(ww - pad * 2, 1)} height={H - pad * 2} style={{ fill: shades[i % shades.length] }} />
       <text x={x0 + ww / 2} y={H / 2 - 4} className="tm-lab" textAnchor="middle">{it.label}</text>
       <text x={x0 + ww / 2} y={H / 2 + 12} className="tm-val" textAnchor="middle">{((it.value / total) * 100).toFixed(0)}%</text>
     </g>); x0 += ww; return rect; })}
@@ -684,10 +724,10 @@ function GroupedBar({ groups, keys, fmt, colors, onPick, w = 420, h = 200 }) {
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
     <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} className="ln-axis" />
     {groups.map((g, gi) => (<g key={gi}>
-      {g.bars.map((b, bi) => { const bx = padL + gw * gi + gw * 0.15 + bw * bi; return (<rect key={bi} x={bx} y={y(b.value)} width={bw - 2} height={padT + plotH - y(b.value)} fill={colors[bi]} className="ln-pt" onClick={() => b.mv && onPick(b.mv)} />); })}
+      {g.bars.map((b, bi) => { const bx = padL + gw * gi + gw * 0.15 + bw * bi; return (<rect key={bi} x={bx} y={y(b.value)} width={bw - 2} height={padT + plotH - y(b.value)} style={{ fill: colors[bi] }} className="ln-pt" onClick={() => b.mv && onPick(b.mv)} />); })}
       <text x={padL + gw * gi + gw / 2} y={H - 2} className="wf-xlab" textAnchor="middle">{g.label}</text>
     </g>))}
-    {keys.map((k, i) => (<g key={i}><rect x={padL + i * 70} y={2} width={8} height={8} fill={colors[i]} /><text x={padL + i * 70 + 12} y={9} className="ax-lab" textAnchor="start">{k}</text></g>))}
+    {keys.map((k, i) => (<g key={i}><rect x={padL + i * 70} y={2} width={8} height={8} style={{ fill: colors[i] }} /><text x={padL + i * 70 + 12} y={9} className="ax-lab" textAnchor="start">{k}</text></g>))}
   </svg>);
 }
 // Quadrant — two metrics with benchmark crosshairs dividing four labeled positioning zones.
@@ -726,7 +766,7 @@ function SmallMultiples({ series, onPick, w = 420, h = 200 }) {
       return (<g key={si}>
         <text x={x0 + cw / 2} y={12} className="wf-xlab" textAnchor="middle">{s.seg}</text>
         <polyline points={s.points.map((p, i) => `${x(i)},${y(p.value)}`).join(" ")} className="idx-line" style={{ stroke: s.color }} />
-        <circle cx={x(s.points.length - 1)} cy={y(s.points[s.points.length - 1].value)} r={2.5} style={{ fill: s.color }} className="ln-pt" onClick={() => onPick(s.points[s.points.length - 1].mv)} />
+        <rect x={x(s.points.length - 1) - 3} y={y(s.points[s.points.length - 1].value) - 3} width={6} height={6} style={{ fill: s.color }} className="ln-pt" onClick={() => onPick(s.points[s.points.length - 1].mv)} />
       </g>); })}
   </svg>);
 }
@@ -861,7 +901,7 @@ function fallbackCuration(fact) {
   const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => (nb.lenses || RELATED_DOMAINS[nb.domain] || [nb.domain]).includes(WIDGET_DOMAIN[id]));
   const evidenceIds = [...new Set([...(fact.mvs || []).map((m) => m.id), ...nb.metricIds])].slice(0, 6);
   return {
-    thesis: `The most statistically anomalous signal in the book is ${fact.label.toLowerCase()} — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.`,
+    thesis: `The most statistically anomalous signal in the book is ${fact.label} — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.`,
     whyRole: "It is the largest deviation the engine surfaced from the data, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
     evidenceIds, testIds: nb.testIds, widgetIds, partitionPref: null,
     scorecardKeys: FALLBACK_SCORECARD[nb.domain] || FALLBACK_SCORECARD.efficiency,
@@ -912,11 +952,23 @@ async function curate(focus, catalog, targetFinding) {
     const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
     const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
     const { viable, curation, violations } = validateCuration(parsed, finding, catalog);
-    if (viable) return { ...curation, finding, violations, _debug: { prompt, raw, model: data.model } };
-    return { ...fallbackCuration(finding), finding, violations: [...violations, "incoherent — fell back to deterministic read"], _debug: { prompt, raw, model: data.model } };
+    if (viable) return { ...curation, finding, violations, rejection: buildRejection(parsed, violations, finding), _debug: { prompt, raw, model: data.model } };
+    return { ...fallbackCuration(finding), finding, violations: [...violations, "incoherent — fell back to deterministic read"], rejection: null, _debug: { prompt, raw, model: data.model } };
   } catch (e) {
-    return { ...fallbackCuration(finding), finding, violations: ["model unavailable — deterministic read"], _debug: { prompt, raw: String(e).slice(0, 200), model: null } };
+    return { ...fallbackCuration(finding), finding, violations: ["model unavailable — deterministic read"], rejection: null, _debug: { prompt, raw: String(e).slice(0, 200), model: null } };
   }
+}
+// A rejection is a MODEL claim the validator refused. Built from the ORIGINAL (pre-sanitised)
+// model text, the guard that fired, the engine's verdict, and the disposition. Null when nothing
+// was rejected → the rejection band then does not render (same honest-absence rule as the read).
+function buildRejection(parsed, violations, finding) {
+  const fmv = finding && finding.mvs && finding.mvs[0];
+  const verdict = fmv ? engineHeadline(deriveGrounding(fmv)) : "engine-computed";
+  if (violations.some((v) => /numeral/.test(v)))
+    return { guard: "Numeral guard", claim: String(parsed.thesis || "").trim().slice(0, 180), verdict, disposition: "The model authored a figure the engine owns. It was struck from the prose — every number in the read is the engine's." };
+  if (violations.some((v) => /neighborhood|off-domain|dropped/.test(v)))
+    return { guard: "Neighborhood coherence", claim: "a selection outside the finding's neighborhood", verdict, disposition: "Off-neighborhood evidence is not admitted; the read cites only what the finding supports." };
+  return null;
 }
 
 
@@ -950,10 +1002,10 @@ const FALLBACK = {
 };
 
 // ================= composition rendering =================
-function Block({ block, catalog, onPick, dim }) {
+function Block({ block, catalog, onPick, dim, source }) {
   const hasFrame = block.headline || block.soWhat;
   return (<div className={`block emph-${block.emphasis}`}>
-    {hasFrame && <div className="frame"><span className="frame-tick">curated</span>{block.headline && <span className="frame-h">{block.headline}</span>}{block.soWhat && <span className="frame-sw">{block.soWhat}</span>}</div>}
+    {hasFrame && <div className="frame"><span className="frame-tick">{source === "live" ? "curated" : "deterministic"}</span>{block.headline && <span className="frame-h">{block.headline}</span>}{block.soWhat && <span className="frame-sw">{block.soWhat}</span>}</div>}
     <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={dim} />
   </div>);
 }
@@ -989,19 +1041,19 @@ const PANEL_WEIGHT = { matrix: 3, table: 3, combo: 2, waterfall: 2, hbar: 2, bul
 const CHART_ASPECTS = new Set(["twothird", "half", "third"]);
 // regions carry a weight `w` (space they want); a big region can `split` into lighter sub-regions
 const PARTITIONS = {
-  band_hero: { asym: true, rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 4], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_hero_row: { asym: true, rowsT: "auto minmax(0, 230px) minmax(0, 230px) minmax(0, 230px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 4], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }, { a: "third", c: [1, 5], r: [4, 5], w: 1 }, { a: "third", c: [5, 9], r: [4, 5], w: 1 }, { a: "third", c: [9, 13], r: [4, 5], w: 1 }] },
-  band_pair_trio: { rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_lead_matrix: { asym: true, rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 3], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_trio_trio: { rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
-  band_trio_pair: { rowsT: "auto minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 2 }, { a: "half", c: [7, 13], r: [3, 4], w: 1 }] },
-  grid_six: { rowsT: "minmax(0, 300px) minmax(0, 300px)", regions: [{ a: "third", c: [1, 5], r: [1, 2], w: 2 }, { a: "third", c: [5, 9], r: [1, 2], w: 1 }, { a: "third", c: [9, 13], r: [1, 2], w: 1 }, { a: "third", c: [1, 5], r: [2, 3], w: 1 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
-  split_table: { rowsT: "minmax(0, 300px)", regions: [{ a: "half", c: [1, 8], r: [1, 2], w: 2 }, { a: "tall", c: [8, 13], r: [1, 2] }] },
-  band_solo: { rowsT: "auto minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 13], r: [2, 3], w: 2 }] },
-  band_pair: { rowsT: "auto minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }] },
-  band_trio: { rowsT: "auto minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
-  band_duo_table: { rowsT: "auto minmax(0, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "tall", c: [7, 13], r: [2, 3] }] },
-  pair: { rowsT: "minmax(0, 300px)", regions: [{ a: "half", c: [1, 7], r: [1, 2], w: 2 }, { a: "half", c: [7, 13], r: [1, 2], w: 2 }] },
+  band_hero: { asym: true, rowsT: "auto minmax(224px, 300px) minmax(224px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 4], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_hero_row: { asym: true, rowsT: "auto minmax(224px, 300px) minmax(224px, 300px) minmax(224px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 4], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }, { a: "third", c: [1, 5], r: [4, 5], w: 1 }, { a: "third", c: [5, 9], r: [4, 5], w: 1 }, { a: "third", c: [9, 13], r: [4, 5], w: 1 }] },
+  band_pair_trio: { rowsT: "auto minmax(224px, 300px) minmax(224px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_lead_matrix: { asym: true, rowsT: "auto minmax(224px, 300px) minmax(224px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "twothird", c: [1, 9], r: [2, 3], w: 3 }, { a: "third", c: [9, 13], r: [2, 3], w: 2 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_trio_trio: { rowsT: "auto minmax(224px, 300px) minmax(224px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "third", c: [1, 5], r: [3, 4], w: 1 }, { a: "third", c: [5, 9], r: [3, 4], w: 1 }, { a: "third", c: [9, 13], r: [3, 4], w: 1 }] },
+  band_trio_pair: { rowsT: "auto minmax(224px, 300px) minmax(224px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }, { a: "half", c: [1, 7], r: [3, 4], w: 2 }, { a: "half", c: [7, 13], r: [3, 4], w: 1 }] },
+  grid_six: { rowsT: "minmax(224px, 300px) minmax(224px, 300px)", regions: [{ a: "third", c: [1, 5], r: [1, 2], w: 2 }, { a: "third", c: [5, 9], r: [1, 2], w: 1 }, { a: "third", c: [9, 13], r: [1, 2], w: 1 }, { a: "third", c: [1, 5], r: [2, 3], w: 1 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
+  split_table: { rowsT: "minmax(224px, 300px)", regions: [{ a: "half", c: [1, 8], r: [1, 2], w: 2 }, { a: "tall", c: [8, 13], r: [1, 2] }] },
+  band_solo: { rowsT: "auto minmax(224px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 13], r: [2, 3], w: 2 }] },
+  band_pair: { rowsT: "auto minmax(224px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "half", c: [7, 13], r: [2, 3], w: 2 }] },
+  band_trio: { rowsT: "auto minmax(224px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "third", c: [1, 5], r: [2, 3], w: 2 }, { a: "third", c: [5, 9], r: [2, 3], w: 1 }, { a: "third", c: [9, 13], r: [2, 3], w: 1 }] },
+  band_duo_table: { rowsT: "auto minmax(224px, 300px)", regions: [{ a: "band", c: [1, 13], r: [1, 2] }, { a: "half", c: [1, 7], r: [2, 3], w: 2 }, { a: "tall", c: [7, 13], r: [2, 3] }] },
+  pair: { rowsT: "minmax(224px, 300px)", regions: [{ a: "half", c: [1, 7], r: [1, 2], w: 2 }, { a: "half", c: [7, 13], r: [1, 2], w: 2 }] },
 };
 // each widget belongs to an analytical domain; each role prioritizes domains differently,
 // so the same content arranges differently per role (CRO leads growth, CFO leads durability)
@@ -1112,7 +1164,7 @@ const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar
 // lead finding; the board is filled from this ranked menu, so there is always surplus to
 // fill a dense partition — a well-built board every time, regardless of how much the model curated.
 const CHART_MENU = ["metric_matrix", "efficiency_combo", "bridge_smb", "bridge_enterprise", "accel_line", "segment_stack", "hbar_nrr", "magic_line", "efficiency_bullets"];
-function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding }) {
+function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding, source }) {
   const kind = (id) => catalog[id]?.kind;
   const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]).map((b) => ({ ...b, _kind: kind(b.widget) }));
   const findings = all.filter((b) => b._kind === "finding_card");
@@ -1141,7 +1193,7 @@ function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding }) 
         {pl.block.widget === "salient_band"
           ? <div className="block emph-hero"><SalientBand finding={finding} role={role} onPick={onPick} /></div>
           : pl.block._kind === "finding_card"
-          ? <Block block={pl.block} catalog={catalog} onPick={onPick} dim={null} />
+          ? <Block block={pl.block} catalog={catalog} onPick={onPick} dim={null} source={source} />
           : <Widget id={pl.block.widget} catalog={catalog} onPick={onPick} dim={null} />}
       </div>))}
   </div>);
@@ -1149,8 +1201,8 @@ function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding }) 
 
 function EntryScreen({ onEnter }) {
   return (<div className="entry">
-    <div className="entry-mark">⟡ CALIPER</div>
-    <div className="entry-sub">Caliper Systems · synthetic · ~$40M ARR vertical SaaS. The engine has computed the quarter. Enter as a role — the dashboard is curated live for what you're accountable for, from the same findings.</div>
+    <div className="entry-mark">CALIPER</div>
+    <div className="entry-sub">Caliper Systems · synthetic · ~$40M ARR vertical SaaS. The engine has computed the quarter. Enter as a role — the dashboard is curated for what you're accountable for (live when the model is reachable, deterministic otherwise), from the same findings.</div>
     <div className="entry-roles">
       {Object.entries(ROLES).map(([k, r]) => (<button key={k} className="role" onClick={() => onEnter(k)}><span className="role-k">{k}</span><span className="role-l">{r.label}</span><span className="role-f">{r.focus}</span></button>))}
     </div>
@@ -1214,7 +1266,7 @@ function resolveQuery(it) {
   const fmt = { magic_number: (v) => `${v.toFixed(2)}x`, cac_payback: (v) => `${v.toFixed(0)} mo`, rule_of_40: (v) => `${v.toFixed(0)}`, gross_margin: (v) => `${v.toFixed(1)}%`, nrr: (v) => `${v.toFixed(1)}%`, grr: (v) => `${v.toFixed(1)}%`, arr: (v) => `$${(v / 1e6).toFixed(1)}M`, qoq_growth: (v) => `${v.toFixed(1)}%`, ent_share: (v) => `${v.toFixed(0)}%` };
   if (it.metric === "retention_bridge") { const b = E.cohortBridge(seg, S[0], S[1]), mv = E.nrr(seg, S[0], S[1]); return { kind: "waterfall", data: { bridge: b, title: `${seg || "Company"} retention bridge`, mv }, grounding: { label: `${seg || "Company"} retention`, hasBenchmark: true, status: b.nrr >= 100 ? "clears" : "breaches", direction: null, proxy: false } }; }
   const benchLatest = { magic_number: () => E.magicNumber(last), cac_payback: () => E.cacPayback(last), rule_of_40: () => E.ruleOf40(last), gross_margin: () => E.grossMargin(last), nrr: () => E.nrr(seg, S[0], S[1]), grr: () => E.grr(seg, S[0], S[1]) };
-  if (it.basis === "latest" && benchLatest[it.metric]) { const mv = benchLatest[it.metric](); const ok = mv.basis.good === "above" ? mv.value >= mv.basis.thr : mv.value <= mv.basis.thr; return { kind: "callout", data: { mv }, grounding: { label: mv.label, hasBenchmark: true, status: ok ? "clears" : "breaches", direction: null, proxy: mv.epistemic === "proxy" } }; }
+  if (it.basis === "latest" && benchLatest[it.metric]) { const mv = benchLatest[it.metric](); return { kind: "callout", data: { mv }, grounding: deriveGrounding(mv) }; }
   const trend = {
     magic_number: () => E.QUARTERS.slice(1).map((q) => ({ q, value: E.magicNumber(q).value, mv: E.magicNumber(q) })),
     cac_payback: () => E.QUARTERS.slice(1).map((q) => ({ q, value: E.cacPayback(q).value, mv: E.cacPayback(q) })),
@@ -1320,7 +1372,7 @@ function DebugPanel({ d, onClose }) {
     <div className="dbg-h"><span className="dbg-title">CURATION LOG · {d.role} <span className="dbg-meta">source: {c.source}{d.model ? ` · ${d.model}` : ""} · {v.length} validator action(s)</span></span>{onClose && <button className="dbg-close" onClick={onClose}>✕</button>}</div>
     {v.length > 0 && <div className="dbg-rej">validator: {v.join(" · ")}</div>}
     <div className="dbg-cols">
-      <div className="dbg-col"><div className="dbg-cap">① model proposed (judgment)</div><pre className="dbg-pre">{JSON.stringify({ thesis: c.thesis, evidence: c.evidenceIds, tests: c.testIds, widgets: c.widgetIds, partition: c.partitionPref }, null, 1)}</pre></div>
+      <div className="dbg-col"><div className="dbg-cap">① {isLive ? "model proposed (judgment)" : "deterministic fallback — no model"}</div><pre className="dbg-pre">{JSON.stringify({ thesis: c.thesis, evidence: c.evidenceIds, tests: c.testIds, widgets: c.widgetIds, partition: c.partitionPref }, null, 1)}</pre></div>
       <div className="dbg-col"><div className="dbg-cap">② engine enforced (truth)</div><pre className="dbg-pre">{`evidence:  ${c.evidenceIds.length} values, every one traceable
 tests:     ${c.testIds.length} (${c.testIds.length ? "incl. falsifier" : "none"})
 widgets:   ${c.widgetIds.length} on-domain, engine-computed
@@ -1496,38 +1548,80 @@ function AppInner() {
     <div className="caliper">
       
       <header className="hdr">
-        <div className="hdr-l"><span className="hdr-mark">⟡ CALIPER</span><span className="hdr-sub">Caliper Systems · synthetic</span></div>
+        <div className="hdr-l"><span className="hdr-mark">Caliper</span><span className="hdr-sub">Caliper Systems · synthetic</span></div>
         <div className={`hdr-status ${state.source}`}>
           {state.loading ? <span><span className="live-dot" /> curating the {role} dashboard — the model is arranging the engine's findings…</span>
-            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · overall #1: {state.disclosure.label} → {state.disclosure.owner.role} view</em>}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>}</span>
+            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · overall #1: {state.disclosure.label} → {state.disclosure.owner.role} view</em>}</span>
             : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>}</span>}
         </div>
         <div className="hdr-r">
           {Object.keys(ROLES).map((k) => <button key={k} className={`lensbtn ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
-          <button className="recur brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">◈ read</button>
-          <button className="recur" onClick={() => setShowQuery(true)} title="interrogate the engine">⌕</button>
-          <button className={`recur ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">⟲ perturb</button>
+          <span className="sep" />
+          <button className="recur brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">Read</button>
+          <button className="recur" onClick={() => setShowQuery(true)} title="interrogate the engine">Query</button>
+          <button className={`recur ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">Perturb</button>
           <div className="hdr-menu-wrap">
-            <button className="recur" onClick={() => setShowMenu((v) => !v)} title="tools">⋯</button>
+            <button className="recur" onClick={() => setShowMenu((v) => !v)} title="tools">Tools</button>
             {showMenu && <div className="hdr-menu" onMouseLeave={() => setShowMenu(false)}>
-              <button onClick={() => { delete cache.current[role]; enter(role); setShowMenu(false); }}>↻ re-curate</button>
-              <button onClick={() => { setShowDebug(true); setShowMenu(false); }}>◱ curation log</button>
-              <button onClick={() => { setShowTrust(true); setShowMenu(false); }}>⛨ trust contract</button>
+              <button onClick={() => { delete cache.current[role]; enter(role); setShowMenu(false); }}>Re-curate</button>
+              <button onClick={() => { setShowDebug(true); setShowMenu(false); }}>Curation log</button>
+              <button onClick={() => { setShowTrust(true); setShowMenu(false); }}>Trust contract</button>
             </div>}
           </div>
         </div>
       </header>
+      <div className="grad" aria-hidden="true" />
 
       {perturbation && <div className="perturb-banner"><span className="pb-tag">DATA PERTURBED</span><span className="pb-lbl">{PERTURBATIONS[perturbation].label}</span><span className="pb-note">{PERTURBATIONS[perturbation].note} The engine recomputed salience from the changed data — the finding you see below re-derived on its own, no code change.</span><button className="pb-reset" onClick={resetPerturbation}>reset data ›</button></div>}
 
       {showDebug && <div className="brief-overlay"><DebugPanel d={state.debug} onClose={() => setShowDebug(false)} /></div>}
 
       <div className={`workarea ${picked ? "drawer-open" : ""}`}>
-        <main className="stage">
-          {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} finding={state.curation && state.curation.finding} /></>}
+        <main className="stage board-view">
+          {state.loading ? <div className="loading">…</div> : (
+            /* THE BOARD — the one view (board-first). deriveShape + partition machinery +
+               role-divergence-by-composition live here. It releases below 13h (CSS). */
+            <div className="board-canvas">
+              <Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} />
+              <TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} finding={state.curation && state.curation.finding} source={state.source} />
+              {/* REJECTION BAND — a validator verdict about the composition, at board level. Renders
+                  ONLY when a model claim was rejected (count > 0); honest absence otherwise. The
+                  detent (R6's one motion event) fires as it arrives — reduced-motion honoured. */}
+              {state.curation && state.curation.rejection && (
+                <section className="rejection">
+                  <div className="rej-sum" aria-hidden="true" />
+                  <div className="rej-head">
+                    <span className="lab tag rej-tag">Rejected</span>
+                    <span className="lab">{state.curation.rejection.guard}</span>
+                  </div>
+                  <dl className="rej-dl">
+                    <dt>Model claim</dt>
+                    <dd className="rej-strike">“{state.curation.rejection.claim}”</dd>
+                    <dt>Engine verdict</dt>
+                    <dd>{state.curation.rejection.verdict}</dd>
+                    <dt>Disposition</dt>
+                    <dd>{state.curation.rejection.disposition}</dd>
+                  </dl>
+                </section>
+              )}
+            </div>
+          )}
         </main>
         <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
       </div>
+
+      <footer className="pedestal">
+        {/* engine facts — true in every mode */}
+        <div className="ped-cell"><span className="lab">Quarters</span><b>{E.QUARTERS.length}</b></div>
+        <div className="ped-cell"><span className="lab">Segments</span><b>{E.SEGMENTS.length}</b></div>
+        <div className="ped-cell"><span className="lab">Source rows</span><b>{(BASE_DS ? BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length : 0).toLocaleString()}</b></div>
+        {/* curation results — only a genuine live pass composed panels or ran the validator (2a) */}
+        {state.source === "live" && state.stats ? <>
+          <div className="ped-cell"><span className="lab">Panels</span><b>{state.stats.selected} / {state.stats.candidates}</b></div>
+          <div className="ped-cell"><span className="lab">Rejected</span><b>{state.stats.rejected}</b></div>
+        </> : <div className="ped-cell"><span className="lab">Curation</span><b className="ped-uncurated">uncurated · no validator pass</b></div>}
+        <span className="invite">Deterministic core v1 · shift+click any value for its source</span>
+      </footer>
 
       {showBrief && <div className="brief-overlay"><AnalystRead role={role} catalog={catalog} curation={state.curation} onPick={(p) => { setPicked(p); setShowBrief(false); }} onClose={() => setShowBrief(false)} /></div>}
       {showTrust && <div className="brief-overlay"><TrustPanel audit={audit.current} onClose={() => setShowTrust(false)} /></div>}

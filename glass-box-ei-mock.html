@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glass Box — Esoteric Industrialism pass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ---- FIELD: the surface plate. Everything is measured against one plane. ---- */
+  --field:        #e9eae5;   /* ground — engine territory */
+  --plane:        #f4f4f0;   /* the ONE advanced plane — interpretive territory */
+  --ink:          #191b17;
+  --ink-mute:     #6d7067;
+  --scribe:       rgba(25,27,23,.13);
+  --scribe-strong:rgba(25,27,23,.26);
+
+  /* ---- SACRED. One accent in the entire product. Layout dye = traceable to source. ---- */
+  --dye:          #1f539f;
+
+  /* ---- Sacred geometry, inherited: h=56 (spiritual), S=192 (industrial) ---- */
+  --h: 56px;
+  --S: 192px;
+  --u: 8px;
+
+  --serif: 'Spectral', Georgia, serif;
+  --mono:  'IBM Plex Mono', ui-monospace, monospace;
+  --sans:  'IBM Plex Sans', system-ui, sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{
+  background:var(--field);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:13px;
+  line-height:1.5;
+  padding-bottom:var(--h);
+}
+:focus-visible{outline:2px solid var(--dye);outline-offset:2px}
+
+/* ============ LABEL VOICE — recessive, tracked, uppercase (A1) ============ */
+.lab{
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+}
+
+/* ============ ACTIONS — tracked caps; state is one underline. No brackets. ============ */
+.act{
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  background:none;border:0;border-bottom:2px solid transparent;
+  padding:0 0 4px;cursor:pointer;
+}
+.act:hover{color:var(--ink)}
+.act[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+
+/* The ONE filled block in the product: the test that could break the read. */
+.act-run{
+  font-family:var(--sans);font-size:10px;font-weight:500;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--plane);background:var(--ink);
+  border:0;padding:12px 20px;cursor:pointer;
+}
+.act-run:hover{background:#000}
+
+/* status tag — hairline, no fill (ledger idiom) */
+.tag{
+  display:inline-block;border:1px solid var(--scribe-strong);
+  padding:3px 8px 2px;
+}
+
+/* ============ THE RAIL — 1h ============ */
+.rail{
+  height:var(--h);
+  display:flex;align-items:center;gap:calc(var(--u)*3);
+  padding:0 calc(var(--u)*3);
+  border-bottom:1px solid var(--scribe-strong);
+}
+.mark{
+  font-family:var(--mono);font-weight:600;font-size:13px;
+  letter-spacing:.28em;text-transform:uppercase;
+}
+.rail .status{
+  font-family:var(--mono);font-size:10.5px;color:var(--ink-mute);
+  letter-spacing:.02em;
+}
+.rail .status b{color:var(--ink);font-weight:500}
+.rail .right{margin-left:auto;display:flex;align-items:center;gap:calc(var(--u)*2.5)}
+.sep{width:1px;height:14px;background:var(--scribe-strong)}
+
+/* ============ SIGNATURE: THE GRADUATION. A vernier scale, not a divider. ============ */
+.grad{
+  height:11px;
+  background-image:
+    repeating-linear-gradient(90deg, var(--scribe-strong) 0 1px, transparent 1px 56px),
+    repeating-linear-gradient(90deg, var(--scribe) 0 1px, transparent 1px 8px);
+  background-size:100% 11px, 100% 5px;
+  background-position:bottom left, bottom left;
+  background-repeat:repeat-x;
+  border-bottom:1px solid var(--scribe);
+}
+
+/* ============ BODY — 75/25 Chamber / Silo (Synthesis grammar) ============ */
+.body{display:grid;grid-template-columns:1fr 320px}
+
+/* --- CHAMBER: the one plane that advances. Lightness = "a model wrote this." --- */
+.chamber{
+  background:var(--plane);
+  padding:calc(var(--u)*6) calc(var(--u)*7) calc(var(--u)*6);
+  border-right:1px solid var(--scribe-strong);
+}
+.eyebrow{margin-bottom:calc(var(--u)*3)}
+.chamber h1{
+  font-family:var(--serif);
+  font-weight:400;
+  font-size:34px;
+  line-height:1.15;
+  letter-spacing:-.012em;
+  max-width:22ch;
+  margin-bottom:calc(var(--u)*4);
+}
+.narr{
+  font-family:var(--serif);
+  font-weight:300;
+  font-size:17.5px;
+  line-height:1.72;
+  text-align:justify;
+  hyphens:auto;
+  max-width:64ch;
+}
+
+/* --- THE DYE-SCRIBE: a value traceable to raw rows. The only color in the system. --- */
+.v{
+  font-family:var(--mono);
+  font-size:.86em;
+  font-weight:500;
+  color:var(--dye);
+  border-bottom:1px solid var(--dye);
+  padding-bottom:1px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.v:hover{background:rgba(31,83,159,.07)}
+
+/* --- PROVENANCE PEEK: the guide's two-line format, shown open --- */
+.peek{
+  margin:calc(var(--u)*4) 0 0;
+  border-left:2px solid var(--dye);
+  padding:calc(var(--u)*1.5) 0 calc(var(--u)*1.5) calc(var(--u)*2);
+}
+.peek .tier{display:block;margin-bottom:6px}
+.peek .line1{font-family:var(--mono);font-size:12px;line-height:1.7}
+.peek .line2{font-family:var(--mono);font-size:10.5px;color:var(--ink-mute);margin-top:5px;line-height:1.7}
+
+/* --- INTERPRETED: segregated, italic, labelled. Never dye-scribed. --- */
+.note{
+  margin-top:calc(var(--u)*5);
+  padding-top:calc(var(--u)*2);
+  border-top:1px solid var(--scribe);
+}
+.note p{
+  font-family:var(--serif);font-style:italic;font-weight:300;
+  font-size:15.5px;line-height:1.68;max-width:64ch;margin-top:8px;
+  color:#33362f;
+}
+
+/* --- FALSIFIER: admissibility made visible --- */
+.fals{margin-top:calc(var(--u)*4);padding-top:calc(var(--u)*2);border-top:1px solid var(--scribe)}
+.fals .cond{font-family:var(--mono);font-size:11.5px;line-height:1.7;margin-top:8px;max-width:70ch}
+.fals .go{display:inline-block;margin-top:10px}
+
+/* ============ SILO — engine + validator territory. Stays on the field. ============ */
+.silo{padding:calc(var(--u)*6) calc(var(--u)*3)}
+.silo h2{margin-bottom:calc(var(--u)*2.5)}
+.log{width:100%;border-collapse:collapse;margin-bottom:calc(var(--u)*4)}
+.log th{
+  text-align:left;font-family:var(--sans);font-size:10px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute);
+  padding:7px 0;border-bottom:1px solid var(--scribe);font-weight:400;
+}
+.log td{
+  text-align:right;font-family:var(--mono);font-size:12px;
+  padding:7px 0;border-bottom:1px solid var(--scribe);
+}
+/* accounting summation rule above the load-bearing row */
+.log tr.sum th,.log tr.sum td{border-top:1px solid var(--scribe-strong);border-bottom:0;padding-top:9px}
+
+.rej{padding-top:calc(var(--u)*2);border-top:1px solid var(--scribe-strong)}
+.rej .head{display:flex;align-items:baseline;gap:10px;margin-bottom:calc(var(--u)*2)}
+.rej dl{font-family:var(--mono);font-size:11px;line-height:1.65}
+.rej dt{font-family:var(--sans);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute);margin-top:10px}
+.rej dd .strike{text-decoration:line-through;text-decoration-thickness:1px;color:var(--ink-mute)}
+
+/* the single motion in the system: the validator arriving. A detent, not a fade. */
+@keyframes detent{0%{opacity:.35}70%{opacity:1}80%{opacity:.86}100%{opacity:1}}
+.rej{animation:detent 620ms cubic-bezier(.16,1,.3,1) both}
+@media (prefers-reduced-motion:reduce){.rej{animation:none}}
+
+/* ============ EVIDENCE BAND ============ */
+.evidence{
+  border-top:1px solid var(--scribe-strong);
+  display:grid;grid-template-columns:1fr 460px;
+}
+.panel{padding:calc(var(--u)*4) calc(var(--u)*3)}
+.panel + .panel{border-left:1px solid var(--scribe-strong)}
+.panel .cap{display:flex;align-items:baseline;gap:12px;margin-bottom:calc(var(--u)*3)}
+.panel svg{display:block;width:100%;height:auto}
+
+.grid-line{stroke:var(--scribe);stroke-width:1}
+.ref-line{stroke:var(--scribe-strong);stroke-width:1;stroke-dasharray:1 3}
+.series{fill:none;stroke:var(--ink);stroke-width:1.4;stroke-linejoin:miter}
+.tickmark{stroke:var(--scribe-strong);stroke-width:1}
+.axis{font-family:'IBM Plex Mono',monospace;font-size:9px;fill:var(--ink-mute);letter-spacing:.04em}
+.term{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;fill:var(--ink)}
+.reflab{font-family:'IBM Plex Mono',monospace;font-size:9px;fill:var(--ink-mute);letter-spacing:.08em}
+
+/* metrics table — numbers look like numbers, no fills, no zebra */
+.mx{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px}
+.mx th{
+  font-family:var(--sans);font-size:9.5px;font-weight:500;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-mute);text-align:right;padding:6px 0 8px;
+  border-bottom:1px solid var(--scribe-strong);
+}
+.mx th:first-child{text-align:left}
+.mx td{text-align:right;padding:6px 0;border-bottom:1px solid var(--scribe);
+  font-variant-numeric:tabular-nums}
+.mx td:first-child{
+  text-align:left;font-family:var(--sans);font-size:10px;letter-spacing:.10em;
+  text-transform:uppercase;color:var(--ink-mute);
+}
+.mx td.nil{color:var(--scribe-strong)}
+.mx tr.verdict td{border-top:1px solid var(--scribe-strong);border-bottom:0;padding-top:9px;font-weight:600}
+.mx tr.verdict td:first-child{font-weight:500;color:var(--ink)}
+
+/* ============ PEDESTAL — 1h compact, persistent ============ */
+.pedestal{
+  position:fixed;left:0;right:0;bottom:0;height:var(--h);
+  display:flex;align-items:center;gap:calc(var(--u)*4);
+  padding:0 calc(var(--u)*3);
+  background:var(--field);
+  border-top:1px solid var(--scribe-strong);
+}
+.ped-cell{display:flex;align-items:baseline;gap:9px}
+.ped-cell b{font-family:var(--mono);font-size:13px;font-weight:500}
+.pedestal .invite{margin-left:auto;font-family:var(--mono);font-size:10px;
+  letter-spacing:.10em;text-transform:uppercase;color:var(--ink-mute)}
+
+@media (max-width:1180px){
+  .body{grid-template-columns:1fr}
+  .chamber{border-right:0;border-bottom:1px solid var(--scribe-strong)}
+  .evidence{grid-template-columns:1fr}
+  .panel + .panel{border-left:0;border-top:1px solid var(--scribe-strong)}
+  .chamber h1{font-size:27px}
+  .narr{font-size:16px;text-align:left}
+  .pedestal{gap:calc(var(--u)*2);overflow-x:auto}
+}
+</style>
+</head>
+<body>
+
+<header class="rail">
+  <span class="mark">Caliper</span>
+  <span class="status">synthetic · 8 quarters · <b>4,520</b> rows traceable · engine <b>green</b></span>
+  <div class="right">
+    <button class="act" aria-pressed="true">CFO</button>
+    <button class="act" aria-pressed="false">CRO</button>
+    <span class="sep"></span>
+    <button class="act">Read</button>
+    <button class="act">Perturb</button>
+    <button class="act">Trace</button>
+  </div>
+</header>
+<div class="grad" aria-hidden="true"></div>
+
+<div class="body">
+
+  <!-- ================= CHAMBER — the interpretive plane ================= -->
+  <section class="chamber">
+    <div class="lab eyebrow">Curated read · Finance · through 25Q4</div>
+
+    <h1>Growth is intact.<br>Its price is not.</h1>
+
+    <p class="narr">
+      Caliper is buying growth at a rising price. The SaaS Magic Number has fallen four
+      consecutive quarters, from <span class="v" tabindex="0">0.81</span> to
+      <span class="v" tabindex="0">0.41</span> against a <span class="v" tabindex="0">0.75</span>
+      target, while sales and marketing spend rose to <span class="v" tabindex="0">$6.10M</span>.
+      Acquisition payback now runs <span class="v" tabindex="0">21 mo</span> against a
+      <span class="v" tabindex="0">12 mo</span> benchmark. Volume is not the problem — net new
+      ARR of <span class="v" tabindex="0">$2.50M</span> is still rising and gross margin holds at
+      <span class="v" tabindex="0">75.5%</span>. What has changed is the price of each dollar
+      acquired.
+    </p>
+
+    <div class="peek">
+      <span class="lab tier">Tier 2 · derived</span>
+      <div class="line1">SaaS Magic Number 25Q4 = Net New ARR 25Q4 ÷ S&amp;M Spend 25Q3 = $2.50M ÷ $6.10M = 0.41</div>
+      <div class="line2">SOURCES · caliper_arr.csv rows 22–24 · caliper_opex.csv rows 19–21 · ingested at 25Q4 close</div>
+    </div>
+
+    <div class="note">
+      <span class="lab">Analyst note · interpreted</span>
+      <p>
+        The deterioration is consistent with a shift in acquisition mix toward Enterprise, where
+        longer cycles depress near-term efficiency without implying a worse business. That reading
+        is an interpretation. It is not computed from the ledger, and no figure above depends on it.
+      </p>
+    </div>
+
+    <div class="fals">
+      <span class="lab">Falsifier · required for admission</span>
+      <div class="cond">
+        IF ENTERPRISE SHARE OF NET NEW ARR IS FLAT ACROSS 25Q1–25Q4,<br>
+        THE MIX EXPLANATION FAILS AND THIS READ IS WITHDRAWN.
+      </div>
+      <button class="act-run go">Run segment mix by quarter</button>
+    </div>
+  </section>
+
+  <!-- ================= SILO — engine + validator ================= -->
+  <aside class="silo">
+    <h2 class="lab">Curation log</h2>
+
+    <table class="log">
+      <tbody>
+        <tr><th scope="row">Role</th><td>CFO</td></tr>
+        <tr><th scope="row">Panels composed</th><td>6 of 12</td></tr>
+        <tr><th scope="row">Findings cited</th><td>5</td></tr>
+        <tr><th scope="row">Rows traceable</th><td>4,520</td></tr>
+        <tr><th scope="row">Model-authored numerals</th><td>0</td></tr>
+        <tr class="sum"><th scope="row">Claims rejected</th><td>1</td></tr>
+      </tbody>
+    </table>
+
+    <div class="rej">
+      <div class="head">
+        <span class="lab tag">Rejected</span>
+        <span class="lab">Direction coherence</span>
+      </div>
+      <dl>
+        <dt>Model claim</dt>
+        <dd class="strike">“Acquisition payback is improving.”</dd>
+        <dt>Engine verdict</dt>
+        <dd>21 mo against a 12 mo benchmark, lengthening four consecutive quarters.</dd>
+        <dt>Disposition</dt>
+        <dd>Framing contradicts the engine's verdict. Not admitted to the read. Replaced with the engine headline.</dd>
+      </dl>
+    </div>
+  </aside>
+</div>
+
+<!-- ================= EVIDENCE BAND ================= -->
+<section class="evidence">
+
+  <div class="panel">
+    <div class="cap">
+      <span class="lab">SaaS magic number</span>
+      <span class="lab">24Q2 — 25Q4 · derived</span>
+    </div>
+    <svg viewBox="0 0 640 224" role="img" aria-label="SaaS Magic Number falling from 0.81 to 0.41 against a 0.75 target">
+      <!-- horizontal graduations -->
+      <line class="grid-line" x1="44" y1="16"  x2="584" y2="16"/>
+      <line class="grid-line" x1="44" y1="76"  x2="584" y2="76"/>
+      <line class="grid-line" x1="44" y1="136" x2="584" y2="136"/>
+      <line class="grid-line" x1="44" y1="196" x2="584" y2="196"/>
+      <text class="axis" x="38" y="19"  text-anchor="end">0.90</text>
+      <text class="axis" x="38" y="79"  text-anchor="end">0.70</text>
+      <text class="axis" x="38" y="139" text-anchor="end">0.50</text>
+      <text class="axis" x="38" y="199" text-anchor="end">0.30</text>
+
+      <!-- vernier ticks on the baseline -->
+      <g class="tickmark">
+        <line x1="44" y1="196" x2="44" y2="202"/><line x1="134" y1="196" x2="134" y2="202"/>
+        <line x1="224" y1="196" x2="224" y2="202"/><line x1="314" y1="196" x2="314" y2="202"/>
+        <line x1="404" y1="196" x2="404" y2="202"/><line x1="494" y1="196" x2="494" y2="202"/>
+        <line x1="584" y1="196" x2="584" y2="202"/>
+      </g>
+
+      <!-- reference, not a series: scribed, unlabelled by colour -->
+      <line class="ref-line" x1="44" y1="61" x2="584" y2="61"/>
+      <text class="reflab" x="584" y="56" text-anchor="end">TARGET 0.75</text>
+
+      <polyline class="series" points="44,43 134,52 224,43 314,115 404,145 494,157 584,163"/>
+      <rect x="581" y="160" width="6" height="6" fill="var(--ink)"/>
+      <text class="term" x="574" y="180" text-anchor="end">0.41</text>
+
+      <text class="axis" x="44"  y="216">24Q2</text>
+      <text class="axis" x="224" y="216">24Q4</text>
+      <text class="axis" x="404" y="216">25Q2</text>
+      <text class="axis" x="584" y="216" text-anchor="end">25Q4</text>
+    </svg>
+  </div>
+
+  <div class="panel">
+    <div class="cap">
+      <span class="lab">Metrics by quarter</span>
+      <span class="lab">Extracted &amp; derived</span>
+    </div>
+    <table class="mx">
+      <thead>
+        <tr><th>Metric</th><th>24Q2</th><th>24Q3</th><th>24Q4</th><th>25Q1</th><th>25Q2</th><th>25Q3</th><th>25Q4</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Magic #</td><td>0.81</td><td>0.78</td><td>0.81</td><td>0.57</td><td>0.47</td><td>0.43</td><td>0.41</td></tr>
+        <tr><td>CAC (mo)</td><td>12</td><td>12</td><td>11</td><td>13</td><td>19</td><td>25</td><td>21</td></tr>
+        <tr><td>Gross margin</td><td>79%</td><td>78%</td><td>78%</td><td>77%</td><td>76%</td><td>76%</td><td>75.5%</td></tr>
+        <tr><td>Blended NRR</td><td class="nil">—</td><td class="nil">—</td><td class="nil">—</td><td>106%</td><td>104%</td><td>105%</td><td>106%</td></tr>
+        <tr><td>Blended GRR</td><td class="nil">—</td><td class="nil">—</td><td class="nil">—</td><td>88%</td><td>87%</td><td>87%</td><td>86%</td></tr>
+        <tr class="verdict"><td>Rule of 40</td><td>44</td><td>42</td><td>43</td><td>38</td><td>33</td><td>29</td><td>27</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="pedestal">
+  <div class="ped-cell"><span class="lab">Quarters</span><b>8</b></div>
+  <div class="ped-cell"><span class="lab">Segments</span><b>3</b></div>
+  <div class="ped-cell"><span class="lab">Source rows</span><b>4,520</b></div>
+  <div class="ped-cell"><span class="lab">Panels</span><b>6 / 12</b></div>
+  <div class="ped-cell"><span class="lab">Rejected</span><b>1</b></div>
+  <span class="invite">Deterministic core v1 · shift+click any value for its source</span>
+</footer>
+
+</body>
+</html>

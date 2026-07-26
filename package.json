@@ -8,9 +8,10 @@
     "dev:live": "netlify dev",
     "build": "vite build",
     "preview": "vite preview",
-    "validate": "tsx scripts/validate.ts && tsx scripts/validate-discovery.ts",
+    "validate": "tsx scripts/validate.ts && tsx scripts/validate-discovery.ts && tsx scripts/validate-surface.ts",
     "validate:discovery": "tsx scripts/validate-discovery.ts",
-    "validate:all": "tsx scripts/validate.ts && tsx scripts/validate-discovery.ts"
+    "validate:surface": "tsx scripts/validate-surface.ts",
+    "validate:all": "tsx scripts/validate.ts && tsx scripts/validate-discovery.ts && tsx scripts/validate-surface.ts"
   },
   "dependencies": {
     "react": "^18.3.1",
