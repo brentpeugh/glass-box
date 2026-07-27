@@ -20,8 +20,18 @@ export const WIDGET_DOMAIN: Record<string, string> = {
   indexed_arr: "growth", grouped_growth: "growth", small_mult_arr: "growth",
   dumbbell_ret: "retention", heatmap_retention: "retention",
 };
-// domains a finding's widgets may draw from when the neighborhood doesn't declare lenses
+// Board-COMPOSITION relatedness: which chart families visually complete a board of a given domain.
+// This is deliberately NOT the analytical-coherence relation (a concentration board tops up with
+// concentration/growth charts, not retention bridges — see the top-up in App.tsx). It is a distinct
+// concept from admissibleLenses() below, which governs what the model may be OFFERED and ADMITTED.
 export const RELATED_DOMAINS: Record<string, string[]> = { retention: ["retention", "concentration"], efficiency: ["efficiency", "growth"], growth: ["growth", "concentration"], concentration: ["concentration", "growth"] };
+
+// The finding's admissible analytical lenses — the SINGLE source of truth for both what the prompt
+// OFFERS (buildCurationPrompt) and what the validator ADMITS (validateCurationCore). Engine-computed
+// via findingNeighborhood → nb.lenses; falls back to the finding's own domain only if a caller hands
+// in a lens-less neighborhood (production always has lenses). Offer and admit MUST derive from this
+// one value, or forms get offered that are then dropped — the spurious-rejection bug this fixes.
+export function admissibleLenses(nb: any): string[] { return nb.lenses || [nb.domain]; }
 
 // model framing may not contain digits — the engine owns every number
 // headline-strip metrics the model may curate into the vital-signs scorecard (broader than the
@@ -77,7 +87,7 @@ export function engineHeadline(grounding: any) {
 // runs live AND the function the discovery-path test proves.
 export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDomain: Record<string, string> = WIDGET_DOMAIN, allowedLabels: string[] = []) {
   const mSet = new Set(nb.metricIds), tSet = new Set(nb.testIds), fSet = new Set(nb.falsifierIds);
-  const rel = nb.lenses || RELATED_DOMAINS[nb.domain] || [nb.domain];
+  const rel = admissibleLenses(nb);
   const violations: string[] = [];
   const evidenceIds = (cur.evidenceIds || []).filter((id: string) => mSet.has(id));
   if (evidenceIds.length < (cur.evidenceIds || []).length) violations.push("evidence outside the finding neighborhood — dropped");

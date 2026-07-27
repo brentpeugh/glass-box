@@ -7,11 +7,11 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 
 import { E, initEngine, setBaseDS, BASE_DS } from "../src/engine";
-import { buildCatalog } from "../src/catalog";
+import { buildCatalog, CHART_MENU } from "../src/catalog";
 import { deriveShape, selectPartition, fillPartition, PARTITIONS } from "../src/layout";
-import { fallbackCuration, curate } from "../src/curate";
+import { fallbackCuration, curate, offeredWidgets } from "../src/curate";
 import { perturbedDataset } from "../src/perturbations";
-import { WIDGET_DOMAIN, RELATED_DOMAINS } from "../src/curation";
+import { WIDGET_DOMAIN, RELATED_DOMAINS, validateCurationCore, admissibleLenses } from "../src/curation";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -100,6 +100,50 @@ await (async () => {
   ok("curate honours injected callModel (invoked; falls back deterministically)", called && !!res && res.source === "fallback",
     `called=${called} source=${res && res.source}`);
 })();
+
+// 7 — one source of truth for domain relatedness: what buildCurationPrompt OFFERS must be a
+//     SUBSET of what validateCuration ADMITS, for every finding in both candidate sets. Zero
+//     offered-but-inadmissible. (Before the fix, a concentration anchor offered growth forms per
+//     RELATED_DOMAINS that the validator dropped per nb.lenses — 30 spurious rejections.)
+{
+  const offenders: string[] = [];
+  let checked = 0;
+  for (const [label, ds] of [["base", base], ["perturbed", perturbedDataset("improve_cac")]] as [string, any][]) {
+    initEngine(ds);
+    const cat = buildCatalog();
+    for (const f of E.computeSalience()) {
+      const nb = E.findingNeighborhood(f);
+      const offered = offeredWidgets(nb, cat);
+      // admit the same offered set through the REAL validator; anything dropped is off-domain
+      const { curation } = validateCurationCore(
+        { thesis: "x", whyRole: "y", evidenceIds: nb.metricIds.slice(0, 1), testIds: [nb.falsifierIds[0]], widgetIds: offered, scorecardKeys: [], rationaleTags: [] },
+        nb, cat, WIDGET_DOMAIN);
+      const admitted = curation ? curation.widgetIds : [];
+      const inadmissible = offered.filter((id: string) => !admitted.includes(id));
+      checked++;
+      if (inadmissible.length) offenders.push(`${label}/${f.id}(${nb.domain}): ${inadmissible.join(",")}`);
+    }
+  }
+  initEngine(base);
+  ok(`offered ⊆ admitted for all ${checked} findings across both states (0 offered-but-inadmissible)`,
+    offenders.length === 0, offenders.join(" | "));
+}
+
+// 8 — registry integrity (inventory §6 recommendation): every CHART_MENU id resolves in
+//     buildCatalog() with a kind in CHART_KINDS (the render-side registry). CHART_KINDS lives in
+//     App.tsx; read it there so the assertion tracks the real source.
+{
+  const app = fs.readFileSync(path.join(root, "src/App.tsx"), "utf8");
+  const m = app.match(/const CHART_KINDS = new Set\(\[([^\]]*)\]\)/);
+  const CHART_KINDS = new Set((m ? m[1] : "").split(",").map((s) => s.trim().replace(/^["']|["']$/g, "")).filter(Boolean));
+  const cat = buildCatalog();
+  const menuBad = CHART_MENU.filter((id: string) => !cat[id] || !CHART_KINDS.has(cat[id].kind));
+  ok(`every CHART_MENU id resolves in buildCatalog() with a kind in CHART_KINDS`, !!m && menuBad.length === 0,
+    m ? `unresolved/mismatched: ${menuBad.join(",")}` : "could not read CHART_KINDS from App.tsx");
+  // Report-only (do NOT assert): chart-kind catalog forms absent from CHART_MENU — the top-up gap.
+  const chartFormsNotInMenu = Object.keys(cat).filter((id) => CHART_KINDS.has(cat[id].kind) && !CHART_MENU.includes(id));
+  console.log(`  · report-only: ${chartFormsNotInMenu.length} chart-kind catalog forms absent from CHART_MENU (not a failure): ${chartFormsNotInMenu.join(", ")}`);
+}
 
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — curation modules: ${pass}/${pass + fail} assertions`);
 if (fail > 0) process.exit(1);

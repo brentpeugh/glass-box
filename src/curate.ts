@@ -1,7 +1,7 @@
 // Extracted from App.tsx (docs/briefs/extraction.md). Behaviour-preserving move — no logic change.
 // The curation path — the one I/O boundary (callModel). fallbackCuration is deterministic.
 import { E } from "./engine";
-import { WIDGET_DOMAIN, RELATED_DOMAINS, HEADLINE_KEYS, validateCurationCore } from "./curation";
+import { WIDGET_DOMAIN, HEADLINE_KEYS, validateCurationCore, admissibleLenses } from "./curation";
 
 // All model calls go through one seam. In production this hits the Netlify function
 // holding the key server-side; running plain `vite` (no function) it throws and the
@@ -29,9 +29,15 @@ const FALLBACK_SCORECARD = {
   growth: ["qoq_growth", "net_new_arr", "ent_share", "nrr", "magic_number", "cac_payback"],
   concentration: ["ent_share", "nrr", "net_new_arr", "qoq_growth", "gross_margin", "cac_payback"],
 };
+// The forms the model is OFFERED for a finding: catalog widgets whose domain is one of the
+// finding's admissible lenses. SAME source (admissibleLenses) the validator admits by, so nothing
+// offered is later dropped as off-domain. Exported so validate-curation.ts can prove offered ⊆ admitted.
+export function offeredWidgets(nb, catalog) {
+  return Object.keys(catalog).filter((id) => admissibleLenses(nb).includes(WIDGET_DOMAIN[id]));
+}
 export function fallbackCuration(fact) {
   const nb = E.findingNeighborhood(fact);
-  const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => (nb.lenses || RELATED_DOMAINS[nb.domain] || [nb.domain]).includes(WIDGET_DOMAIN[id]));
+  const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => admissibleLenses(nb).includes(WIDGET_DOMAIN[id]));
   const evidenceIds = [...new Set([...(fact.mvs || []).map((m) => m.id), ...nb.metricIds])].slice(0, 6);
   return {
     thesis: `The most statistically anomalous signal in the book is ${fact.label} — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.`,
@@ -51,7 +57,7 @@ function validateCuration(cur, finding, catalog) {
 function buildCurationPrompt(focus, finding, nb, catalog) {
   const metricMenu = nb.metricIds.map((id) => ({ id, label: E.store.get(id).label }));
   const testMenu = nb.testIds.map((id) => { const t = E.TEST_MENU.find((x) => x.id === id); return { id, question: t.label, falsifier: nb.falsifierIds.includes(id) }; });
-  const widgetMenu = Object.keys(catalog).filter((id) => (RELATED_DOMAINS[nb.domain] || []).includes(WIDGET_DOMAIN[id])).map((id) => ({ id, label: catalog[id].title || id }));
+  const widgetMenu = offeredWidgets(nb, catalog).map((id) => ({ id, label: catalog[id].title || id }));
   const headlineMenu = HEADLINE_KEYS;
   // Domain-conditional composition guidance. Some findings (concentration especially) are served
   // by segment-based widgets the model may not recognize as "the board" — naming the complementary
