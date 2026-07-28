@@ -1,0 +1,5924 @@
+{
+  "meta": {
+    "run": 2,
+    "base": "3e409c1 (post domain-relatedness fix)",
+    "generated": "live via injected Anthropic seam (Netlify function bypassed — no Origin check, no rate limiter)",
+    "model": "claude-sonnet-4-6",
+    "temperature": "unset (API default 1.0)",
+    "max_tokens": 600,
+    "endpoint": "https://api.anthropic.com/v1/messages",
+    "anthropicVersion": "2023-06-01",
+    "design": "2 states × 2 roles × 10 repeats = 40 runs",
+    "offerSource": "admissibleLenses(nb) via offeredWidgets (post-fix)",
+    "stateResetAssertion": "PASS",
+    "perturbationChangesCandidates": true,
+    "rateLimitHits": 0
+  },
+  "candidateSets": {
+    "base": [
+      {
+        "id": "S0",
+        "dim": "benchmark",
+        "metric": "cac",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 2.457936597249314,
+        "raw": 0.7618251347786268
+      },
+      {
+        "id": "S1",
+        "dim": "dispersion",
+        "metric": "arr",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764,
+        "raw": 1.4331683067003218
+      },
+      {
+        "id": "S2",
+        "dim": "benchmark",
+        "metric": "magic",
+        "label": "Magic # vs benchmark",
+        "domain": "efficiency",
+        "salience": 1.2303750920337984,
+        "raw": 0.45355189726775946
+      },
+      {
+        "id": "S3",
+        "dim": "divergence",
+        "metric": "nrr",
+        "label": "NRR blended vs worst segment",
+        "domain": "retention",
+        "salience": 1,
+        "raw": 0.24144334868212933
+      },
+      {
+        "id": "S4",
+        "dim": "trend",
+        "metric": "magic",
+        "label": "Magic # adverse trend",
+        "domain": "efficiency",
+        "salience": 0.9654952695112429,
+        "raw": 0.9160942919854324
+      },
+      {
+        "id": "S5",
+        "dim": "trend",
+        "metric": "cac",
+        "label": "CAC Payback adverse trend",
+        "domain": "efficiency",
+        "salience": 0.9637239196369185,
+        "raw": 0.9151111168793074
+      },
+      {
+        "id": "S6",
+        "dim": "benchmark",
+        "metric": "r40",
+        "label": "Rule of 40 vs benchmark",
+        "domain": "efficiency",
+        "salience": 0.7260369035672846,
+        "raw": 0.32689920777042747
+      },
+      {
+        "id": "S7",
+        "dim": "benchmark",
+        "metric": "nrr",
+        "label": "SMB NRR vs benchmark",
+        "domain": "retention",
+        "salience": 0.21416378005077585,
+        "raw": 0.19835429632541535
+      },
+      {
+        "id": "S8",
+        "dim": "benchmark",
+        "metric": "grr",
+        "label": "SMB GRR vs benchmark",
+        "domain": "retention",
+        "salience": 0.01892533123191015,
+        "raw": 0.14932474591325504
+      },
+      {
+        "id": "S9",
+        "dim": "concentration",
+        "metric": "arr",
+        "label": "ARR concentration (top segment)",
+        "domain": "concentration",
+        "salience": 0,
+        "raw": 0.27557755509672227
+      },
+      {
+        "id": "S10",
+        "dim": "dispersion",
+        "metric": "winRate",
+        "label": "Win rate spread across segments",
+        "domain": "retention",
+        "salience": -0.163269335639388,
+        "raw": 0.5629150349054999
+      },
+      {
+        "id": "S11",
+        "dim": "benchmark",
+        "metric": "grr",
+        "label": "Mid-Market GRR vs benchmark",
+        "domain": "retention",
+        "salience": -0.3831813627292633,
+        "raw": 0.04834509491773136
+      },
+      {
+        "id": "S12",
+        "dim": "benchmark",
+        "metric": "grr",
+        "label": "Blended GRR vs benchmark",
+        "domain": "retention",
+        "salience": -0.3925848751384807,
+        "raw": 0.045983623657801176
+      },
+      {
+        "id": "S13",
+        "dim": "dispersion",
+        "metric": "nrr",
+        "label": "NRR spread across segments",
+        "domain": "retention",
+        "salience": -0.47953490536754423,
+        "raw": 0.41122921653085953
+      },
+      {
+        "id": "S14",
+        "dim": "benchmark",
+        "metric": "nrr",
+        "label": "Mid-Market NRR vs benchmark",
+        "domain": "retention",
+        "salience": -0.4829809216768206,
+        "raw": 0.02328277990686857
+      },
+      {
+        "id": "S15",
+        "dim": "benchmark",
+        "metric": "grr",
+        "label": "Enterprise GRR vs benchmark",
+        "domain": "retention",
+        "salience": -0.5667264786870967,
+        "raw": 0.0022520503857630086
+      },
+      {
+        "id": "S16",
+        "dim": "trend",
+        "metric": "grossMargin",
+        "label": "Gross Margin adverse trend",
+        "domain": "efficiency",
+        "salience": -0.5917076293189196,
+        "raw": 0.051779936302493224
+      },
+      {
+        "id": "S17",
+        "dim": "benchmark",
+        "metric": "grossMargin",
+        "label": "Gross Margin vs benchmark",
+        "domain": "efficiency",
+        "salience": -0.6022413154126663,
+        "raw": -0.006666666640264225
+      },
+      {
+        "id": "S18",
+        "dim": "benchmark",
+        "metric": "nrr",
+        "label": "Blended NRR vs benchmark",
+        "domain": "retention",
+        "salience": -0.8018910204797043,
+        "raw": -0.05680400044196261
+      },
+      {
+        "id": "S19",
+        "dim": "divergence",
+        "metric": "grr",
+        "label": "GRR blended vs worst segment",
+        "domain": "retention",
+        "salience": -0.9999999999999998,
+        "raw": 0.10832216806557853
+      },
+      {
+        "id": "S20",
+        "dim": "dispersion",
+        "metric": "grr",
+        "label": "GRR spread across segments",
+        "domain": "retention",
+        "salience": -1.0084081577779445,
+        "raw": 0.15757349239596877
+      },
+      {
+        "id": "S21",
+        "dim": "trend",
+        "metric": "qoq",
+        "label": "QoQ growth adverse trend",
+        "domain": "growth",
+        "salience": -1.3375115598292415,
+        "raw": -0.3621732127374235
+      },
+      {
+        "id": "S22",
+        "dim": "benchmark",
+        "metric": "nrr",
+        "label": "Enterprise NRR vs benchmark",
+        "domain": "retention",
+        "salience": -1.4178317300090517,
+        "raw": -0.21148304164244153
+      }
+    ],
+    "improve_cac": [
+      {
+        "id": "S0",
+        "dim": "dispersion",
+        "metric": "arr",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764,
+        "raw": 1.4331683067003218
+      },
+      {
+        "id": "S1",
+        "dim": "benchmark",
+        "metric": "nrr",
+        "label": "SMB NRR vs benchmark",
+        "domain": "retention",
+        "salience": 1.3114521930898455,
+        "raw": 0.19835429632541535
+      },
+      {
+        "id": "S2",
+        "dim": "divergence",
+        "metric": "nrr",
+        "label": "NRR blended vs worst segment",
+        "domain": "retention",
+        "salience": 1,
+        "raw": 0.24144334868212933
+      },
+      {
+        "id": "S3",
+        "dim": "benchmark",
+        "metric": "grr",
+        "label": "SMB GRR vs benchmark",
+        "domain": "retention",
+        "salience": 0.9961391420875267,
+        "raw": 0.14932474591325504
+      },
+      {
+        "id": "S4",
+        "dim": "trend",
+        "metric": "magic",
+        "label": "Magic # adverse trend",
+        "domain": "efficiency",
+        "salience": 0.9221242970092867,
+        "raw": 0.3076043409957583
+      },
+      {
+        "id": "S5",
+        "dim": "trend",
+        "metric": "cac",
+        "label": "CAC Payback adverse trend",
+        "domain": "efficiency",
+        "salience": 0.7377148617512201,
+        "raw": 0.25889273715769573
+      },
+      {
+        "id": "S6",
+        "dim": "benchmark",
+        "metric": "magic",
+        "label": "Magic # vs benchmark",
+        "domain": "efficiency",
+        "salience": 0.6098138707482381,
+        "raw": 0.08925316211293251
+      },
+      {
+        "id": "S7",
+        "dim": "benchmark",
+        "metric": "cac",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 0.4030026186208872,
+        "raw": 0.05709508086717596
+      },
+      {
+        "id": "S8",
+        "dim": "benchmark",
+        "metric": "grr",
+        "label": "Mid-Market GRR vs benchmark",
+        "domain": "retention",
+        "salience": 0.3467307429305379,
+        "raw": 0.04834509491773136
+      },
+      {
+        "id": "S9",
+        "dim": "benchmark",
+        "metric": "grr",
+        "label": "Blended GRR vs benchmark",
+        "domain": "retention",
+        "salience": 0.3315439280084455,
+        "raw": 0.045983623657801176
+      },
+      {
+        "id": "S10",
+        "dim": "benchmark",
+        "metric": "nrr",
+        "label": "Mid-Market NRR vs benchmark",
+        "domain": "retention",
+        "salience": 0.1855529441372537,
+        "raw": 0.02328277990686857
+      },
+      {
+        "id": "S11",
+        "dim": "benchmark",
+        "metric": "grr",
+        "label": "Enterprise GRR vs benchmark",
+        "domain": "retention",
+        "salience": 0.05030260155080314,
+        "raw": 0.0022520503857630086
+      },
+      {
+        "id": "S12",
+        "dim": "concentration",
+        "metric": "arr",
+        "label": "ARR concentration (top segment)",
+        "domain": "concentration",
+        "salience": 0,
+        "raw": 0.27557755509672227
+      },
+      {
+        "id": "S13",
+        "dim": "benchmark",
+        "metric": "grossMargin",
+        "label": "Gross Margin vs benchmark",
+        "domain": "efficiency",
+        "salience": -0.0070543975010481505,
+        "raw": -0.006666666640264225
+      },
+      {
+        "id": "S14",
+        "dim": "trend",
+        "metric": "grossMargin",
+        "label": "Gross Margin adverse trend",
+        "domain": "efficiency",
+        "salience": -0.04636021751316644,
+        "raw": 0.051779936302493224
+      },
+      {
+        "id": "S15",
+        "dim": "dispersion",
+        "metric": "winRate",
+        "label": "Win rate spread across segments",
+        "domain": "retention",
+        "salience": -0.163269335639388,
+        "raw": 0.5629150349054999
+      },
+      {
+        "id": "S16",
+        "dim": "benchmark",
+        "metric": "nrr",
+        "label": "Blended NRR vs benchmark",
+        "domain": "retention",
+        "salience": -0.32949169413622736,
+        "raw": -0.05680400044196261
+      },
+      {
+        "id": "S17",
+        "dim": "dispersion",
+        "metric": "nrr",
+        "label": "NRR spread across segments",
+        "domain": "retention",
+        "salience": -0.47953490536754423,
+        "raw": 0.41122921653085953
+      },
+      {
+        "id": "S18",
+        "dim": "divergence",
+        "metric": "grr",
+        "label": "GRR blended vs worst segment",
+        "domain": "retention",
+        "salience": -0.9999999999999998,
+        "raw": 0.10832216806557853
+      },
+      {
+        "id": "S19",
+        "dim": "dispersion",
+        "metric": "grr",
+        "label": "GRR spread across segments",
+        "domain": "retention",
+        "salience": -1.0084081577779445,
+        "raw": 0.15757349239596877
+      },
+      {
+        "id": "S20",
+        "dim": "benchmark",
+        "metric": "nrr",
+        "label": "Enterprise NRR vs benchmark",
+        "domain": "retention",
+        "salience": -1.3242452661563344,
+        "raw": -0.21148304164244153
+      },
+      {
+        "id": "S21",
+        "dim": "trend",
+        "metric": "qoq",
+        "label": "QoQ growth adverse trend",
+        "domain": "growth",
+        "salience": -1.6134789412473405,
+        "raw": -0.3621732127374235
+      },
+      {
+        "id": "S22",
+        "dim": "benchmark",
+        "metric": "r40",
+        "label": "Rule of 40 vs benchmark",
+        "domain": "efficiency",
+        "salience": -2.573746683379928,
+        "raw": -0.4057740566546283
+      }
+    ]
+  },
+  "runs": [
+    {
+      "runId": 0,
+      "state": "base",
+      "role": "CFO",
+      "repeat": 0,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 2.457936597249314
+      },
+      "candidateForms": [
+        {
+          "id": "efficiency_combo",
+          "domain": "efficiency"
+        },
+        {
+          "id": "magic_line",
+          "domain": "efficiency"
+        },
+        {
+          "id": "accel_line",
+          "domain": "growth"
+        },
+        {
+          "id": "segment_stack",
+          "domain": "growth"
+        },
+        {
+          "id": "metric_matrix",
+          "domain": "efficiency"
+        },
+        {
+          "id": "efficiency_bullets",
+          "domain": "efficiency"
+        },
+        {
+          "id": "scatter_eff_growth",
+          "domain": "efficiency"
+        },
+        {
+          "id": "heatmap_metrics",
+          "domain": "efficiency"
+        },
+        {
+          "id": "indexed_arr",
+          "domain": "growth"
+        },
+        {
+          "id": "grouped_growth",
+          "domain": "growth"
+        },
+        {
+          "id": "quadrant_eff",
+          "domain": "efficiency"
+        },
+        {
+          "id": "small_mult_arr",
+          "domain": "growth"
+        }
+      ],
+      "selectedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "metric_matrix",
+        "segment_stack",
+        "efficiency_bullets"
+      ],
+      "requestedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "metric_matrix",
+        "segment_stack",
+        "efficiency_bullets"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_hero_row",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "magic_line",
+          "aspect": "twothird"
+        },
+        {
+          "index": 2,
+          "form": "efficiency_combo",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "quadrant_eff",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "segment_stack",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "efficiency_bullets",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "metric_matrix",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"CAC payback has extended beyond benchmark, signaling that the cost to acquire each dollar of recurring revenue has risen relative to peers — a direct challenge to capital efficiency and the durability of growth economics.\",\n  \"whyRole\": \"Extended payback stretches the cash conversion cycle, pressures free cash flow timing, and forces the CFO to question whether incremental S&M investment is compounding returns or destroying them.\",\n  \"evidenceIds\": [\"cac.25Q4\", \"magic.25Q4\", \"r40.25Q4\", \"gm.25Q4\", \"nna.25Q4\"],\n  \"testIds\": [\"persist_cac_payback\", \"decompose_cac_payback\", \"persist_magic_number\", \"localize_efficiency\"],\n  \"widgetIds\": [\"efficiency_combo\", \"magic_line\", \"quadrant_eff\", \"metric_matrix\", \"segment_stack\", \"efficiency_bullets\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"cac_payback\", \"magic_number\", \"rule_of_40\", \"gross_margin\", \"net_new_arr\", \"qoq_growth\"],\n  \"rationaleTags\": [\"capital-efficiency\", \"spend-vs-output\", \"benchmark-gap\", \"payback-durability\", \"margin-drag\", \"segment-localization\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 1043,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 328,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 1,
+      "state": "base",
+      "role": "CFO",
+      "repeat": 1,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 2.457936597249314
+      },
+      "candidateForms": [
+        {
+          "id": "efficiency_combo",
+          "domain": "efficiency"
+        },
+        {
+          "id": "magic_line",
+          "domain": "efficiency"
+        },
+        {
+          "id": "accel_line",
+          "domain": "growth"
+        },
+        {
+          "id": "segment_stack",
+          "domain": "growth"
+        },
+        {
+          "id": "metric_matrix",
+          "domain": "efficiency"
+        },
+        {
+          "id": "efficiency_bullets",
+          "domain": "efficiency"
+        },
+        {
+          "id": "scatter_eff_growth",
+          "domain": "efficiency"
+        },
+        {
+          "id": "heatmap_metrics",
+          "domain": "efficiency"
+        },
+        {
+          "id": "indexed_arr",
+          "domain": "growth"
+        },
+        {
+          "id": "grouped_growth",
+          "domain": "growth"
+        },
+        {
+          "id": "quadrant_eff",
+          "domain": "efficiency"
+        },
+        {
+          "id": "small_mult_arr",
+          "domain": "growth"
+        }
+      ],
+      "selectedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "requestedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_hero_row",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "magic_line",
+          "aspect": "twothird"
+        },
+        {
+          "index": 2,
+          "form": "efficiency_combo",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "quadrant_eff",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "segment_stack",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "efficiency_bullets",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "metric_matrix",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"CAC payback has extended materially beyond benchmark, signaling that the cost to acquire a dollar of recurring revenue is consuming more capital per unit of return — a direct drag on the efficiency of growth spend and the timeline to self-funding.\",\n  \"whyRole\": \"For the CFO, a deteriorating CAC payback compresses the horizon over which growth investment recovers, strains working capital, and forces a choice between defending burn efficiency and sustaining top-line momentum.\",\n  \"evidenceIds\": [\"cac.25Q4\", \"magic.25Q4\", \"r40.25Q4\", \"gm.25Q4\", \"nna.25Q4\"],\n  \"testIds\": [\"persist_cac_payback\", \"decompose_cac_payback\", \"localize_efficiency\", \"persist_magic_number\"],\n  \"widgetIds\": [\"efficiency_combo\", \"magic_line\", \"quadrant_eff\", \"segment_stack\", \"metric_matrix\", \"efficiency_bullets\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"cac_payback\", \"magic_number\", \"rule_of_40\", \"gross_margin\", \"net_new_arr\", \"qoq_growth\"],\n  \"rationaleTags\": [\"efficiency-deterioration\", \"benchmark-gap\", \"capital-recovery-risk\", \"spend-output-mismatch\", \"multi-quarter-persistence-test\", \"segment-localization\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 1043,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 348,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 2,
+      "state": "base",
+      "role": "CFO",
+      "repeat": 2,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 2.457936597249314
+      },
+      "candidateForms": [
+        {
+          "id": "efficiency_combo",
+          "domain": "efficiency"
+        },
+        {
+          "id": "magic_line",
+          "domain": "efficiency"
+        },
+        {
+          "id": "accel_line",
+          "domain": "growth"
+        },
+        {
+          "id": "segment_stack",
+          "domain": "growth"
+        },
+        {
+          "id": "metric_matrix",
+          "domain": "efficiency"
+        },
+        {
+          "id": "efficiency_bullets",
+          "domain": "efficiency"
+        },
+        {
+          "id": "scatter_eff_growth",
+          "domain": "efficiency"
+        },
+        {
+          "id": "heatmap_metrics",
+          "domain": "efficiency"
+        },
+        {
+          "id": "indexed_arr",
+          "domain": "growth"
+        },
+        {
+          "id": "grouped_growth",
+          "domain": "growth"
+        },
+        {
+          "id": "quadrant_eff",
+          "domain": "efficiency"
+        },
+        {
+          "id": "small_mult_arr",
+          "domain": "growth"
+        }
+      ],
+      "selectedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "metric_matrix",
+        "segment_stack",
+        "efficiency_bullets"
+      ],
+      "requestedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "metric_matrix",
+        "segment_stack",
+        "efficiency_bullets"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_hero_row",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "magic_line",
+          "aspect": "twothird"
+        },
+        {
+          "index": 2,
+          "form": "efficiency_combo",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "quadrant_eff",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "segment_stack",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "efficiency_bullets",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "metric_matrix",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"CAC payback has extended beyond benchmark, signaling that the cost to acquire a dollar of new ARR has risen relative to what the business earns back per unit of gross margin — a capital efficiency problem that directly pressures free-cash-flow timing and the returns on go-to-market investment.\",\n  \"whyRole\": \"For the CFO, an extended payback period means capital is locked in customer acquisition longer before it is recovered, compressing liquidity runway, distorting IRR assumptions on growth investment, and demanding scrutiny of whether the current S&M spending rate is defensible at scale.\",\n  \"evidenceIds\": [\"cac.25Q4\", \"magic.25Q4\", \"r40.25Q4\", \"gm.25Q4\", \"nna.25Q4\"],\n  \"testIds\": [\"persist_cac_payback\", \"decompose_cac_payback\", \"persist_magic_number\", \"localize_efficiency\"],\n  \"widgetIds\": [\"efficiency_combo\", \"magic_line\", \"quadrant_eff\", \"metric_matrix\", \"segment_stack\", \"efficiency_bullets\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"cac_payback\", \"magic_number\", \"rule_of_40\", \"gross_margin\", \"net_new_arr\", \"qoq_growth\"],\n  \"rationaleTags\": [\"capital-efficiency\", \"payback-vs-benchmark\", \"spend-output-ratio\", \"margin-drag-risk\", \"persistence-test\", \"segment-localization\", \"go-to-market-ROI\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 1043,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 382,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 3,
+      "state": "base",
+      "role": "CFO",
+      "repeat": 3,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 2.457936597249314
+      },
+      "candidateForms": [
+        {
+          "id": "efficiency_combo",
+          "domain": "efficiency"
+        },
+        {
+          "id": "magic_line",
+          "domain": "efficiency"
+        },
+        {
+          "id": "accel_line",
+          "domain": "growth"
+        },
+        {
+          "id": "segment_stack",
+          "domain": "growth"
+        },
+        {
+          "id": "metric_matrix",
+          "domain": "efficiency"
+        },
+        {
+          "id": "efficiency_bullets",
+          "domain": "efficiency"
+        },
+        {
+          "id": "scatter_eff_growth",
+          "domain": "efficiency"
+        },
+        {
+          "id": "heatmap_metrics",
+          "domain": "efficiency"
+        },
+        {
+          "id": "indexed_arr",
+          "domain": "growth"
+        },
+        {
+          "id": "grouped_growth",
+          "domain": "growth"
+        },
+        {
+          "id": "quadrant_eff",
+          "domain": "efficiency"
+        },
+        {
+          "id": "small_mult_arr",
+          "domain": "growth"
+        }
+      ],
+      "selectedForms": [
+        "efficiency_combo",
+        "quadrant_eff",
+        "magic_line",
+        "metric_matrix",
+        "segment_stack",
+        "efficiency_bullets"
+      ],
+      "requestedForms": [
+        "efficiency_combo",
+        "quadrant_eff",
+        "magic_line",
+        "metric_matrix",
+        "segment_stack",
+        "efficiency_bullets"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_hero_row",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "magic_line",
+          "aspect": "twothird"
+        },
+        {
+          "index": 2,
+          "form": "efficiency_combo",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "quadrant_eff",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "segment_stack",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "efficiency_bullets",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "metric_matrix",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"CAC payback has extended materially versus benchmark, signaling that the business is consuming capital less efficiently to generate each dollar of new ARR — a pattern that, if persistent, compresses the return profile on growth investment and strains the path to self-funded scaling.\",\n  \"whyRole\": \"For the CFO, elongated payback periods directly erode the unit economics underwriting current growth spend, raise the cost of capital required to sustain that spend, and may force a reallocation decision between growth investment and margin defense.\",\n  \"evidenceIds\": [\"cac.25Q4\", \"magic.25Q4\", \"r40.25Q4\", \"gm.25Q4\", \"nna.25Q4\"],\n  \"testIds\": [\"persist_cac_payback\", \"decompose_cac_payback\", \"persist_magic_number\", \"localize_efficiency\"],\n  \"widgetIds\": [\"efficiency_combo\", \"quadrant_eff\", \"magic_line\", \"metric_matrix\", \"segment_stack\", \"efficiency_bullets\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"cac_payback\", \"magic_number\", \"rule_of_40\", \"gross_margin\", \"net_new_arr\", \"qoq_growth\"],\n  \"rationaleTags\": [\"capital-efficiency\", \"benchmark-deviation\", \"spend-vs-output\", \"persistence-check\", \"segment-localization\", \"unit-economics\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 1043,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 351,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 4,
+      "state": "base",
+      "role": "CFO",
+      "repeat": 4,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 2.457936597249314
+      },
+      "candidateForms": [
+        {
+          "id": "efficiency_combo",
+          "domain": "efficiency"
+        },
+        {
+          "id": "magic_line",
+          "domain": "efficiency"
+        },
+        {
+          "id": "accel_line",
+          "domain": "growth"
+        },
+        {
+          "id": "segment_stack",
+          "domain": "growth"
+        },
+        {
+          "id": "metric_matrix",
+          "domain": "efficiency"
+        },
+        {
+          "id": "efficiency_bullets",
+          "domain": "efficiency"
+        },
+        {
+          "id": "scatter_eff_growth",
+          "domain": "efficiency"
+        },
+        {
+          "id": "heatmap_metrics",
+          "domain": "efficiency"
+        },
+        {
+          "id": "indexed_arr",
+          "domain": "growth"
+        },
+        {
+          "id": "grouped_growth",
+          "domain": "growth"
+        },
+        {
+          "id": "quadrant_eff",
+          "domain": "efficiency"
+        },
+        {
+          "id": "small_mult_arr",
+          "domain": "growth"
+        }
+      ],
+      "selectedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "requestedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_hero_row",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "magic_line",
+          "aspect": "twothird"
+        },
+        {
+          "index": 2,
+          "form": "efficiency_combo",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "quadrant_eff",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "segment_stack",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "efficiency_bullets",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "metric_matrix",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"CAC payback has extended beyond benchmark, signaling that the capital deployed to acquire new ARR is returning more slowly than peers — threatening the efficiency of growth spend and lengthening the timeline to recoup customer acquisition investment.\",\n  \"whyRole\": \"For the CFO, a deteriorating CAC payback directly pressures working capital requirements, complicates the unit-economics case for continued S&M investment, and raises the cost of funded growth at a time when capital efficiency is a board-level lens.\",\n  \"evidenceIds\": [\"cac.25Q4\", \"magic.25Q4\", \"r40.25Q4\", \"gm.25Q4\", \"nna.25Q4\"],\n  \"testIds\": [\"persist_cac_payback\", \"decompose_cac_payback\", \"localize_efficiency\", \"persist_magic_number\"],\n  \"widgetIds\": [\"efficiency_combo\", \"magic_line\", \"quadrant_eff\", \"segment_stack\", \"metric_matrix\", \"efficiency_bullets\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"cac_payback\", \"magic_number\", \"rule_of_40\", \"gross_margin\", \"net_new_arr\", \"qoq_growth\"],\n  \"rationaleTags\": [\"payback-extension\", \"spend-efficiency\", \"benchmark-gap\", \"unit-economics\", \"capital-allocation-risk\", \"multi-angle-decomposition\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 1043,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 349,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 5,
+      "state": "base",
+      "role": "CFO",
+      "repeat": 5,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 2.457936597249314
+      },
+      "candidateForms": [
+        {
+          "id": "efficiency_combo",
+          "domain": "efficiency"
+        },
+        {
+          "id": "magic_line",
+          "domain": "efficiency"
+        },
+        {
+          "id": "accel_line",
+          "domain": "growth"
+        },
+        {
+          "id": "segment_stack",
+          "domain": "growth"
+        },
+        {
+          "id": "metric_matrix",
+          "domain": "efficiency"
+        },
+        {
+          "id": "efficiency_bullets",
+          "domain": "efficiency"
+        },
+        {
+          "id": "scatter_eff_growth",
+          "domain": "efficiency"
+        },
+        {
+          "id": "heatmap_metrics",
+          "domain": "efficiency"
+        },
+        {
+          "id": "indexed_arr",
+          "domain": "growth"
+        },
+        {
+          "id": "grouped_growth",
+          "domain": "growth"
+        },
+        {
+          "id": "quadrant_eff",
+          "domain": "efficiency"
+        },
+        {
+          "id": "small_mult_arr",
+          "domain": "growth"
+        }
+      ],
+      "selectedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "requestedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_hero_row",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "magic_line",
+          "aspect": "twothird"
+        },
+        {
+          "index": 2,
+          "form": "efficiency_combo",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "quadrant_eff",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "segment_stack",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "efficiency_bullets",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "metric_matrix",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"CAC payback has extended materially beyond benchmark, signaling that the capital deployed to acquire each dollar of new ARR is working harder and returning slower — a direct drag on capital efficiency and free cash flow timing that warrants immediate decomposition before the next planning cycle.\",\n  \"whyRole\": \"For the CFO, a deteriorating payback period compresses the window between cash outlay and recovery, tightening liquidity runway assumptions and weakening the efficiency narrative in any capital-raise or valuation conversation.\",\n  \"evidenceIds\": [\"cac.25Q4\", \"magic.25Q4\", \"r40.25Q4\", \"gm.25Q4\", \"nna.25Q4\"],\n  \"testIds\": [\"persist_cac_payback\", \"decompose_cac_payback\", \"persist_magic_number\", \"localize_efficiency\"],\n  \"widgetIds\": [\"efficiency_combo\", \"magic_line\", \"quadrant_eff\", \"segment_stack\", \"metric_matrix\", \"efficiency_bullets\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"cac_payback\", \"magic_number\", \"rule_of_40\", \"gross_margin\", \"net_new_arr\", \"qoq_growth\"],\n  \"rationaleTags\": [\"capital-efficiency\", \"payback-vs-benchmark\", \"spend-output-ratio\", \"efficiency-trend\", \"segment-localization\", \"falsifiable-persistence\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 1043,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 350,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 6,
+      "state": "base",
+      "role": "CFO",
+      "repeat": 6,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 2.457936597249314
+      },
+      "candidateForms": [
+        {
+          "id": "efficiency_combo",
+          "domain": "efficiency"
+        },
+        {
+          "id": "magic_line",
+          "domain": "efficiency"
+        },
+        {
+          "id": "accel_line",
+          "domain": "growth"
+        },
+        {
+          "id": "segment_stack",
+          "domain": "growth"
+        },
+        {
+          "id": "metric_matrix",
+          "domain": "efficiency"
+        },
+        {
+          "id": "efficiency_bullets",
+          "domain": "efficiency"
+        },
+        {
+          "id": "scatter_eff_growth",
+          "domain": "efficiency"
+        },
+        {
+          "id": "heatmap_metrics",
+          "domain": "efficiency"
+        },
+        {
+          "id": "indexed_arr",
+          "domain": "growth"
+        },
+        {
+          "id": "grouped_growth",
+          "domain": "growth"
+        },
+        {
+          "id": "quadrant_eff",
+          "domain": "efficiency"
+        },
+        {
+          "id": "small_mult_arr",
+          "domain": "growth"
+        }
+      ],
+      "selectedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "requestedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_hero_row",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "magic_line",
+          "aspect": "twothird"
+        },
+        {
+          "index": 2,
+          "form": "efficiency_combo",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "quadrant_eff",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "segment_stack",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "efficiency_bullets",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "metric_matrix",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"CAC payback has extended beyond benchmark, signaling that the capital deployed to acquire each dollar of recurring revenue is working harder and returning slower — a direct pressure on free cash flow duration and the implied reinvestment rate the business can sustain.\",\n  \"whyRole\": \"For the CFO, a deteriorating payback period lengthens the cash cycle, raises the implied cost of growth capital, and forces a reassessment of how much S&M spend the balance sheet can carry before efficiency-adjusted returns compress below hurdle.\",\n  \"evidenceIds\": [\"cac.25Q4\", \"magic.25Q4\", \"r40.25Q4\", \"gm.25Q4\", \"nna.25Q4\"],\n  \"testIds\": [\"persist_cac_payback\", \"decompose_cac_payback\", \"persist_magic_number\", \"localize_efficiency\"],\n  \"widgetIds\": [\"efficiency_combo\", \"magic_line\", \"quadrant_eff\", \"segment_stack\", \"metric_matrix\", \"efficiency_bullets\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"cac_payback\", \"magic_number\", \"rule_of_40\", \"gross_margin\", \"net_new_arr\", \"qoq_growth\"],\n  \"rationaleTags\": [\"payback-duration\", \"capital-efficiency\", \"spend-vs-output\", \"benchmark-gap\", \"cash-cycle\", \"falsifiable-persistence\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 1043,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 351,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 7,
+      "state": "base",
+      "role": "CFO",
+      "repeat": 7,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 2.457936597249314
+      },
+      "candidateForms": [
+        {
+          "id": "efficiency_combo",
+          "domain": "efficiency"
+        },
+        {
+          "id": "magic_line",
+          "domain": "efficiency"
+        },
+        {
+          "id": "accel_line",
+          "domain": "growth"
+        },
+        {
+          "id": "segment_stack",
+          "domain": "growth"
+        },
+        {
+          "id": "metric_matrix",
+          "domain": "efficiency"
+        },
+        {
+          "id": "efficiency_bullets",
+          "domain": "efficiency"
+        },
+        {
+          "id": "scatter_eff_growth",
+          "domain": "efficiency"
+        },
+        {
+          "id": "heatmap_metrics",
+          "domain": "efficiency"
+        },
+        {
+          "id": "indexed_arr",
+          "domain": "growth"
+        },
+        {
+          "id": "grouped_growth",
+          "domain": "growth"
+        },
+        {
+          "id": "quadrant_eff",
+          "domain": "efficiency"
+        },
+        {
+          "id": "small_mult_arr",
+          "domain": "growth"
+        }
+      ],
+      "selectedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "requestedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_hero_row",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "magic_line",
+          "aspect": "twothird"
+        },
+        {
+          "index": 2,
+          "form": "efficiency_combo",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "quadrant_eff",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "segment_stack",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "efficiency_bullets",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "metric_matrix",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"CAC payback has extended beyond benchmark, signaling that the capital deployed to acquire each dollar of new ARR is working harder and returning slower — a direct drag on payback-period economics and forward free-cash-flow visibility.\",\n  \"whyRole\": \"For the CFO, a deteriorating CAC payback compresses the window between spend commitment and cash recovery, pressuring capital allocation decisions, go-to-market ROI, and the credibility of any efficiency narrative with investors.\",\n  \"evidenceIds\": [\"cac.25Q4\", \"magic.25Q4\", \"r40.25Q4\", \"gm.25Q4\", \"nna.25Q4\"],\n  \"testIds\": [\"persist_cac_payback\", \"decompose_cac_payback\", \"persist_magic_number\", \"localize_efficiency\"],\n  \"widgetIds\": [\"efficiency_combo\", \"magic_line\", \"quadrant_eff\", \"segment_stack\", \"metric_matrix\", \"efficiency_bullets\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"cac_payback\", \"magic_number\", \"rule_of_40\", \"gross_margin\", \"net_new_arr\", \"qoq_growth\"],\n  \"rationaleTags\": [\"efficiency-deterioration\", \"benchmark-gap\", \"spend-vs-output\", \"payback-duration\", \"capital-allocation-risk\", \"persistence-test-required\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 1043,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 347,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 8,
+      "state": "base",
+      "role": "CFO",
+      "repeat": 8,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 2.457936597249314
+      },
+      "candidateForms": [
+        {
+          "id": "efficiency_combo",
+          "domain": "efficiency"
+        },
+        {
+          "id": "magic_line",
+          "domain": "efficiency"
+        },
+        {
+          "id": "accel_line",
+          "domain": "growth"
+        },
+        {
+          "id": "segment_stack",
+          "domain": "growth"
+        },
+        {
+          "id": "metric_matrix",
+          "domain": "efficiency"
+        },
+        {
+          "id": "efficiency_bullets",
+          "domain": "efficiency"
+        },
+        {
+          "id": "scatter_eff_growth",
+          "domain": "efficiency"
+        },
+        {
+          "id": "heatmap_metrics",
+          "domain": "efficiency"
+        },
+        {
+          "id": "indexed_arr",
+          "domain": "growth"
+        },
+        {
+          "id": "grouped_growth",
+          "domain": "growth"
+        },
+        {
+          "id": "quadrant_eff",
+          "domain": "efficiency"
+        },
+        {
+          "id": "small_mult_arr",
+          "domain": "growth"
+        }
+      ],
+      "selectedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "requestedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "segment_stack",
+        "metric_matrix",
+        "efficiency_bullets"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_hero_row",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "magic_line",
+          "aspect": "twothird"
+        },
+        {
+          "index": 2,
+          "form": "efficiency_combo",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "quadrant_eff",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "segment_stack",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "efficiency_bullets",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "metric_matrix",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"CAC payback has extended beyond benchmark, signaling that capital deployed on customer acquisition is taking materially longer to recover — compressing near-term free cash flow and raising questions about whether the efficiency gap is structural or transient.\",\n  \"whyRole\": \"For the CFO, a deteriorating payback period directly threatens capital efficiency, lengthens the cash conversion cycle, and must be resolved before committing to the next S&M investment tranche or growth forecast.\",\n  \"evidenceIds\": [\"cac.25Q4\", \"magic.25Q4\", \"r40.25Q4\", \"gm.25Q4\", \"nna.25Q4\"],\n  \"testIds\": [\"persist_cac_payback\", \"decompose_cac_payback\", \"persist_magic_number\", \"localize_efficiency\"],\n  \"widgetIds\": [\"efficiency_combo\", \"magic_line\", \"quadrant_eff\", \"segment_stack\", \"metric_matrix\", \"efficiency_bullets\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"cac_payback\", \"magic_number\", \"rule_of_40\", \"gross_margin\", \"net_new_arr\", \"qoq_growth\"],\n  \"rationaleTags\": [\"efficiency-finding\", \"capital-recovery-risk\", \"benchmark-gap\", \"spend-vs-output\", \"persistence-test\", \"segment-localization\", \"cash-cycle-impact\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 1043,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 346,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 9,
+      "state": "base",
+      "role": "CFO",
+      "repeat": 9,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "CAC Payback vs benchmark",
+        "domain": "efficiency",
+        "salience": 2.457936597249314
+      },
+      "candidateForms": [
+        {
+          "id": "efficiency_combo",
+          "domain": "efficiency"
+        },
+        {
+          "id": "magic_line",
+          "domain": "efficiency"
+        },
+        {
+          "id": "accel_line",
+          "domain": "growth"
+        },
+        {
+          "id": "segment_stack",
+          "domain": "growth"
+        },
+        {
+          "id": "metric_matrix",
+          "domain": "efficiency"
+        },
+        {
+          "id": "efficiency_bullets",
+          "domain": "efficiency"
+        },
+        {
+          "id": "scatter_eff_growth",
+          "domain": "efficiency"
+        },
+        {
+          "id": "heatmap_metrics",
+          "domain": "efficiency"
+        },
+        {
+          "id": "indexed_arr",
+          "domain": "growth"
+        },
+        {
+          "id": "grouped_growth",
+          "domain": "growth"
+        },
+        {
+          "id": "quadrant_eff",
+          "domain": "efficiency"
+        },
+        {
+          "id": "small_mult_arr",
+          "domain": "growth"
+        }
+      ],
+      "selectedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "metric_matrix",
+        "segment_stack",
+        "efficiency_bullets"
+      ],
+      "requestedForms": [
+        "efficiency_combo",
+        "magic_line",
+        "quadrant_eff",
+        "metric_matrix",
+        "segment_stack",
+        "efficiency_bullets"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_hero_row",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "magic_line",
+          "aspect": "twothird"
+        },
+        {
+          "index": 2,
+          "form": "efficiency_combo",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "quadrant_eff",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "segment_stack",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "efficiency_bullets",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "metric_matrix",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"CAC payback has extended beyond benchmark, signaling that the capital deployed to acquire each dollar of new ARR is working harder and returning slower — a direct drag on capital efficiency and free cash flow timing that warrants decomposition before further S&M investment is committed.\",\n  \"whyRole\": \"For the CFO, extended payback stretches the cash cycle, pressures the efficiency narrative with investors, and forces a capital allocation question about whether incremental S&M spend is a sound deployment of growth capital at current unit economics.\",\n  \"evidenceIds\": [\"cac.25Q4\", \"magic.25Q4\", \"r40.25Q4\", \"gm.25Q4\", \"nna.25Q4\"],\n  \"testIds\": [\"persist_cac_payback\", \"decompose_cac_payback\", \"persist_magic_number\", \"localize_efficiency\"],\n  \"widgetIds\": [\"efficiency_combo\", \"magic_line\", \"quadrant_eff\", \"metric_matrix\", \"segment_stack\", \"efficiency_bullets\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"cac_payback\", \"magic_number\", \"rule_of_40\", \"gross_margin\", \"net_new_arr\", \"qoq_growth\"],\n  \"rationaleTags\": [\"capital-efficiency\", \"payback-cycle\", \"spend-vs-output\", \"benchmark-gap\", \"unit-economics\", \"persistence-test\", \"segment-localization\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 1043,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 355,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 10,
+      "state": "base",
+      "role": "CRO",
+      "repeat": 0,
+      "source": "live",
+      "finding": {
+        "id": "S1",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is materially spread across segments in a pattern that shapes where revenue motion is being won or lost — the segment mix itself is the signal, and whether that mix is shifting toward or away from higher-retention, higher-lifetime-value tiers will determine pipeline prioritization and quota architecture.\",\n  \"whyRole\": \"The CRO owns segment mix as a strategic lever — if the spread reveals overexposure to a lower-retention segment or underexposure to Enterprise, it reframes where sales capacity, overlay resources, and conversion effort should be directed.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-mix-risk\", \"concentration-signal\", \"retention-by-tier\", \"pipeline-prioritization\", \"enterprise-exposure\", \"motion-legibility\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 346,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 11,
+      "state": "base",
+      "role": "CRO",
+      "repeat": 1,
+      "source": "live",
+      "finding": {
+        "id": "S1",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "bridge_blended",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "bridge_blended",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "bridge_blended",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is not evenly distributed across segments — one or two tiers carry a disproportionate share of the book, creating both a concentration risk and a signal about where the revenue motion is actually winning or stalling.\",\n  \"whyRole\": \"For the CRO, segment concentration determines where to direct pipeline investment, how durable the ARR base is if a single tier churns or slows, and whether the current GTM motion is producing a healthy or lopsided mix.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"bridge_blended\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-concentration\", \"arr-spread\", \"mix-risk\", \"gtm-motion-signal\", \"retention-by-tier\", \"pipeline-prioritization\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 330,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 12,
+      "state": "base",
+      "role": "CRO",
+      "repeat": 2,
+      "source": "live",
+      "finding": {
+        "id": "S1",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "masking_card",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "masking_card",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_pair_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 2,
+          "form": "pareto_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 3,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly spread across segments, with Enterprise carrying a disproportionate share of the book — a mix profile that concentrates pipeline risk, shapes attainment paths, and determines whether top-line growth is being built on a broad or fragile foundation.\",\n  \"whyRole\": \"Segment mix directly governs where the CRO deploys capacity, which motions drive net-new ARR, and whether the current spread supports durable quota attainment or disguises structural dependence on a single tier.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"masking_card\", \"hbar_nrr\", \"segment_table\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"magic_number\", \"qoq_growth\"],\n  \"rationaleTags\": [\"segment-concentration\", \"mix-risk\", \"capacity-allocation\", \"motion-fit\", \"pipeline-foundation\", \"retention-by-tier\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 334,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 13,
+      "state": "base",
+      "role": "CRO",
+      "repeat": 3,
+      "source": "live",
+      "finding": {
+        "id": "S1",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "masking_card",
+        "dumbbell_ret"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "masking_card",
+        "dumbbell_ret"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_pair_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 2,
+          "form": "pareto_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 3,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across SMB, Mid-Market, and Enterprise segments, creating a structural concentration that shapes both the revenue motion and the forecast reliability the CRO must manage.\",\n  \"whyRole\": \"For the CRO, segment concentration directly governs where conversion effort, pipeline mix, and expansion capacity must be steered to rebalance or defend the book.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"masking_card\", \"dumbbell_ret\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-concentration\", \"arr-distribution\", \"mix-risk\", \"conversion-motion\", \"expansion-signal\", \"falsifiable-retention\", \"falsifiable-winrate\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 310,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 14,
+      "state": "base",
+      "role": "CRO",
+      "repeat": 4,
+      "source": "live",
+      "finding": {
+        "id": "S1",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\"thesis\":\"ARR is unevenly distributed across SMB, Mid-Market, and Enterprise segments, creating a segment mix that shapes pipeline priorities, motion efficiency, and revenue durability — the spread determines whether growth is being built on a scalable foundation or concentrated in ways that carry hidden risk\",\"whyRole\":\"For the CRO, segment mix is the master variable behind quota design, coverage decisions, and go-to-market motion — understanding where ARR lives tells you whether the current sales engine is building toward a defensible book or drifting toward an unfavorable composition\",\"evidenceIds\":[\"arr.SMB.25Q4\",\"arr.Mid-Market.25Q4\",\"arr.Enterprise.25Q4\",\"entshare.25Q4\"],\"testIds\":[\"localize_nrr\",\"localize_winrate\"],\"widgetIds\":[\"treemap_arr\",\"pareto_arr\",\"hbar_nrr\",\"segment_table\",\"dumbbell_ret\",\"heatmap_retention\"],\"partitionPref\":\"balanced\",\"scorecardKeys\":[\"ent_share\",\"net_new_arr\",\"nrr\",\"grr\",\"magic_number\",\"qoq_growth\"],\"rationaleTags\":[\"segment-mix\",\"coverage-design\",\"arr-composition\",\"motion-efficiency\",\"retention-by-tier\",\"pareto-concentration\"]}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 304,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 15,
+      "state": "base",
+      "role": "CRO",
+      "repeat": 5,
+      "source": "live",
+      "finding": {
+        "id": "S1",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across segments, creating a structural concentration pattern that shapes pipeline priority, segment mix strategy, and forward revenue predictability for the CRO.\",\n  \"whyRole\": \"Segment mix imbalance directly determines where the CRO should direct capacity, how win-rate and conversion motion should be calibrated by tier, and whether the current book composition supports durable growth or exposes the revenue plan to segment-specific volatility.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-concentration\", \"mix-shift\", \"conversion-motion\", \"tier-calibration\", \"nrr-by-segment\", \"win-rate-localization\", \"capacity-allocation\", \"revenue-predictability\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 337,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 16,
+      "state": "base",
+      "role": "CRO",
+      "repeat": 6,
+      "source": "live",
+      "finding": {
+        "id": "S1",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is materially spread across SMB, Mid-Market, and Enterprise segments in a pattern that shapes both near-term pipeline motion and long-term revenue durability — understanding which segments dominate the book and whether that mix is shifting is the strategic read the CRO must own.\",\n  \"whyRole\": \"Segment mix directly governs where the sales motion is winning, where conversion resources should be concentrated, and whether the current pipeline build matches the ARR composition the business actually needs.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"magic_number\", \"qoq_growth\"],\n  \"rationaleTags\": [\"segment-mix\", \"concentration-risk\", \"pipeline-motion\", \"retention-by-segment\", \"win-rate-localization\", \"ARR-composition\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 331,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 17,
+      "state": "base",
+      "role": "CRO",
+      "repeat": 7,
+      "source": "live",
+      "finding": {
+        "id": "S1",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across SMB, Mid-Market, and Enterprise segments, creating a concentration profile that shapes pipeline priorities, segment mix strategy, and the durability of revenue motion going forward.\",\n  \"whyRole\": \"For the CRO, segment concentration determines where to direct selling capacity, how to interpret blended win-rate signals, and whether the current book-of-business mix supports the growth trajectory the business needs.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_winrate\", \"localize_nrr\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-concentration\", \"mix-shift\", \"pipeline-prioritization\", \"retention-by-segment\", \"win-rate-localization\", \"enterprise-share-signal\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 322,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 18,
+      "state": "base",
+      "role": "CRO",
+      "repeat": 8,
+      "source": "live",
+      "finding": {
+        "id": "S1",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "masking_card"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "masking_card"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_pair_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 2,
+          "form": "pareto_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 3,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is not evenly distributed across segments — one segment commands a disproportionate share of the book, creating both a concentration risk and a signal about where growth motion is (or is not) compounding.\",\n  \"whyRole\": \"For the CRO, segment concentration shapes pipeline prioritization, quota design, and go-to-market resource allocation — knowing which segments are carrying the number and which are stalling determines where to press and where to rebalance.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"heatmap_retention\", \"masking_card\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-concentration\", \"arr-spread\", \"go-to-market-mix\", \"retention-by-segment\", \"win-rate-signal\", \"pipeline-prioritization\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 329,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 19,
+      "state": "base",
+      "role": "CRO",
+      "repeat": 9,
+      "source": "live",
+      "finding": {
+        "id": "S1",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is materially skewed across segments, creating a structural imbalance that shapes pipeline prioritization, segment-mix risk, and the durability of the revenue motion going forward.\",\n  \"whyRole\": \"For the CRO, segment concentration directly governs where to deploy sales capacity, which motions to accelerate, and whether the current mix is building toward a resilient or brittle book of business.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-concentration\", \"mix-risk\", \"pipeline-prioritization\", \"retention-by-tier\", \"capacity-allocation\", \"motion-durability\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 313,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 20,
+      "state": "improve_cac",
+      "role": "CFO",
+      "repeat": 0,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is materially concentrated across segments in a pattern that creates forecast asymmetry — the durability of the revenue base depends on which segment anchors the book and how stable that anchor is under retention and competitive pressure.\",\n  \"whyRole\": \"For the CFO, segment concentration determines whether forward ARR is underwritten by contractually durable enterprise cohorts or by higher-churn, lower-ACV segments that require continuous conversion volume to sustain the base.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"nrr\", \"grr\", \"net_new_arr\", \"rule_of_40\", \"cac_payback\"],\n  \"rationaleTags\": [\"concentration-risk\", \"forecast-durability\", \"segment-mix\", \"retention-by-tier\", \"capital-allocation-signal\", \"revenue-quality\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 982,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 327,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 21,
+      "state": "improve_cac",
+      "role": "CFO",
+      "repeat": 1,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "masking_card",
+        "hbar_nrr",
+        "segment_table",
+        "bridge_blended"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "masking_card",
+        "hbar_nrr",
+        "segment_table",
+        "bridge_blended"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_pair_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 2,
+          "form": "pareto_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 3,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across segments, creating a structural concentration profile that shapes forecast durability, capital deployment risk, and the reliability of blended growth assumptions.\",\n  \"whyRole\": \"For the CFO, segment concentration determines whether revenue durability and forward cash-flow projections rest on a broad, resilient base or on a small number of bets that could compress or expand non-linearly.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"masking_card\", \"hbar_nrr\", \"segment_table\", \"bridge_blended\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"nrr\", \"grr\", \"net_new_arr\", \"rule_of_40\", \"qoq_growth\"],\n  \"rationaleTags\": [\"concentration-risk\", \"segment-mix\", \"forecast-durability\", \"capital-allocation\", \"retention-by-segment\", \"blended-vs-segment-growth\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 982,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 316,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 22,
+      "state": "improve_cac",
+      "role": "CFO",
+      "repeat": 2,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "lorenz_arr"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "lorenz_arr"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across SMB, Mid-Market, and Enterprise segments, creating a structural concentration that shapes both revenue durability and the reliability of forward forecasts — the CFO must understand which segments carry the book and what that implies for downside scenarios.\",\n  \"whyRole\": \"Segment concentration determines how exposed the revenue base is to a single-segment shock, directly affecting covenant headroom, reinvestment confidence, and the credibility of long-range ARR guidance.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"heatmap_retention\", \"lorenz_arr\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"nrr\", \"grr\", \"net_new_arr\", \"rule_of_40\", \"qoq_growth\"],\n  \"rationaleTags\": [\"concentration-risk\", \"segment-mix\", \"revenue-durability\", \"forecast-sensitivity\", \"retention-by-tier\", \"capital-allocation\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 982,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 329,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 23,
+      "state": "improve_cac",
+      "role": "CFO",
+      "repeat": 3,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "masking_card",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "masking_card",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_pair_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 2,
+          "form": "pareto_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 3,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across SMB, Mid-Market, and Enterprise segments, creating a structural concentration that shapes revenue durability, forecast confidence, and where incremental capital compounds most efficiently.\",\n  \"whyRole\": \"For the CFO, segment concentration determines whether the ARR base is defensible under macro stress, how reliably it can be modeled forward, and which segments deserve priority in capital allocation decisions.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"masking_card\", \"hbar_nrr\", \"segment_table\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"nrr\", \"grr\", \"net_new_arr\", \"rule_of_40\", \"cac_payback\"],\n  \"rationaleTags\": [\"segment-concentration\", \"arr-durability\", \"forecast-risk\", \"capital-allocation\", \"retention-by-segment\", \"enterprise-weight\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 982,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 314,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 24,
+      "state": "improve_cac",
+      "role": "CFO",
+      "repeat": 4,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "masking_card"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "masking_card"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_pair_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 2,
+          "form": "pareto_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 3,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly spread across segments, creating a structural concentration profile that shapes forecast reliability, covenant headroom, and where incremental capital deployment will have the highest durability payoff.\",\n  \"whyRole\": \"For the CFO, the segment composition of ARR determines how predictable the revenue base is, how exposed the P&L is to a single-segment shock, and which allocation decisions—capacity, GTM spend, credit lines—are defensible to the board.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"heatmap_retention\", \"masking_card\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"nrr\", \"grr\", \"net_new_arr\", \"rule_of_40\", \"qoq_growth\"],\n  \"rationaleTags\": [\"segment-concentration\", \"arr-composition\", \"forecast-durability\", \"capital-allocation\", \"retention-by-tier\", \"downside-scenario\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 982,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 328,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 25,
+      "state": "improve_cac",
+      "role": "CFO",
+      "repeat": 5,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "lorenz_arr"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "lorenz_arr"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is materially concentrated across segments in a pattern that has direct implications for revenue durability and forecast confidence — the segment carrying the largest share defines both the floor and the ceiling of near-term growth predictability.\",\n  \"whyRole\": \"For the CFO, segment concentration determines whether the ARR base is structurally durable or exposed to idiosyncratic risk in a single cohort, which shapes capital deployment timing and covenant headroom assumptions.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"heatmap_retention\", \"lorenz_arr\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"nrr\", \"grr\", \"net_new_arr\", \"rule_of_40\", \"qoq_growth\"],\n  \"rationaleTags\": [\"concentration-risk\", \"segment-mix\", \"revenue-durability\", \"forecast-confidence\", \"retention-by-cohort\", \"capital-allocation\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 982,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 322,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 26,
+      "state": "improve_cac",
+      "role": "CFO",
+      "repeat": 6,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "dumbbell_ret"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "dumbbell_ret"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is materially concentrated across segments in a pattern that shapes forecast durability and capital allocation risk — the distribution of revenue by segment determines how exposed the book is to segment-specific shocks and where growth bets are implicitly being placed.\",\n  \"whyRole\": \"For the CFO, segment ARR spread determines whether the revenue base is structurally resilient or quietly dependent on a single cohort's retention and expansion to hold plan.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"heatmap_retention\", \"dumbbell_ret\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"nrr\", \"grr\", \"net_new_arr\", \"rule_of_40\", \"qoq_growth\"],\n  \"rationaleTags\": [\"concentration-risk\", \"segment-mix\", \"durability\", \"forecast-sensitivity\", \"retention-localization\", \"capital-allocation\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 982,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 317,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 27,
+      "state": "improve_cac",
+      "role": "CFO",
+      "repeat": 7,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "lorenz_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "lorenz_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across segments, creating a structural concentration risk that shapes forecast durability and capital allocation decisions — the degree of dependence on any single segment determines how exposed the business is to segment-specific shocks.\",\n  \"whyRole\": \"For the CFO, segment concentration directly governs revenue predictability, covenant headroom, and where incremental investment must go to diversify or reinforce the ARR base.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"lorenz_arr\", \"hbar_nrr\", \"segment_table\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"nrr\", \"grr\", \"net_new_arr\", \"qoq_growth\", \"rule_of_40\"],\n  \"rationaleTags\": [\"concentration-risk\", \"segment-mix\", \"forecast-durability\", \"capital-allocation\", \"arr-composition\", \"retention-by-segment\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 982,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 316,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 28,
+      "state": "improve_cac",
+      "role": "CFO",
+      "repeat": 8,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "lorenz_arr",
+        "dumbbell_ret"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "lorenz_arr",
+        "dumbbell_ret"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across SMB, Mid-Market, and Enterprise segments, creating a structural concentration that shapes forecast reliability, covenant exposure, and capital allocation decisions for the coming periods.\",\n  \"whyRole\": \"For the CFO, segment concentration determines how durable the revenue base is under stress — a top-heavy or bottom-heavy book carries materially different refinancing, forecasting, and investment-pacing risks.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"lorenz_arr\", \"dumbbell_ret\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"nrr\", \"grr\", \"net_new_arr\", \"rule_of_40\", \"qoq_growth\"],\n  \"rationaleTags\": [\"concentration-risk\", \"segment-mix\", \"revenue-durability\", \"forecast-sensitivity\", \"retention-by-tier\", \"capital-allocation\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 982,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 317,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 29,
+      "state": "improve_cac",
+      "role": "CFO",
+      "repeat": 9,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "segment_table",
+        "hbar_nrr",
+        "lorenz_arr",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "segment_table",
+        "hbar_nrr",
+        "lorenz_arr",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across segments, creating a structural concentration profile that shapes forecast durability and capital allocation priorities — the degree of that skew, and whether it is stable or drifting, is the CFO's core question.\",\n  \"whyRole\": \"Segment concentration determines how much of the revenue base is exposed to enterprise deal volatility versus SMB churn risk, directly setting the confidence interval around the forward ARR forecast and the defensibility of the capital plan.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"segment_table\", \"hbar_nrr\", \"lorenz_arr\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"nrr\", \"grr\", \"net_new_arr\", \"qoq_growth\", \"rule_of_40\"],\n  \"rationaleTags\": [\"concentration-risk\", \"segment-mix\", \"forecast-durability\", \"retention-by-tier\", \"capital-allocation\", \"pareto-skew\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 982,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 329,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 30,
+      "state": "improve_cac",
+      "role": "CRO",
+      "repeat": 0,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across segments, with Enterprise commanding a disproportionate share — a structural mix condition that shapes pipeline prioritization, quota design, and revenue durability in ways the blended ARR number conceals.\",\n  \"whyRole\": \"For the CRO, segment concentration determines where motion must be built or protected, whether the pipeline mix is reinforcing or correcting the spread, and which segment's win-rate or expansion behavior is doing the most work.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"magic_number\", \"qoq_growth\"],\n  \"rationaleTags\": [\"segment-concentration\", \"mix-risk\", \"enterprise-weight\", \"retention-by-segment\", \"win-rate-localization\", \"pipeline-motion\", \"expansion-vs-new-logo\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 337,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 31,
+      "state": "improve_cac",
+      "role": "CRO",
+      "repeat": 1,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly spread across SMB, Mid-Market, and Enterprise segments, creating a mix profile that shapes pipeline priorities, revenue durability, and the risk-reward balance of the current go-to-market motion\",\n  \"whyRole\": \"Segment mix directly governs where the CRO should direct capacity, which deals to accelerate, and whether the current conversion engine is building toward a defensible or fragile book of business\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"magic_number\", \"qoq_growth\"],\n  \"rationaleTags\": [\"segment-mix\", \"concentration-risk\", \"go-to-market-alignment\", \"pipeline-prioritization\", \"retention-by-segment\", \"win-rate-signal\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 326,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 32,
+      "state": "improve_cac",
+      "role": "CRO",
+      "repeat": 2,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is meaningfully skewed across segments, creating a structural concentration profile that shapes both pipeline prioritization and revenue durability — the segment mix, not just the total, is the strategic signal.\",\n  \"whyRole\": \"For the CRO, segment concentration determines where to direct capacity, which motions are working, and whether the current mix is intentional or a drift risk.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-concentration\", \"mix-intentionality\", \"motion-efficiency\", \"retention-by-tier\", \"pipeline-prioritization\", \"pareto-structure\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 308,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 33,
+      "state": "improve_cac",
+      "role": "CRO",
+      "repeat": 3,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "dumbbell_ret"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "dumbbell_ret"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly spread across segments, creating a structural concentration that shapes both the revenue center of gravity and the motion mix the CRO must manage going forward.\",\n  \"whyRole\": \"Segment concentration determines which pipeline plays, win-rate levers, and retention risks actually move the aggregate number — and where misallocation of sales capacity would be most costly.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"heatmap_retention\", \"dumbbell_ret\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"magic_number\", \"qoq_growth\"],\n  \"rationaleTags\": [\"segment-concentration\", \"mix-shift\", \"motion-relevance\", \"retention-by-segment\", \"pipeline-allocation\", \"win-rate-localization\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 306,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 34,
+      "state": "improve_cac",
+      "role": "CRO",
+      "repeat": 4,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across segments, creating a structural concentration that shapes where revenue motion is won or lost and how resilient the book is to segment-specific shocks.\",\n  \"whyRole\": \"For the CRO, segment concentration determines where pipeline investment, quota design, and coverage model must be calibrated — and whether growth is being driven by the right mix or carried by a single bet.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-concentration\", \"mix-risk\", \"coverage-model\", \"retention-by-segment\", \"win-rate-localization\", \"pipeline-allocation\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 312,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 35,
+      "state": "improve_cac",
+      "role": "CRO",
+      "repeat": 5,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across the three segments, creating a structural skew that shapes pipeline priority, quota design, and go-to-market resource allocation — the mix itself is the signal, not merely its size.\",\n  \"whyRole\": \"For the CRO, segment mix determines where motion is being generated, which bets are compounding, and whether the current coverage model is pointed at the segments that will drive durable net-new ARR.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-mix\", \"concentration-signal\", \"go-to-market-alignment\", \"pipeline-priority\", \"coverage-model\", \"retention-by-segment\", \"win-rate-localization\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 333,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 36,
+      "state": "improve_cac",
+      "role": "CRO",
+      "repeat": 6,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "masking_card"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "masking_card"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_pair_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 2,
+          "form": "pareto_arr",
+          "aspect": "half"
+        },
+        {
+          "index": 3,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across SMB, Mid-Market, and Enterprise segments, creating a structural mix story that shapes pipeline priorities, capacity planning, and revenue motion across the entire book.\",\n  \"whyRole\": \"For the CRO, segment mix determines where to direct quota, headcount, and coverage model — an unbalanced spread signals that conversion motion and growth bets may be misaligned with where ARR actually lives.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"heatmap_retention\", \"masking_card\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-mix\", \"ARR-concentration\", \"coverage-alignment\", \"retention-by-tier\", \"pipeline-prioritization\", \"win-rate-localization\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 321,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 37,
+      "state": "improve_cac",
+      "role": "CRO",
+      "repeat": 7,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "dumbbell_ret",
+        "heatmap_retention"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across SMB, Mid-Market, and Enterprise segments, creating a segment mix that has direct implications for pipeline prioritization, motion design, and where the revenue center of gravity is being built — or left to drift.\",\n  \"whyRole\": \"For the CRO, segment concentration defines which sales motions are actually producing the book and whether the pipeline is being built toward or away from the segments that compound best.\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"dumbbell_ret\", \"heatmap_retention\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"magic_number\", \"qoq_growth\"],\n  \"rationaleTags\": [\"segment-mix\", \"ARR-concentration\", \"motion-fit\", \"retention-by-segment\", \"pipeline-prioritization\", \"win-rate-localization\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 322,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 38,
+      "state": "improve_cac",
+      "role": "CRO",
+      "repeat": 8,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "segment_table",
+        "hbar_nrr",
+        "dumbbell_ret",
+        "lorenz_arr"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "segment_table",
+        "hbar_nrr",
+        "dumbbell_ret",
+        "lorenz_arr"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "dumbbell_ret",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is unevenly distributed across segments, meaning the revenue base may be structurally concentrated in ways that shape both near-term pipeline priorities and longer-term mix risk — the CRO must understand which segments are carrying the book and whether that distribution is intentional or drifting.\",\n  \"whyRole\": \"Segment mix determines where the CRO deploys quota capacity, how conversion motion is sequenced, and whether the current ARR spread reflects a deliberate go-to-market posture or an emerging imbalance that needs correction.\",\n  \"evidenceIds\": [\n    \"arr.SMB.25Q4\",\n    \"arr.Mid-Market.25Q4\",\n    \"arr.Enterprise.25Q4\",\n    \"entshare.25Q4\"\n  ],\n  \"testIds\": [\n    \"localize_nrr\",\n    \"localize_winrate\"\n  ],\n  \"widgetIds\": [\n    \"treemap_arr\",\n    \"pareto_arr\",\n    \"segment_table\",\n    \"hbar_nrr\",\n    \"dumbbell_ret\",\n    \"lorenz_arr\"\n  ],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\n    \"ent_share\",\n    \"net_new_arr\",\n    \"nrr\",\n    \"grr\",\n    \"magic_number\",\n    \"qoq_growth\"\n  ],\n  \"rationaleTags\": [\n    \"segment-concentration\",\n    \"arr-mix\",\n    \"enterprise-weight\",\n    \"retention-by-segment\",\n    \"pipeline-allocation\",\n    \"go-to-market-posture\"\n  ]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 413,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    },
+    {
+      "runId": 39,
+      "state": "improve_cac",
+      "role": "CRO",
+      "repeat": 9,
+      "source": "live",
+      "finding": {
+        "id": "S0",
+        "label": "ARR spread across segments",
+        "domain": "concentration",
+        "salience": 1.6512123987848764
+      },
+      "candidateForms": [
+        {
+          "id": "masking_card",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_smb",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_enterprise",
+          "domain": "retention"
+        },
+        {
+          "id": "bridge_blended",
+          "domain": "retention"
+        },
+        {
+          "id": "segment_table",
+          "domain": "concentration"
+        },
+        {
+          "id": "hbar_nrr",
+          "domain": "retention"
+        },
+        {
+          "id": "pareto_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "dumbbell_ret",
+          "domain": "retention"
+        },
+        {
+          "id": "treemap_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "lorenz_arr",
+          "domain": "concentration"
+        },
+        {
+          "id": "heatmap_retention",
+          "domain": "retention"
+        }
+      ],
+      "selectedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "lorenz_arr"
+      ],
+      "requestedForms": [
+        "treemap_arr",
+        "pareto_arr",
+        "hbar_nrr",
+        "segment_table",
+        "heatmap_retention",
+        "lorenz_arr"
+      ],
+      "panelCount": 6,
+      "partitionId": "band_trio_trio",
+      "regions": [
+        {
+          "index": 0,
+          "form": "salient_band",
+          "aspect": "band"
+        },
+        {
+          "index": 1,
+          "form": "treemap_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 2,
+          "form": "lorenz_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 3,
+          "form": "accel_line",
+          "aspect": "third"
+        },
+        {
+          "index": 4,
+          "form": "pareto_arr",
+          "aspect": "third"
+        },
+        {
+          "index": 5,
+          "form": "hbar_nrr",
+          "aspect": "third"
+        },
+        {
+          "index": 6,
+          "form": "heatmap_retention",
+          "aspect": "third"
+        }
+      ],
+      "rejections": {
+        "count": 0,
+        "guards": [],
+        "droppedWidgets": []
+      },
+      "modelResponse": "```json\n{\n  \"thesis\": \"ARR is not uniformly distributed across segments — the spread reveals a structural skew that shapes pipeline priorities, segment mix strategy, and where motion must be accelerated or defended to sustain durable growth\",\n  \"whyRole\": \"For the CRO, segment concentration determines where quota capacity, coverage, and conversion investment will compound or dilute — a skewed spread means the revenue base is more fragile or more leveraged than a blended view suggests\",\n  \"evidenceIds\": [\"arr.SMB.25Q4\", \"arr.Mid-Market.25Q4\", \"arr.Enterprise.25Q4\", \"entshare.25Q4\"],\n  \"testIds\": [\"localize_nrr\", \"localize_winrate\"],\n  \"widgetIds\": [\"treemap_arr\", \"pareto_arr\", \"hbar_nrr\", \"segment_table\", \"heatmap_retention\", \"lorenz_arr\"],\n  \"partitionPref\": \"balanced\",\n  \"scorecardKeys\": [\"ent_share\", \"net_new_arr\", \"nrr\", \"grr\", \"qoq_growth\", \"magic_number\"],\n  \"rationaleTags\": [\"segment-mix\", \"arr-concentration\", \"motion-by-tier\", \"retention-by-segment\", \"pipeline-leverage\", \"coverage-strategy\"]\n}\n```",
+      "apiMeta": {
+        "status": 200,
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 321,
+          "service_tier": "standard",
+          "inference_geo": "global"
+        },
+        "model": "claude-sonnet-4-6"
+      }
+    }
+  ]
+}
