@@ -13,6 +13,8 @@
   --scribe:#ccd0d3; --scribe-strong:#a5abb1;
   --frame-ink:#d8dbdd; --frame-mute:#8b939b;
   --dye:#1f539f; --pos:#2f6b4a; --neg:#9c3a2c;
+  --scrim: rgba(21,24,27,.34);                                  /* fallback for engines without color-mix */
+  --scrim: color-mix(in srgb, var(--ink) 34%, transparent);    /* both declarations stay in the token block */
   --t-1:10px; --t-2:11px; --t-3:14px; --t-4:20px; --t-6:40px;
   --t-tab:12px;   /* tabular numerals + their row labels ONLY — a role, applied to every table uniformly */
   --in-1:4px; --in-2:8px; --in-3:16px; --out:32px;
@@ -297,7 +299,7 @@ button.dt-num:hover{ color:var(--dye); }
 .tb-panel .cpanel{ height:100%; display:flex; flex-direction:column; }
 .tb-panel .cfill{ flex:1 1 auto; height:auto; min-height:0; }
 /* ===== query modal (relocated off the top chrome) ===== */
-.qmodal-bg{ position:fixed; inset:0; background:color-mix(in srgb, var(--ink) 34%, transparent); display:flex; align-items:flex-start; justify-content:center; padding-top:8vh; z-index:50; }
+.qmodal-bg{ position:fixed; inset:0; background:var(--scrim); display:flex; align-items:flex-start; justify-content:center; padding-top:8vh; z-index:50; }
 .qmodal{ background:var(--field); border:1px solid var(--scribe); border-top:2px solid var(--ink); width:min(760px,92vw); max-height:80vh; display:flex; flex-direction:column; padding:18px 20px; box-shadow:none; }
 .qmodal-h{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .qmodal-t{ font-family:'IBM Plex Sans',sans-serif; font-weight:600; font-size:20px; }
@@ -447,7 +449,7 @@ html,body,#root{ height:100%; overflow:hidden; }
 .err-btn{ margin-top:14px; font-family:'IBM Plex Mono',monospace; font-size:11px; border:1px solid var(--scribe); background:none; padding:6px 12px; cursor:pointer; }
 
 /* ===== Analyst Read: the investigation layer ===== */
-.brief-overlay{ position:fixed; inset:0; z-index:60; background:color-mix(in srgb, var(--ink) 34%, transparent); display:flex; align-items:flex-start; justify-content:center; padding:5vh 20px; overflow-y:auto; }
+.brief-overlay{ position:fixed; inset:0; z-index:60; background:var(--scrim); display:flex; align-items:flex-start; justify-content:center; padding:5vh 20px; overflow-y:auto; }
 .brief{ background:var(--field); border:1px solid var(--ink); max-width:820px; width:100%; padding:0; box-shadow:none; }
 .brief-head{ display:flex; align-items:center; gap:12px; padding:14px 22px; border-bottom:2px solid var(--ink); }
 .brief-tag{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.12em; color:var(--ink-2); border:1px solid var(--scribe); padding:3px 8px; }
