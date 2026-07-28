@@ -206,7 +206,7 @@ function Combo({ bars, line, benchmark, good, onPick, fmtL, fmtR, w = 620, h = 2
     <line x1={padL} x2={W - padR} y1={yR(benchmark)} y2={yR(benchmark)} className="cx-bench" /><text x={padL + 2} y={yR(benchmark) - 6} className="cx-bench-lab" textAnchor="start">TARGET {fmtR(benchmark)}</text>
     <path d={path} className="cx-line" />
     <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="cx-axis" />
-    {line.map((p, i) => { const br = good === "above" ? p.value < benchmark : p.value > benchmark; const last = i === line.length - 1; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}><circle cx={x(i)} cy={yR(p.value)} r={last ? 4 : 2.5} className={`cx-dot ${br ? "bad" : "good"} ${last ? "last" : ""}`} /></g>); })}
+    {line.map((p, i) => { const last = i === line.length - 1; return (<g key={i} className="ln-pt" onClick={() => onPick(p.mv)}>{last ? <rect x={x(i) - 3} y={yR(p.value) - 3} width={6} height={6} className="cx-dot last" /> : <circle cx={x(i)} cy={yR(p.value)} r={6} fill="transparent" />}</g>); })}
     {bars.map((b, i) => (<text key={i} x={x(i)} y={H - padB + 16} className="cx-xtick" textAnchor="middle">{b.q}</text>))}
     <text x={padL - 8} y={padT - 6} className="cx-axlab" textAnchor="end">S&M $</text><text x={W - padR + 8} y={padT - 6} className="cx-axlab" textAnchor="start">MAGIC</text>
   </svg>);
@@ -217,9 +217,9 @@ function StackedArea({ quarters, series, onPick, w = 620, h = 270 }) {
   const maxY = Math.max(...totals) * 1.06; const x = (i) => padL + (plotW * i) / (quarters.length - 1), y = (v) => padT + plotH - (v / maxY) * plotH;
   const ticks = Array.from({ length: 4 }, (_, i) => (maxY / 3) * i);
   let cum = quarters.map(() => 0); const bands = [];
-  for (const se of series) { const lower = cum.slice(), upper = cum.map((c, i) => c + se.points[i].value); const up = upper.map((v, i) => `${x(i)},${y(v)}`).join(" "); const lo = lower.map((v, i) => `${x(i)},${y(v)}`).reverse().join(" "); bands.push({ seg: se.seg, color: se.color, poly: `${up} ${lo}` }); cum = upper; }
-  return (<div><div className="legend">{series.slice().reverse().map((se) => (<button key={se.seg} className="chip" onClick={() => onPick(se.points[se.points.length - 1].mv)}><span className="sw" style={{ background: se.color }} />{se.seg}</button>))}</div>
-    <svg viewBox={`0 0 ${W} ${H}`} className="ln"><line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bands.map((b, i) => (<polygon key={i} points={b.poly} fill={b.color} className="area" />))}{quarters.map((q, i) => (<text key={i} x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{q}</text>))}</svg></div>);
+  for (const se of series) { const lower = cum.slice(), upper = cum.map((c, i) => c + se.points[i].value); const up = upper.map((v, i) => `${x(i)},${y(v)}`).join(" "); const lo = lower.map((v, i) => `${x(i)},${y(v)}`).reverse().join(" "); const li = lower.length - 1; bands.push({ seg: se.seg, color: se.color, poly: `${up} ${lo}`, midY: y((lower[li] + upper[li]) / 2), mv: se.points[se.points.length - 1].mv }); cum = upper; }
+  // §3: no legend — direct end-labels on the bands
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln"><line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="ax" /><line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="ax" />{ticks.map((tv, i) => (<g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="wf-grid" /><text x={padL - 8} y={y(tv) + 3} className="wf-axis" textAnchor="end">{fmtM(tv)}</text></g>))}{bands.map((b, i) => (<polygon key={i} points={b.poly} style={{ fill: b.color }} className="area" onClick={() => onPick(b.mv)} />))}{bands.map((b, i) => (<text key={"l" + i} x={W - padR - 4} y={b.midY + 3} className="area-lab" textAnchor="end">{b.seg}</text>))}{quarters.map((q, i) => (<text key={i} x={x(i)} y={H - padB + 15} className="wf-xlab" textAnchor="middle">{q}</text>))}</svg>);
 }
 // ===== shared chart construction layer — the machinery institutional charts have and hand-drawn
 // SVG lacks: a nice-number scale so axes land on rounded values (0.4, 0.6, 0.8 — not 0.34, 0.52),
@@ -247,14 +247,9 @@ function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
   const sc = niceScale(Math.min(...vals), Math.max(...vals), 5);
   const x = (i) => padL + (plotW * i) / (series.length - 1); const y = (v) => padT + plotH - ((v - sc.min) / (sc.max - sc.min)) * plotH;
   const path = series.map((p, i) => `${i ? "L" : "M"}${x(i)},${y(p.value)}`).join(" ");
-  const areaId = `lg-${Math.abs(series.reduce((a, p, i) => a + p.value * (i + 1), 0) * 1000 | 0)}`;
-  const area = `M${x(0)},${padT + plotH} ` + series.map((p, i) => `L${x(i)},${y(p.value)}`).join(" ") + ` L${x(series.length - 1)},${padT + plotH} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln" preserveAspectRatio="xMidYMid meet">
-    <defs><linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ink)" stopOpacity="0.12" /><stop offset="100%" stopColor="var(--ink)" stopOpacity="0" /></linearGradient></defs>
-    {benchmark != null && <rect x={padL} y={good === "above" ? y(benchmark) : padT} width={W - padR - padL} height={good === "above" ? (padT + plotH - y(benchmark)) : (y(benchmark) - padT)} className="cx-danger" />}
     {sc.ticks.map((tv, i) => (tv >= sc.min && tv <= sc.max && <g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="cx-grid" /><text x={padL - 10} y={y(tv) + 3.5} className="cx-ytick" textAnchor="end">{fmt(tv)}</text></g>))}
     {benchmark != null && <><line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="cx-bench" /><text x={W - padR} y={y(benchmark) - 6} className="cx-bench-lab" textAnchor="end">TARGET {fmt(benchmark)}</text></>}
-    <path d={area} fill={`url(#${areaId})`} />
     <path d={path} className="cx-line" />
     <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} className="cx-axis" />
     {/* invisible hit-targets keep every point traceable without drawing redundant nodes */}
@@ -264,8 +259,8 @@ function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
     </g>))}
     {/* single load-bearing mark: the current value */}
     {(() => { const p = series[series.length - 1], br = benchmark != null && (good === "above" ? p.value < benchmark : p.value > benchmark); return (<g className="ln-pt" onClick={() => onPick(p.mv)}>
-      <circle cx={x(series.length - 1)} cy={y(p.value)} r={4.5} className={`cx-dot ${benchmark == null ? "neutral" : br ? "bad" : "good"} last`} />
-      <text x={x(series.length - 1)} y={y(p.value) - 12} className={`cx-dlab ${br ? "bad" : ""}`} textAnchor="end">{fmt(p.value)}</text>
+      <rect x={x(series.length - 1) - 3} y={y(p.value) - 3} width={6} height={6} className="cx-dot last" />
+      <text x={x(series.length - 1)} y={y(p.value) - 12} className="cx-dlab" textAnchor="end">{fmt(p.value)}</text>
     </g>); })()}
   </svg>);
 }
@@ -310,17 +305,12 @@ function MiniTrend({ a, b, benchmark, labels = [], w = 680, h = 66 }) {
   const y = (v) => padT + plotH * (1 - (v - lo) / (hi - lo));
   const line = (s) => s.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
   const area = (s) => `${line(s)} L${x(s.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`;
-  const dots = (s, tone) => s.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r={i === s.length - 1 ? 3 : 2} className={`mt-dot ${tone}`}><title>{labels[i] || ""} · {v.toFixed(1)}%</title></circle>);
+  const dot = (s, tone) => (<rect x={x(s.length - 1) - 3} y={y(s[s.length - 1]) - 3} width={6} height={6} className={`mt-dot ${tone}`} />);
   return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
-    <defs>
-      <linearGradient id="mt-good" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--pos)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--pos)" stopOpacity="0" /></linearGradient>
-      <linearGradient id="mt-bad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--neg)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--neg)" stopOpacity="0" /></linearGradient>
-    </defs>
-    <path d={area(a)} fill="url(#mt-good)" /><path d={area(b)} fill="url(#mt-bad)" />
     <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" />
     <text x={W - padR + 4} y={y(benchmark) + 3} className="mt-bench-lab">{benchmark}%</text>
     <path d={line(a)} className="mt-ln good" /><path d={line(b)} className="mt-ln bad" />
-    {dots(a, "good")}{dots(b, "bad")}
+    {dot(a, "good")}{dot(b, "bad")}
     <text x={x(a.length - 1) + 5} y={y(a[a.length - 1]) + 3} className="mt-end good">{a[a.length - 1].toFixed(0)}</text>
     <text x={x(b.length - 1) + 5} y={y(b[b.length - 1]) + 3} className="mt-end bad">{b[b.length - 1].toFixed(0)}</text>
     {labels.length > 1 && <><text x={x(0)} y={H - 3} className="mt-qlab" textAnchor="start">{labels[0]}</text><text x={x(labels.length - 1)} y={H - 3} className="mt-qlab" textAnchor="end">{labels[labels.length - 1]}</text></>}
@@ -346,12 +336,10 @@ function SoloSpark({ vals, labels, benchmark, tone }) {
   const line = vals.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
   const area = `${line} L${x(vals.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
-    <defs><linearGradient id="sf-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ink)" stopOpacity="0.14" /><stop offset="100%" stopColor="var(--ink)" stopOpacity="0" /></linearGradient></defs>
-    <path d={area} fill="url(#sf-g)" />
     {benchmark != null && <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" />}
     {benchmark != null && <text x={W - padR + 4} y={y(benchmark) + 3} className="mt-bench-lab">{benchmark}</text>}
     <path d={line} className="mt-ln" />
-    <circle cx={x(vals.length - 1)} cy={y(vals[vals.length - 1])} r={3.5} className={`mt-dot ${tone} last`} />
+    <rect x={x(vals.length - 1) - 3} y={y(vals[vals.length - 1]) - 3} width={6} height={6} className={`mt-dot ${tone} last`} />
     <text x={x(0)} y={H - 3} className="mt-qlab" textAnchor="start">{labels[0]}</text><text x={x(vals.length - 1)} y={H - 3} className="mt-qlab" textAnchor="end">{labels[labels.length - 1]}</text>
   </svg>);
 }
@@ -463,10 +451,8 @@ function LorenzCurve({ curve, onPick, w = 420, h = 200 }) {
   const path = curve.map((p, i) => `${i ? "L" : "M"}${x(p.acc)},${y(p.arr)}`).join(" ");
   const area = `${path} L${x(100)},${y(0)} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln" onClick={onPick}>
-    <defs><linearGradient id="lz-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ink)" stopOpacity="0.12" /><stop offset="100%" stopColor="var(--ink)" stopOpacity="0" /></linearGradient></defs>
     {ticks.map((t, i) => (<g key={i}><line x1={padL} x2={padL + plotW} y1={y(t)} y2={y(t)} className="cx-grid" /><text x={padL - 8} y={y(t) + 3.5} className="cx-ytick" textAnchor="end">{t}</text><text x={x(t)} y={padT + plotH + 14} className="cx-xtick" textAnchor="middle">{t}</text></g>))}
     <line x1={x(0)} y1={y(0)} x2={x(100)} y2={y(100)} className="cx-bench" /><text x={x(100)} y={y(100) + 12} className="cx-bench-lab" textAnchor="end">EQUALITY</text>
-    <path d={area} fill="url(#lz-g)" />
     <path d={path} className="cx-line" />
     <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} className="cx-axis" />
     <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="cx-axis" />
@@ -488,7 +474,7 @@ function Scatter({ points, xlab, ylab, onPick, w = 420, h = 200 }) {
     <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} className="cx-axis" />
     <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} className="cx-axis" />
     {points.map((p, i) => (<g key={i} className="ln-pt" onClick={() => p.mv && onPick(p.mv)}>
-      <circle cx={px(p.x)} cy={py(p.y)} r={i === points.length - 1 ? 5 : 3.5} className={`scat-dot ${i === points.length - 1 ? "last" : ""}`} />
+      {i === points.length - 1 ? <rect x={px(p.x) - 3} y={py(p.y) - 3} width={6} height={6} className="scat-dot last" /> : <circle cx={px(p.x)} cy={py(p.y)} r={3.5} className="scat-dot" />}
       {p.label && <text x={px(p.x)} y={py(p.y) - 8} className="scat-lab" textAnchor="middle">{p.label}</text>}
     </g>))}
     <text x={padL + plotW / 2} y={H - 3} className="cx-axlab" textAnchor="middle">{xlab}</text>
@@ -542,7 +528,7 @@ function IndexedLine({ series, quarters, onPick, w = 420, h = 200 }) {
     {idx.map((s, si) => (<g key={si}>
       <polyline points={s.pts.map((p, i) => `${x(i)},${y(p.iv)}`).join(" ")} className="idx-line" style={{ stroke: s.color }} />
       <text x={padL + plotW + 3} y={y(s.pts[s.pts.length - 1].iv) + 3} className="idx-lab" style={{ fill: s.color }} textAnchor="start">{s.seg}</text>
-      {s.pts.map((p, i) => <circle key={i} cx={x(i)} cy={y(p.iv)} r={2} style={{ fill: s.color }} className="ln-pt" onClick={() => p.mv && onPick(p.mv)} />)}
+      {s.pts.map((p, i) => { const last = i === s.pts.length - 1; return last ? <rect key={i} x={x(i) - 3} y={y(p.iv) - 3} width={6} height={6} style={{ fill: s.color }} className="ln-pt" onClick={() => p.mv && onPick(p.mv)} /> : <circle key={i} cx={x(i)} cy={y(p.iv)} r={6} fill="transparent" className="ln-pt" onClick={() => p.mv && onPick(p.mv)} />; })}
     </g>))}
   </svg>);
 }
@@ -612,7 +598,7 @@ function Quadrant({ points, xlab, ylab, xbench, ybench, quad, onPick, w = 420, h
     {zones.br && <text x={padL + plotW - 3} y={padT + plotH - 4} className="quad-zone" textAnchor="end">{zones.br}</text>}
     {zones.bl && <text x={padL + 3} y={padT + plotH - 4} className="quad-zone" textAnchor="start">{zones.bl}</text>}
     {points.map((p, i) => (<g key={i} className="ln-pt" onClick={() => p.mv && onPick(p.mv)}>
-      <circle cx={px(p.x)} cy={py(p.y)} r={i === points.length - 1 ? 5 : 3.5} className={`scat-dot ${i === points.length - 1 ? "last" : ""}`} />
+      {i === points.length - 1 ? <rect x={px(p.x) - 3} y={py(p.y) - 3} width={6} height={6} className="scat-dot last" /> : <circle cx={px(p.x)} cy={py(p.y)} r={3.5} className="scat-dot" />}
       <text x={px(p.x)} y={py(p.y) - 8} className="scat-lab" textAnchor="middle">{p.label}</text>
     </g>))}
     <text x={padL + plotW / 2} y={H - 3} className="cx-axlab" textAnchor="middle">{xlab}</text>
@@ -629,7 +615,7 @@ function SmallMultiples({ series, onPick, w = 420, h = 200 }) {
       return (<g key={si}>
         <text x={x0 + cw / 2} y={12} className="wf-xlab" textAnchor="middle">{s.seg}</text>
         <polyline points={s.points.map((p, i) => `${x(i)},${y(p.value)}`).join(" ")} className="idx-line" style={{ stroke: s.color }} />
-        <circle cx={x(s.points.length - 1)} cy={y(s.points[s.points.length - 1].value)} r={2.5} style={{ fill: s.color }} className="ln-pt" onClick={() => onPick(s.points[s.points.length - 1].mv)} />
+        <rect x={x(s.points.length - 1) - 3} y={y(s.points[s.points.length - 1].value) - 3} width={6} height={6} style={{ fill: s.color }} className="ln-pt" onClick={() => onPick(s.points[s.points.length - 1].mv)} />
       </g>); })}
   </svg>);
 }
@@ -670,7 +656,7 @@ function MetricMatrix({ onPick }) {
     <div className="mx-row mx-head"><span className="mx-lab" />{qs.map((q) => <span key={q} className="mx-cell">{q}</span>)}</div>
     {metrics.map((m, i) => (<div key={i} className="mx-row">
       <span className="mx-lab">{m.label}</span>
-      {qs.map((q, i) => { const mv = m.get(q, i); return mv ? <button key={q} className={`mx-cell v ${tone(mv)}`} onClick={() => onPick({ node: mv })}>{m.fmt(mv.value)}</button> : <span key={q} className="mx-cell dim">—</span>; })}
+      {qs.map((q, i) => { const mv = m.get(q, i); return mv ? <button key={q} className={`mx-cell v ${i === qs.length - 1 ? "cur" : ""}`} onClick={() => onPick({ node: mv })}>{m.fmt(mv.value)}</button> : <span key={q} className="mx-cell dim">—</span>; })}
     </div>))}
   </div>);
 }

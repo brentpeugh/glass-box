@@ -71,8 +71,8 @@
 .wf-conn{stroke:var(--scribe-strong);stroke-width:1;stroke-dasharray:2 2;}
 .wf-anchor{fill:var(--ink);shape-rendering:crispEdges;} .wf-up{fill:var(--pos);shape-rendering:crispEdges;} .wf-down{fill:var(--neg);shape-rendering:crispEdges;}
 @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
-.ln-path{fill:none;stroke:var(--ink);stroke-width:2.25;stroke-linejoin:round;stroke-linecap:round;} .ln-bench{stroke:var(--dye);stroke-width:1.25;stroke-dasharray:4 3;} .ln-bench-lab{font-family:'IBM Plex Sans',sans-serif;font-size:10px;font-weight:600;fill:var(--dye);letter-spacing:.06em;text-transform:uppercase;}
-.ln-pt{cursor:pointer;} .ln-dot{stroke:var(--field);stroke-width:1.5;} .ln-dot.good{fill:var(--pos);} .ln-dot.bad{fill:var(--neg);}
+.ln-path{fill:none;stroke:var(--ink);stroke-width:2.25;stroke-linejoin:round;stroke-linecap:round;} .ln-bench{stroke:var(--ink-2);stroke-width:var(--w-hair);stroke-dasharray:1 3;} .ln-bench-lab{font-family:'IBM Plex Mono',monospace;font-size:10px;fill:var(--ink-2);}
+.ln-pt{cursor:pointer;} .ln-dot{fill:var(--ink);}
 .ln-pt:hover .ln-dot{r:7;}
 .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px;}
 .callout{background:var(--field);border:1px solid var(--scribe);border-top:3px solid;padding:16px;cursor:pointer;text-align:left;font-family:inherit;display:flex;flex-direction:column;gap:4px;transition:transform .12s;}
@@ -85,7 +85,8 @@
 
 .wf-axis.r{fill:var(--ink-2);}
 .co-bar{ fill:var(--frame-mute); shape-rendering:crispEdges; cursor:pointer; transition:fill .12s; } .co-bar:hover{ fill:var(--frame-mute); }
-.area{fill-opacity:.86;}
+.area{fill-opacity:1;cursor:pointer;}
+.area-lab{ font-family:'IBM Plex Sans',sans-serif; font-size:var(--t-2); font-weight:600; fill:var(--field); paint-order:stroke; stroke:var(--ink); stroke-width:2px; stroke-linejoin:round; }
 .legend{display:flex;gap:16px;margin:0 0 8px 4px;flex-wrap:wrap;}
 .chip{display:flex;align-items:center;gap:6px;background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink);cursor:pointer;padding:2px 2px;}
 .chip:hover{color:var(--dye);} .sw{width:10px;height:10px;display:inline-block;border-radius:0;}
@@ -243,7 +244,7 @@
 .fband-right{ margin-left:auto; display:flex; align-items:center; gap:24px; }
 .minigap{ width:230px; height:52px; flex:0 0 auto; }
 .mg-axis{ stroke:var(--scribe); stroke-width:1; }
-.mg-bench{ stroke:var(--ink-2); stroke-width:1; stroke-dasharray:2 2; }
+.mg-bench{ stroke:var(--ink-2); stroke-width:var(--w-hair); stroke-dasharray:1 3; }
 .mg-lab{ font-family:'IBM Plex Mono',monospace; font-size:10px; fill:var(--ink-2); }
 .mg-cap{ font-family:'IBM Plex Mono',monospace; font-size:10px; fill:var(--ink-2); letter-spacing:.03em; }
 .mg-dot.good{ fill:var(--pos); } .mg-dot.bad{ fill:var(--neg); } .mg-dot{ stroke:var(--field); stroke-width:1.5; }
@@ -338,11 +339,11 @@ html,body,#root{ height:100%; overflow:hidden; }
 .hbar.good{ fill:var(--pos); } .hbar.bad{ fill:var(--neg); }
 .ln-pt:hover .hbar{ fill:var(--ink); }
 .bullet-track{ fill:var(--scribe); }
-.bullet-bar{ shape-rendering:crispEdges; } .bullet-bar.good{ fill:var(--pos); } .bullet-bar.bad{ fill:var(--neg); }
-.bullet-target{ stroke:var(--dye); stroke-width:2; }
-.bl-tlab{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; fill:var(--dye); }
+.bullet-bar{ shape-rendering:crispEdges; fill:var(--ink); }
+.bullet-target{ stroke:var(--ink-2); stroke-width:var(--w-hair); stroke-dasharray:1 3; }
+.bl-tlab{ font-family:'IBM Plex Mono',monospace; font-size:10px; fill:var(--ink-2); }
 .bl-rowlab{ font-family:'IBM Plex Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; fill:var(--ink); }
-.bl-val{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; fill:var(--ink); } .bl-val.good{ fill:var(--pos); } .bl-val.bad{ fill:var(--neg); }
+.bl-val{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; fill:var(--ink); }
 
 /* ===== metric matrix (dense terminal grid) ===== */
 .matrix{ width:100%; display:flex; flex-direction:column; }
@@ -353,7 +354,7 @@ html,body,#root{ height:100%; overflow:hidden; }
 .mx-cell{ text-align:right; font-family:'IBM Plex Mono',monospace; font-size:14px; font-variant-numeric:tabular-nums; padding:5px 7px 5px 0; color:var(--ink); }
 .mx-cell.v{ background:none; border:none; cursor:pointer; }
 .mx-cell.v:hover{ color:var(--dye); }
-.mx-cell.good{ color:var(--pos); } .mx-cell.bad{ color:var(--neg); } .mx-cell.dim{ color:var(--scribe); }
+.mx-cell.v{ color:var(--ink-2); } .mx-cell.v.cur{ color:var(--ink); font-weight:600; } .mx-cell.dim{ color:var(--scribe); }
 
 /* ===== compact/dense chart internals ===== */
 .wf-axis,.wf-xlab{ font-size:10px; }
@@ -372,12 +373,12 @@ html,body,#root{ height:100%; overflow:hidden; }
 .fband-vals{ display:flex; align-items:center; gap:26px; flex:0 0 auto; }
 .fband-trend{ flex:1 1 auto; max-width:720px; align-self:center; }
 .mtrend{ width:100%; height:auto; display:block; }
-.mt-bench{ stroke:var(--dye); stroke-width:1.25; stroke-dasharray:3 2; }
-.mt-ln{ fill:none; stroke:var(--ink); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+.mt-bench{ stroke:var(--ink-2); stroke-width:var(--w-hair); stroke-dasharray:1 3; }
+.mt-ln{ fill:none; stroke:var(--ink); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; } .mt-ln.bad{ stroke:var(--ink-2); }
 
-.mt-dot{ stroke:var(--field); stroke-width:1.5; } .mt-dot.good{ fill:var(--pos); } .mt-dot.bad{ fill:var(--neg); } .mt-dot.neutral{ fill:var(--ink); }
-.mt-end{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; } .mt-end.good{ fill:var(--pos); } .mt-end.bad{ fill:var(--neg); }
-.mt-bench-lab{ font-family:'IBM Plex Mono',monospace; font-size:10px; fill:var(--dye); }
+.mt-dot{ fill:var(--ink); }
+.mt-end{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; } .mt-end.good{ fill:var(--ink); } .mt-end.bad{ fill:var(--ink-2); }
+.mt-bench-lab{ font-family:'IBM Plex Mono',monospace; font-size:10px; fill:var(--ink-2); }
 .mt-qlab{ font-family:'IBM Plex Mono',monospace; font-size:10px; fill:var(--ink-2); }
 .mt-dot{ cursor:default; }
 
@@ -585,15 +586,11 @@ html,body,#root{ height:100%; overflow:hidden; }
 .cx-axis{ stroke:var(--scribe); stroke-width:1.25; }
 .cx-ytick,.cx-xtick{ font-family:'IBM Plex Mono',monospace; font-size:10px; fill:var(--ink-2); letter-spacing:.02em; }
 .cx-line{ fill:none; stroke:var(--ink); stroke-width:2.25; stroke-linejoin:round; stroke-linecap:round; }
-.cx-dot{ stroke:var(--field); stroke-width:1.25; }
-.cx-dot.neutral{ fill:var(--ink-2); }
-.cx-dot.good{ fill:var(--pos); }
-.cx-dot.bad{ fill:var(--neg); }
-.cx-dot.last{ stroke-width:2; }
-.cx-bench{ stroke:var(--dye); stroke-width:1.25; stroke-dasharray:4 3; }
-.cx-bench-lab{ font-family:'IBM Plex Sans',sans-serif; font-size:10px; font-weight:600; fill:var(--dye); letter-spacing:.06em; text-transform:uppercase; }
-.cx-dlab{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; fill:var(--ink); } .cx-dlab.bad{ fill:var(--neg); }
-.cx-danger{ fill:var(--neg); opacity:.035; }
+.cx-dot{ fill:var(--ink); }
+.cx-bench{ stroke:var(--ink-2); stroke-width:var(--w-hair); stroke-dasharray:1 3; }
+.cx-bench-lab{ font-family:'IBM Plex Mono',monospace; font-size:10px; fill:var(--ink-2); }
+.cx-dlab{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; fill:var(--ink); }
+/* danger tint removed (§3) */
 
 /* navy header — light chrome elements */
 .hdr .lensbtn{ color:var(--frame-mute); border:1px solid var(--frame-mute); background:transparent; font-family:'IBM Plex Sans',sans-serif; font-weight:600; letter-spacing:1px; font-size:11px; padding:4px 12px; border-radius:0; cursor:pointer; }
@@ -646,8 +643,8 @@ html,body,#root{ height:100%; overflow:hidden; }
 
 /* ===== register fix 1: tracked-caps label role — uniform tracking .10em on every tracked-caps
    label, every surface (the scattered per-site values / the §4 .16em were never derived). One rule. */
-.asked-h,.bl-rowlab,.both-lbl,.brief-lbl,.chart-title,.chart-trace,.cx-axlab,.cx-bench-lab,.dbg-cap,
-.dt-head,.fband-inspect,.fband-verb,.frame-tick,.kcell-l,.ln-bench-lab,.quad-zone,.recur-lbl,.sf-ctx,
+.asked-h,.bl-rowlab,.both-lbl,.brief-lbl,.chart-title,.chart-trace,.cx-axlab,.dbg-cap,
+.dt-head,.fband-inspect,.fband-verb,.frame-tick,.kcell-l,.quad-zone,.recur-lbl,.sf-ctx,
 .tc-h,.tc-kind{ letter-spacing:.10em; }
 /* ===== register fix 2: tabular role runs tight — horizontal cell padding → --in-1. Numeric cells
    are right-aligned (their column gap is the RIGHT pad); the row label hugs within the panel's own
