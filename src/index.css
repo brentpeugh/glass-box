@@ -50,13 +50,19 @@
 .node{position:relative;} .node-kids{border-left:1px solid var(--dye);margin-left:6px;}
 .node-head{display:flex;align-items:baseline;gap:10px;padding:6px 0;cursor:pointer;}
 .node-glyph{color:var(--dye);font-size:11px;width:12px;} .node-label{font-size:14px;font-weight:500;}
-.proxy{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--neg);border:1px solid var(--neg);padding:0 4px;margin-left:6px;border-radius:0;}
+/* §4: proxy disclosure is a source-key, not a danger tag — a superscript letter in dye that a
+   foot source-line on the raising panel resolves (route-to-source, the one job dye carries). */
+.proxy{font-family:'IBM Plex Mono',monospace;font-size:.72em;font-weight:600;color:var(--dye);margin-left:1px;}
+.src-note{font-family:'IBM Plex Mono',monospace;font-size:var(--t-1);color:var(--ink-2);line-height:1.4;margin-top:8px;}
+.co-note{font-family:'IBM Plex Mono',monospace;font-size:var(--t-1);color:var(--ink-2);line-height:1.35;margin-top:3px;}
 .node-op{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-2);background:var(--field);padding:1px 6px;border-radius:0;}
 .node-val{margin-left:auto;font-weight:600;font-size:14px;} .mono{font-family:'IBM Plex Mono',monospace;}
 .node-desc{font-size:14px;color:var(--ink-2);line-height:1.5;margin:0 0 6px 22px;max-width:66ch;}
 .rows{margin:6px 0 10px 22px;border:1px solid var(--scribe);background:var(--field);padding:12px;}
 .rows-stat{display:flex;align-items:center;gap:8px;font-size:14px;flex-wrap:wrap;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;}
-.dot{width:8px;height:8px;border-radius:0;display:inline-block;margin-left:6px;} .dot.ember{background:var(--neg);} .dot.ember2{background:var(--neg);} .dot.verdant{background:var(--pos);}
+/* §4: cohort-state swatches are a categorical legend (churned/contracted/expanded), not variance —
+   the label after each carries the category; the squares are uniform ink-2, no pos/neg. */
+.dot{width:8px;height:8px;border-radius:0;display:inline-block;margin-left:6px;} .dot.ember,.dot.ember2,.dot.verdant{background:var(--ink-2);}
 .rows-tbl{width:100%;border-collapse:collapse;font-size:14px;}
 .rows-tbl th{text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);padding:4px 10px;border-bottom:1px solid var(--scribe);} .rows-tbl th:first-child{text-align:left;}
 .rows-tbl td{padding:4px 10px;text-align:right;border-bottom:1px solid var(--scribe);} .rows-tbl td:first-child{text-align:left;}
@@ -64,7 +70,9 @@
 .bridges{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:16px;}
 .bridge{background:var(--field);border:1px solid var(--scribe);padding:14px 14px 6px;}
 .bridge-h{display:flex;justify-content:space-between;font-size:14px;font-weight:500;margin-bottom:6px;}
-.bridge-h .good{color:var(--pos);font-family:'IBM Plex Mono',monospace;} .bridge-h .bad{color:var(--neg);font-family:'IBM Plex Mono',monospace;}
+/* §4: dead CSS — no JSX renders .bridge-h (the waterfall header level now lives in .chart-tag).
+   Neutralised so the old pos/neg-on-a-level convention isn't left lurking for a future reader. */
+.bridge-h .good,.bridge-h .bad{color:var(--ink);font-family:'IBM Plex Mono',monospace;}
 .wf,.ln{width:100%;height:100%;} .wf-grid{stroke:var(--scribe);stroke-width:1;}
 .wf-axis{font-family:'IBM Plex Mono',monospace;font-size:10px;fill:var(--ink-2);}
 .wf-xlab{font-family:'IBM Plex Sans',sans-serif;font-size:10px;fill:var(--ink);} .wf-xval{font-family:'IBM Plex Mono',monospace;font-size:10px;fill:var(--ink-2);}
@@ -198,7 +206,9 @@
 .chart-title:hover{color:var(--dye);}
 .chart-trace{font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:600;color:var(--dye);letter-spacing:.5px;text-transform:uppercase;margin-left:6px;}
 .chart-tag{font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;color:var(--ink-2);}
-.chart-tag.good{color:var(--pos);} .chart-tag.bad{color:var(--neg);}
+/* §4: the header level (e.g. NRR 98%) is a level, not a variance — neutral ink-2. A breach is
+   marked by weight + full ink, not hue; clearing stays unmarked. */
+.chart-tag.bad{color:var(--ink);font-weight:600;}
 
 /* ===== calibrated density + traditionalist chrome ===== */
 .caliper{ --gap:16px; }
@@ -229,6 +239,7 @@
 .kcell-l{ font-family:'IBM Plex Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--ink-2); display:flex; align-items:center; gap:5px; }
 .kcell-b{ font-family:'IBM Plex Mono',monospace; font-size:10px; margin-top:2px; color:var(--ink-2); } .kcell-b.good{ color:var(--pos); } .kcell-b.bad{ color:var(--neg); }
 .kcell-b.good{ color:var(--pos); } .kcell-b.bad{ color:var(--neg); } .kcell-b.trend{ color:var(--ink-2); }
+.scorecard .src-note{ grid-column:1/-1; margin-top:6px; }
 @media(max-width:1100px){ .scorecard{ grid-template-columns:repeat(3,1fr); } }
 @media(max-width:640px){ .scorecard{ grid-template-columns:repeat(2,1fr); } }
 
@@ -273,7 +284,8 @@
 .dt-seg{ font-family:'IBM Plex Sans',sans-serif; font-weight:500; font-size:14px; color:var(--ink); }
 .dt-num{ font-family:'IBM Plex Mono',monospace; font-size:14px; font-variant-numeric:tabular-nums; color:var(--ink); background:none; border:none; cursor:pointer; padding:0; justify-self:end; text-align:right; }
 button.dt-num:hover{ color:var(--dye); }
-.dt-num.good{ color:var(--pos); } .dt-num.bad{ color:var(--neg); } .dt-num.dim{ color:var(--ink-2); cursor:default; }
+/* §4: segment-table values are LEVELS — ink, no pos/neg (tone dropped in the JSX too). */
+.dt-num.dim{ color:var(--ink-2); cursor:default; }
 .dt-total{ border-top:1px solid var(--ink); border-bottom:none; margin-top:1px; }   /* summation line — institutional convention */
 .dt-total .dt-seg{ font-weight:700; } .dt-total .dt-num{ font-weight:600; }
 
@@ -455,9 +467,11 @@ html,body,#root{ height:100%; overflow:hidden; }
 .brief-head{ display:flex; align-items:center; gap:12px; padding:14px 22px; border-bottom:2px solid var(--ink); }
 .brief-tag{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.12em; color:var(--ink-2); border:1px solid var(--scribe); padding:3px 8px; }
 .brief-status{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.1em; padding:3px 9px; }
+/* §4: the read's status is neither a chart mark nor a variance — no colour. It's a neutral hairline
+   tag; the caps word (UNTESTED/HOLDS/WEAKENED) carries the state. untested = the null state, ink-2. */
 .brief-status.untested{ color:var(--ink-2); border:1px solid var(--scribe); }
-.brief-status.holds{ color:var(--pos); border:1px solid var(--pos); background:transparent; }
-.brief-status.weakened{ color:var(--neg); border:1px solid var(--neg); background:transparent; }
+.brief-status.holds{ color:var(--ink); border:1px solid var(--scribe); background:transparent; }
+.brief-status.weakened{ color:var(--ink); border:1px solid var(--scribe); background:transparent; }
 .brief-x{ margin-left:auto; background:none; border:none; cursor:pointer; color:var(--ink-2); font-size:14px; }
 .brief-thesis{ font-family:'Newsreader',Georgia,serif; font-size:20px; line-height:1.42; color:var(--ink); padding:20px 22px 14px; }
 .brief-why{ padding:0 22px 18px; font-size:14px; line-height:1.55; color:var(--ink); }
@@ -479,11 +493,11 @@ html,body,#root{ height:100%; overflow:hidden; }
 .test-run{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--dye); background:none; border:1px solid var(--dye); padding:5px 11px; cursor:pointer; white-space:nowrap; }
 .test-run:hover{ background:transparent; }
 .test-verdict{ font-family:'IBM Plex Mono',monospace; font-size:11px; max-width:56%; text-align:right; }
-.test-verdict.confirms{ color:var(--pos); }
-.test-verdict.weakens{ color:var(--neg); }
+/* §4: the verdict summary is prose — the sentence states confirms/weakens; ink-2, no hue. */
+.test-verdict.confirms,.test-verdict.weakens{ color:var(--ink-2); }
 .brief-foot{ padding:14px 22px; font-size:14px; line-height:1.5; border-top:2px solid var(--ink); }
-.brief-foot.holds{ color:var(--pos); background:transparent; }
-.brief-foot.weakened{ color:var(--neg); background:transparent; }
+/* §4: the footer is a full prose sentence stating the outcome — ink, no hue; the 2px ink rule frames it. */
+.brief-foot.holds,.brief-foot.weakened{ color:var(--ink); background:transparent; }
 .brief-empty{ padding:40px; text-align:center; color:var(--ink-2); }
 .brief-btn{ font-weight:600; }
 
@@ -516,13 +530,14 @@ html,body,#root{ height:100%; overflow:hidden; }
 .recur-rank{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--dye); min-width:26px; }
 .recur-flabel{ flex:1; font-size:14px; color:var(--ink); }
 
-/* perturbation banner */
-.recur.on{ background:var(--neg); color:var(--frame-ink); border-color:var(--neg); }
-.perturb-banner{ display:flex; align-items:center; gap:14px; padding:11px 22px; background:transparent; border-bottom:2px solid var(--neg); }
-.pb-tag{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.12em; color:var(--neg); border:1px solid var(--neg); padding:3px 9px; white-space:nowrap; }
+/* perturbation banner — §4: a MODE indicator, not a variance. No danger-hue; the mode is carried by
+   a solid-ink stamp ("DATA PERTURBED"), a 2px ink rule under the banner, and the note prose. */
+.recur.on{ background:var(--ink); color:var(--frame-ink); border-color:var(--ink); }
+.perturb-banner{ display:flex; align-items:center; gap:14px; padding:11px 22px; background:transparent; border-bottom:2px solid var(--ink); }
+.pb-tag{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.12em; color:var(--field); background:var(--ink); border:1px solid var(--ink); padding:3px 9px; white-space:nowrap; }
 .pb-lbl{ font-weight:600; font-size:14px; color:var(--ink); white-space:nowrap; }
 .pb-note{ flex:1; font-size:14px; color:var(--ink); line-height:1.4; }
-.pb-reset{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--neg); background:none; border:1px solid var(--neg); padding:6px 12px; cursor:pointer; white-space:nowrap; }
+.pb-reset{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--dye); background:none; border:1px solid var(--dye); padding:6px 12px; cursor:pointer; white-space:nowrap; }
 .pb-reset:hover{ background:transparent; }
 
 /* query "both" fork (C): engine value inline, framing on confirm */
@@ -548,7 +563,9 @@ html,body,#root{ height:100%; overflow:hidden; }
 .tc-contract{ display:flex; flex-direction:column; gap:8px; }
 .tc-line{ display:flex; gap:12px; align-items:baseline; font-size:14px; color:var(--ink); line-height:1.45; }
 .tc-yes{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--dye); border:1px solid var(--dye); padding:2px 7px; white-space:nowrap; }
-.tc-no{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--neg); border:1px solid var(--neg); padding:2px 7px; white-space:nowrap; }
+/* §4: contract "refused" label is a status, not a variance — neutral hairline tag; the word carries it.
+   (Sibling .tc-yes/.tc-h.ok/.tc-row.* still carry decorative dye/neg — reported, left for a scoped call.) */
+.tc-no{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }
 .tc-audit{ border:1px solid var(--scribe); max-height:220px; overflow-y:auto; }
 .tc-row{ display:flex; gap:12px; align-items:baseline; padding:8px 12px; border-bottom:1px solid var(--scribe); font-size:14px; }
 .tc-row:last-child{ border-bottom:none; }

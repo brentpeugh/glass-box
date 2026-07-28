@@ -12,6 +12,10 @@ const fmtM = (v) => `$${(v / 1e6).toFixed(2)}M`;
 const fmtK = (v) => (Math.abs(v) >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : `$${(v / 1e3).toFixed(1)}K`);
 const fmtPct = (v) => `${v.toFixed(1)}%`;
 function fmtMV(mv) { switch (mv.unit) { case "usd": return fmtM(mv.value); case "percent": return fmtPct(mv.value); case "ratio": return `${mv.value.toFixed(2)}x`; case "months": return `${mv.value.toFixed(0)} mo`; case "number": return `${mv.value.toFixed(0)}`; case "pp": return `${mv.value.toFixed(0)} pp`; default: return `${mv.value}`; } }
+// §4 variance convention: benchmark deltas read as parenthesised (accounting-negative) when BELOW
+// threshold, bare when at/above — replaces the ▲/▼ direction glyph. Magnitude only; favourability
+// stays in the pos/neg colour on genuine-delta cells. Precision follows the metric's unit.
+function fmtVar(b, unit) { const mag = Math.abs(b.delta); const p = unit === "ratio" ? mag.toFixed(2) : unit === "percent" ? mag.toFixed(1) : mag.toFixed(0); return b.delta < 0 ? `(${p})` : p; }
 
 // ================= trace =================
 function RowsLeaf({ leaf, parentVal }) {
@@ -266,8 +270,8 @@ function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
 }
 function Callout({ mv, onPick }) {
   const b = mv.basis; const breached = b.good === "above" ? mv.value < b.thr : mv.value > b.thr;
-  const arrow = mv.value < b.thr ? "▼" : "▲"; const thrFmt = mv.unit === "ratio" ? `${b.thr}x` : mv.unit === "months" ? `${b.thr}mo` : mv.unit === "percent" ? `${b.thr}%` : `${b.thr}`;
-  return (<button className={`callout ${breached ? "bad" : "good"}`} onClick={() => onPick(mv)}><span className="co-v">{fmtMV(mv)}</span><span className="co-l">{mv.label}{mv.epistemic === "proxy" && <span className="proxy">proxy</span>}</span><span className="co-basis">{arrow} vs {thrFmt}</span></button>);
+  const thrFmt = mv.unit === "ratio" ? `${b.thr}x` : mv.unit === "months" ? `${b.thr}mo` : mv.unit === "percent" ? `${b.thr}%` : `${b.thr}`;
+  return (<button className={`callout ${breached ? "bad" : "good"}`} onClick={() => onPick(mv)}><span className="co-v">{fmtMV(mv)}</span><span className="co-l">{mv.label}{mv.epistemic === "proxy" && <sup className="proxy">a</sup>}</span><span className="co-basis">{fmtVar(b, mv.unit)} vs {thrFmt}</span>{mv.epistemic === "proxy" && mv.note && <span className="co-note"><sup className="proxy">a</sup> {mv.note}</span>}</button>);
 }
 // Presentation registry: each finding TYPE declares how it renders as a card. A generic
 // FindingCard draws any of them — adding a finding type is a registry entry here, not a
@@ -665,8 +669,8 @@ function SegmentTable({ onPick }) {
   const rows = E.SEGMENTS.map((seg) => ({ seg, arr: E.segArr(seg, L), nrr: E.nrr(seg, P, L), grr: E.grr(seg, P, L) }));
   const total = rows.reduce((a, r) => a + r.arr.value, 0);
   const bNrr = E.nrr(null, P, L), bGrr = E.grr(null, P, L);
-  const tone = (mv) => mv.basis ? ((mv.basis.good === "above" ? mv.value >= mv.basis.thr : mv.value <= mv.basis.thr) ? "good" : "bad") : "";
-  const num = (mv) => <button className={`dt-num ${tone(mv)}`} onClick={() => onPick({ node: mv })}>{fmtMV(mv)}</button>;
+  // §4: segment-table cells are LEVELS, not variances — ink, no pos/neg valence (three-job rule).
+  const num = (mv) => <button className="dt-num" onClick={() => onPick({ node: mv })}>{fmtMV(mv)}</button>;
   return (<div className="dtable">
     <div className="dt-row dt-head"><span>Segment</span><span>ARR</span><span>% ARR</span><span>NRR</span><span>GRR</span></div>
     {rows.map((r) => (<div key={r.seg} className="dt-row">
@@ -969,7 +973,7 @@ verdict:   ${isLive ? "COHERENT → rendered live" : "fell back to deterministic
 // finding-weighted headline metrics as part of the curation contract (validated against the
 // headline menu, cached per finding+role so it's stable — bounded, not re-rolled). KPI_SET below
 // is only the DETERMINISTIC FALLBACK persona set, used when curation is unavailable. Every cell is
-// engine-resolved and traceable either way; two-mode cells show ▲/▼ vs benchmark or a trend. =====
+// engine-resolved and traceable either way; two-mode cells show a parenthesised variance vs benchmark or a trend. =====
 const KPI_SET = {
   CFO: ["nrr", "grr", "gross_margin", "magic_number", "cac_payback", "rule_of_40"],
   CRO: ["qoq_growth", "net_new_arr", "ent_share", "nrr", "magic_number", "cac_payback"],
@@ -996,10 +1000,10 @@ function KpiCell({ res, onPick }) {
   const disp = res.disp || fmtMV(mv);
   const tone = b ? ((b.good === "above" ? mv.value >= b.thr : mv.value <= b.thr) ? "good" : "bad") : "";
   return (<button className="kcell" onClick={() => onPick({ node: mv })}>
-    <span className="kcell-l">{mv.label}{mv.epistemic === "proxy" && <span className="proxy">proxy</span>}</span>
+    <span className="kcell-l">{mv.label}{mv.epistemic === "proxy" && <sup className="proxy">a</sup>}</span>
     <span className="kcell-v">{disp}</span>
-    {b ? <span className={`kcell-b ${tone}`}>{mv.value < b.thr ? "▼" : "▲"} vs {kpiThr(b, mv.unit)}</span>
-      : res.trend ? <span className="kcell-b trend">{res.trend === "rising" ? "▲" : res.trend === "falling" ? "▼" : "—"} {res.trend}</span> : null}
+    {b ? <span className={`kcell-b ${tone}`}>{fmtVar(b, mv.unit)} vs {kpiThr(b, mv.unit)}</span>
+      : res.trend ? <span className="kcell-b trend">{res.trend}</span> : null}
   </button>);
 }
 function Scorecard({ role, scorecardKeys, onPick }) {
@@ -1007,7 +1011,12 @@ function Scorecard({ role, scorecardKeys, onPick }) {
   // curation, so stable per finding+role — bounded, not re-rolled per render). Falls back to the
   // deterministic persona set only if curation is unavailable. Every cell engine-resolved + traceable.
   const set = (scorecardKeys && scorecardKeys.length ? scorecardKeys : (KPI_SET[role] || KPI_SET.CFO));
-  return (<div className="scorecard">{set.map((m, i) => { const res = resolveKpi(m); return res ? <KpiCell key={i} res={res} onPick={onPick} /> : null; })}</div>);
+  const resolved = set.map((m) => resolveKpi(m)).filter(Boolean);
+  const proxy = resolved.find((r) => r.mv.epistemic === "proxy" && r.mv.note);
+  return (<div className="scorecard">
+    {resolved.map((res, i) => <KpiCell key={i} res={res} onPick={onPick} />)}
+    {proxy && <div className="src-note"><sup className="proxy">a</sup> {proxy.mv.label} — {proxy.mv.note}</div>}
+  </div>);
 }
 
 function QueryModal({ queries, onAsk, onClose, onPick, onRecurate, onAnswerFully, busy }) {
