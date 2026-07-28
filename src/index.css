@@ -558,21 +558,22 @@ html,body,#root{ height:100%; overflow:hidden; }
 .tc-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
 .tc-col{ border:1px solid var(--scribe); background:var(--field); padding:12px; }
 .tc-h{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid var(--scribe); }
-.tc-h.ok{ color:var(--dye); } .tc-h.no{ color:var(--neg); } .tc-h.eng{ color:var(--ink); }
+/* §4: column heads are labels, not routes or variances — ink. (dye means route-to-source, not "yes";
+   neg means variance, not "refused" — the MAY / MAY NOT / GUARANTEE wording carries the distinction.) */
+.tc-h.ok,.tc-h.no,.tc-h.eng{ color:var(--ink); }
 .tc-col ul{ margin:0; padding-left:16px; } .tc-col li{ font-size:14px; color:var(--ink); margin-bottom:6px; line-height:1.4; }
 .tc-contract{ display:flex; flex-direction:column; gap:8px; }
 .tc-line{ display:flex; gap:12px; align-items:baseline; font-size:14px; color:var(--ink); line-height:1.45; }
-.tc-yes{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--dye); border:1px solid var(--dye); padding:2px 7px; white-space:nowrap; }
-/* §4: contract "refused" label is a status, not a variance — neutral hairline tag; the word carries it.
-   (Sibling .tc-yes/.tc-h.ok/.tc-row.* still carry decorative dye/neg — reported, left for a scoped call.) */
+/* §4: "answerable" is a status, not a route-to-source — neutral hairline tag like its .tc-no pair; the word carries it. */
+.tc-yes{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }
+/* §4: contract "refused" label is a status, not a variance — neutral hairline tag; the word carries it. */
 .tc-no{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }
 .tc-audit{ border:1px solid var(--scribe); max-height:220px; overflow-y:auto; }
 .tc-row{ display:flex; gap:12px; align-items:baseline; padding:8px 12px; border-bottom:1px solid var(--scribe); font-size:14px; }
 .tc-row:last-child{ border-bottom:none; }
 .tc-kind{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:2px 6px; min-width:78px; text-align:center; }
-.tc-row.curation .tc-kind{ background:transparent; color:var(--dye); }
-.tc-row.query .tc-kind{ background:transparent; color:var(--ink); }
-.tc-row.perturbation .tc-kind{ background:transparent; color:var(--neg); }
+/* §4: audit-row kind is a label already spelled out in the row — ink, no dye/neg repeating it. */
+.tc-row.curation .tc-kind,.tc-row.query .tc-kind,.tc-row.perturbation .tc-kind{ background:transparent; color:var(--ink); }
 .tc-detail{ flex:1; color:var(--ink); line-height:1.4; }
 .tc-empty{ padding:16px; text-align:center; color:var(--ink-2); font-size:14px; }
 

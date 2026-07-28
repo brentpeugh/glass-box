@@ -12,10 +12,12 @@ const fmtM = (v) => `$${(v / 1e6).toFixed(2)}M`;
 const fmtK = (v) => (Math.abs(v) >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : `$${(v / 1e3).toFixed(1)}K`);
 const fmtPct = (v) => `${v.toFixed(1)}%`;
 function fmtMV(mv) { switch (mv.unit) { case "usd": return fmtM(mv.value); case "percent": return fmtPct(mv.value); case "ratio": return `${mv.value.toFixed(2)}x`; case "months": return `${mv.value.toFixed(0)} mo`; case "number": return `${mv.value.toFixed(0)}`; case "pp": return `${mv.value.toFixed(0)} pp`; default: return `${mv.value}`; } }
-// §4 variance convention: benchmark deltas read as parenthesised (accounting-negative) when BELOW
-// threshold, bare when at/above — replaces the ▲/▼ direction glyph. Magnitude only; favourability
-// stays in the pos/neg colour on genuine-delta cells. Precision follows the metric's unit.
-function fmtVar(b, unit) { const mag = Math.abs(b.delta); const p = unit === "ratio" ? mag.toFixed(2) : unit === "percent" ? mag.toFixed(1) : mag.toFixed(0); return b.delta < 0 ? `(${p})` : p; }
+// §4 variance convention: a benchmark delta is parenthesised when UNFAVOURABLE, bare when favourable —
+// favourability read from basis.good (not the sign of the delta): good "above" wants delta ≥ 0,
+// good "below" wants delta ≤ 0. So CAC 21 vs 12mo → (9); Rule-of-40 27 vs 40 → (13); NRR 105.7 vs
+// 100 → 5.7. Replaces the ▲/▼ glyph. The pos/neg colour reinforces the SAME favourability — the one
+// place the guide sanctions two signals for one meaning. Magnitude only; precision follows the unit.
+function fmtVar(b, unit) { const mag = Math.abs(b.delta); const p = unit === "ratio" ? mag.toFixed(2) : unit === "percent" ? mag.toFixed(1) : mag.toFixed(0); const favourable = b.good === "above" ? b.delta >= 0 : b.delta <= 0; return favourable ? p : `(${p})`; }
 
 // ================= trace =================
 function RowsLeaf({ leaf, parentVal }) {
