@@ -250,7 +250,7 @@ function LineChart({ series, benchmark, good, onPick, fmt, w = 620, h = 230 }) {
   const areaId = `lg-${Math.abs(series.reduce((a, p, i) => a + p.value * (i + 1), 0) * 1000 | 0)}`;
   const area = `M${x(0)},${padT + plotH} ` + series.map((p, i) => `L${x(i)},${y(p.value)}`).join(" ") + ` L${x(series.length - 1)},${padT + plotH} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln" preserveAspectRatio="xMidYMid meet">
-    <defs><linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data)" stopOpacity="0.12" /><stop offset="100%" stopColor="var(--data)" stopOpacity="0" /></linearGradient></defs>
+    <defs><linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ink)" stopOpacity="0.12" /><stop offset="100%" stopColor="var(--ink)" stopOpacity="0" /></linearGradient></defs>
     {benchmark != null && <rect x={padL} y={good === "above" ? y(benchmark) : padT} width={W - padR - padL} height={good === "above" ? (padT + plotH - y(benchmark)) : (y(benchmark) - padT)} className="cx-danger" />}
     {sc.ticks.map((tv, i) => (tv >= sc.min && tv <= sc.max && <g key={i}><line x1={padL} x2={W - padR} y1={y(tv)} y2={y(tv)} className="cx-grid" /><text x={padL - 10} y={y(tv) + 3.5} className="cx-ytick" textAnchor="end">{fmt(tv)}</text></g>))}
     {benchmark != null && <><line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="cx-bench" /><text x={W - padR} y={y(benchmark) - 6} className="cx-bench-lab" textAnchor="end">TARGET {fmt(benchmark)}</text></>}
@@ -313,8 +313,8 @@ function MiniTrend({ a, b, benchmark, labels = [], w = 680, h = 66 }) {
   const dots = (s, tone) => s.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r={i === s.length - 1 ? 3 : 2} className={`mt-dot ${tone}`}><title>{labels[i] || ""} · {v.toFixed(1)}%</title></circle>);
   return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
     <defs>
-      <linearGradient id="mt-good" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--verdant)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--verdant)" stopOpacity="0" /></linearGradient>
-      <linearGradient id="mt-bad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ember)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--ember)" stopOpacity="0" /></linearGradient>
+      <linearGradient id="mt-good" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--pos)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--pos)" stopOpacity="0" /></linearGradient>
+      <linearGradient id="mt-bad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--neg)" stopOpacity="0.22" /><stop offset="100%" stopColor="var(--neg)" stopOpacity="0" /></linearGradient>
     </defs>
     <path d={area(a)} fill="url(#mt-good)" /><path d={area(b)} fill="url(#mt-bad)" />
     <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" />
@@ -346,7 +346,7 @@ function SoloSpark({ vals, labels, benchmark, tone }) {
   const line = vals.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
   const area = `${line} L${x(vals.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
-    <defs><linearGradient id="sf-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data)" stopOpacity="0.14" /><stop offset="100%" stopColor="var(--data)" stopOpacity="0" /></linearGradient></defs>
+    <defs><linearGradient id="sf-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ink)" stopOpacity="0.14" /><stop offset="100%" stopColor="var(--ink)" stopOpacity="0" /></linearGradient></defs>
     <path d={area} fill="url(#sf-g)" />
     {benchmark != null && <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" />}
     {benchmark != null && <text x={W - padR + 4} y={y(benchmark) + 3} className="mt-bench-lab">{benchmark}</text>}
@@ -463,7 +463,7 @@ function LorenzCurve({ curve, onPick, w = 420, h = 200 }) {
   const path = curve.map((p, i) => `${i ? "L" : "M"}${x(p.acc)},${y(p.arr)}`).join(" ");
   const area = `${path} L${x(100)},${y(0)} Z`;
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln" onClick={onPick}>
-    <defs><linearGradient id="lz-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--data)" stopOpacity="0.12" /><stop offset="100%" stopColor="var(--data)" stopOpacity="0" /></linearGradient></defs>
+    <defs><linearGradient id="lz-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--ink)" stopOpacity="0.12" /><stop offset="100%" stopColor="var(--ink)" stopOpacity="0" /></linearGradient></defs>
     {ticks.map((t, i) => (<g key={i}><line x1={padL} x2={padL + plotW} y1={y(t)} y2={y(t)} className="cx-grid" /><text x={padL - 8} y={y(t) + 3.5} className="cx-ytick" textAnchor="end">{t}</text><text x={x(t)} y={padT + plotH + 14} className="cx-xtick" textAnchor="middle">{t}</text></g>))}
     <line x1={x(0)} y1={y(0)} x2={x(100)} y2={y(100)} className="cx-bench" /><text x={x(100)} y={y(100) + 12} className="cx-bench-lab" textAnchor="end">EQUALITY</text>
     <path d={area} fill="url(#lz-g)" />
@@ -568,7 +568,7 @@ function Treemap({ items, fmt, onPick, w = 420, h = 200 }) {
   const W = w, H = h, pad = 3;
   const total = items.reduce((s, x) => s + x.value, 0) || 1;
   const sorted = items.slice().sort((a, b) => b.value - a.value);
-  let x0 = 0; const shades = ["#1f3a5f", "#4a7ba8", "#8ba6c4", "#b8c8da"];
+  let x0 = 0; const shades = ["var(--ink)", "var(--ink-2)", "var(--scribe-strong)", "var(--scribe)"];
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
     {sorted.map((it, i) => { const ww = (it.value / total) * W; const rect = (<g key={i} className="ln-pt" onClick={() => it.mv && onPick(it.mv)}>
       <rect x={x0 + pad} y={pad} width={Math.max(ww - pad * 2, 1)} height={H - pad * 2} fill={shades[i % shades.length]} />
