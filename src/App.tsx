@@ -688,29 +688,50 @@ function SegmentTable({ onPick }) {
     <div className="dt-row dt-total"><span className="dt-seg">Total</span><span className="dt-num">{fmtM(total)}</span><span className="dt-num dim">100%</span>{num(bNrr)}{num(bGrr)}</div>
   </div>);
 }
+// §1d: every panel is traceable — the conditional trace taught the reader that some values weren't.
+// It was conditional because only single-canonical-value charts (line/combo/waterfall/lorenz) had an
+// obvious "the value" (the last point); multi-value panels (bars, matrix, scatter…) had no single node
+// so trace was omitted. Now every panel traces: single-value panels their value; multi-value panels a
+// representative value that stands for the panel (the drawer opens its full provenance tree). The two
+// component panels (matrix, table) build their own data — they fall back to the blended-NRR headline.
+function panelTrace(w) {
+  const d = w.data || {};
+  const lastMv = (a) => (a && a.length && a[a.length - 1] ? a[a.length - 1].mv : null);
+  if (d.mv) return d.mv;
+  if (d.line) return lastMv(d.line);
+  if (d.series && d.series.length) {
+    const s = d.series;
+    if (s[0] && s[0].mv) return lastMv(s);            // flat points array (line): its own last value
+    if (s[0] && s[0].points) return lastMv(s[0].points);  // series-of-series (stacked_area, indexed…)
+  }
+  if (d.items) { const it = d.items.find((x) => x && x.mv); if (it) return it.mv; }
+  if (d.points) { const p = d.points.find((x) => x && x.mv); if (p) return p.mv; }
+  try { const Q = E.QUARTERS; return E.nrr(null, Q[Q.length - 5], Q[Q.length - 1]); } catch { return null; }
+}
 function Widget({ id, catalog, onPick, dim }) {
   const w = catalog[id]; if (!w) return null; const d = w.data;
-  const last = (arr) => arr[arr.length - 1].mv;
   if (w.kind === "finding_card") return <FindingCard finding={d.finding} onPick={onPick} />;
   if (w.kind === "callout") return <Callout mv={d.mv} onPick={(mv) => onPick({ node: mv })} />;
-  if (w.kind === "combo") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.line) })} /><Fill render={(cw, ch) => <Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "line") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: last(d.series) })} /><Fill render={(cw, ch) => <LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "stacked_area") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <StackedArea quarters={E.QUARTERS} series={d.series} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "matrix") return (<div className="tpanel"><ChartHeader title="Metrics by quarter" /><MetricMatrix onPick={onPick} /></div>);
-  if (w.kind === "hbar") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <HBar items={d.items} benchmark={d.benchmark} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "bullet") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <BulletPanel items={d.items} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "table") return (<div className="tpanel"><ChartHeader title="Segment breakdown" /><SegmentTable onPick={onPick} /></div>);
-  if (w.kind === "waterfall") return (<div className="cpanel"><ChartHeader title={d.title} tag={`NRR ${d.bridge.nrr.toFixed(0)}%`} tagTone={d.bridge.nrr >= 100 ? "good" : "bad"} onTrace={() => onPick({ node: d.mv })} /><Fill render={(cw, ch) => <Waterfall c={d.bridge} w={cw} h={ch} />} /></div>);
-  if (w.kind === "scatter") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Scatter points={d.points} xlab={d.xlab} ylab={d.ylab} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "pareto") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Pareto items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "heatmap") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Heatmap rows={d.rows} cols={d.cols} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "indexed") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <IndexedLine series={d.series} quarters={d.quarters} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "dumbbell") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Dumbbell items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "treemap") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Treemap items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "lorenz") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={() => onPick({ node: d.mv })} /><Fill render={(cw, ch) => <LorenzCurve curve={d.curve} onPick={() => onPick({ node: d.mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "grouped") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <GroupedBar groups={d.groups} keys={d.keys} colors={d.colors} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "quadrant") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <Quadrant points={d.points} xlab={d.xlab} ylab={d.ylab} xbench={d.xbench} ybench={d.ybench} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
-  if (w.kind === "small_multiples") return (<div className="cpanel"><ChartHeader title={d.title} /><Fill render={(cw, ch) => <SmallMultiples series={d.series} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  const tn = panelTrace(w);
+  const onTrace = tn ? () => onPick({ node: tn }) : undefined;
+  if (w.kind === "combo") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <Combo bars={d.bars} line={d.line} benchmark={d.benchmark} good={d.good} fmtL={(v) => fmtM(v)} fmtR={(v) => `${v.toFixed(2)}x`} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "line") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <LineChart series={d.series} benchmark={d.benchmark} good={d.good} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "stacked_area") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <StackedArea quarters={E.QUARTERS} series={d.series} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "matrix") return (<div className="tpanel"><ChartHeader title="Metrics by quarter" onTrace={onTrace} /><MetricMatrix onPick={onPick} /></div>);
+  if (w.kind === "hbar") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <HBar items={d.items} benchmark={d.benchmark} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "bullet") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <BulletPanel items={d.items} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "table") return (<div className="tpanel"><ChartHeader title="Segment breakdown" onTrace={onTrace} /><SegmentTable onPick={onPick} /></div>);
+  if (w.kind === "waterfall") return (<div className="cpanel"><ChartHeader title={d.title} tag={`NRR ${d.bridge.nrr.toFixed(0)}%`} tagTone={d.bridge.nrr >= 100 ? "good" : "bad"} onTrace={onTrace} /><Fill render={(cw, ch) => <Waterfall c={d.bridge} w={cw} h={ch} />} /></div>);
+  if (w.kind === "scatter") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <Scatter points={d.points} xlab={d.xlab} ylab={d.ylab} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "pareto") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <Pareto items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "heatmap") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <Heatmap rows={d.rows} cols={d.cols} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "indexed") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <IndexedLine series={d.series} quarters={d.quarters} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "dumbbell") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <Dumbbell items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "treemap") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <Treemap items={d.items} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "lorenz") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <LorenzCurve curve={d.curve} onPick={() => onPick({ node: d.mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "grouped") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <GroupedBar groups={d.groups} keys={d.keys} colors={d.colors} fmt={d.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "quadrant") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <Quadrant points={d.points} xlab={d.xlab} ylab={d.ylab} xbench={d.xbench} ybench={d.ybench} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
+  if (w.kind === "small_multiples") return (<div className="cpanel"><ChartHeader title={d.title} onTrace={onTrace} /><Fill render={(cw, ch) => <SmallMultiples series={d.series} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   return null;
 }
 
@@ -1152,6 +1173,14 @@ function AppInner() {
   }, [perturbation]);
   function applyPerturbation(name) { initEngine(perturbedDataset(name)); pushAudit({ kind: "perturbation", role, detail: `applied "${PERTURBATIONS[name].label}" — data changed, salience recomputes` }); setPerturbation(name); }
   function resetPerturbation() { initEngine(BASE_DS); pushAudit({ kind: "perturbation", role, detail: "reset to original data" }); setPerturbation(null); }
+
+  // §1d: lock body scroll while any modal is open (read/query/trust/debug/trace); each modal scrolls
+  // in its own body. Restores on close.
+  const modalOpen = showBrief || showQuery || showTrust || showDebug || !!picked;
+  useEffect(() => {
+    document.body.classList.toggle("modal-open", modalOpen);
+    return () => document.body.classList.remove("modal-open");
+  }, [modalOpen]);
 
   if (!role) return (<div className="caliper"><EntryScreen onEnter={enter} /></div>);
 
