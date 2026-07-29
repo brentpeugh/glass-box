@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
 
 import { WIDGET_DOMAIN, RELATED_DOMAINS, guardFraming, guardDirection, engineHeadline } from "./curation";
 import { E, initEngine, setBaseDS, BASE_DS } from "./engine";
@@ -419,16 +419,23 @@ function ChartHeader({ title, tag, tagTone, onTrace }) {
 function useSize() {
   const ref = useRef(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current; if (!el) return;
-    const ro = new ResizeObserver((es) => { const r = es[0].contentRect; setSize({ w: Math.round(r.width), h: Math.round(r.height) }); });
+    // Synchronous first measure (before paint) so the chart renders at its real size on the first
+    // frame — no first-paint flash, and no dependence on the ResizeObserver's first async delivery.
+    // The ResizeObserver only tracks subsequent resizes. A guard, not a timer.
+    const measure = () => { const r = el.getBoundingClientRect(); setSize({ w: Math.round(r.width), h: Math.round(r.height) }); };
+    measure();
+    const ro = new ResizeObserver(measure);
     ro.observe(el); return () => ro.disconnect();
   }, []);
   return [ref, size];
 }
 function Fill({ render }) {
   const [ref, { w, h }] = useSize();
-  return <div ref={ref} className="cfill">{w > 1 && h > 1 ? render(w, h) : null}</div>;
+  // Guard: render nothing until measured (both dims > 0). Below that the plot geometry
+  // (width − padding) goes negative and the SVG emits negative-<rect> errors.
+  return <div ref={ref} className="cfill">{w > 0 && h > 0 ? render(w, h) : null}</div>;
 }
 
 function HBar({ items, benchmark, fmt, onPick, w = 420, h = 200 }) {

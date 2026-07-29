@@ -207,5 +207,42 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
   ok("every font-size resolves to the ladder or --t-tab", bad.length === 0, bad.join(" · "));
 }
 
+// ── 10 · type on an ink ground uses --frame-ink/--frame-mute, never --ink/--ink-2 ────────────────
+// A valence/status sweep can recolour a foreground without checking its background; on an ink-ground
+// container, --ink/--ink-2 text is invisible. For each member of a known-ink container, the EFFECTIVE
+// (cascaded) resting colour must be a frame token. TEETH: catches .brief-src.live/.fallback and
+// .brief-status.holds/.weakened on the ink .brief-head before their dark-head overrides are added.
+{
+  const INK: Record<string, string[]> = {
+    "brief-head": ["brief-tag", "brief-x", "brief-src.live", "brief-src.fallback", "brief-status.untested", "brief-status.holds", "brief-status.weakened"],
+    "hdr": ["hdr-mark", "hdr-sub", "hdr-r", "hdr-status", "lensbtn", "recur", "trust-link", "disclose"],
+    "dbg-h": ["dbg-title", "dbg-meta", "dbg-close"],
+  };
+  const lastSimple = (p: string) => p.trim().split(/\s+|>|\+|~/).filter(Boolean).pop() || "";
+  const clsOf = (sel: string) => new Set((sel.match(/\.[A-Za-z_][\w-]*/g) || []).map((s) => s.slice(1)));
+  const colorOf = (body: string) => { const m = body.match(/(?:^|[;{\s])color:\s*var\(--([\w-]+)\)/); return m ? m[1] : null; };
+  const selfBg = (body: string) => /background(?:-color)?:\s*var\(--(?!ink\b)[\w-]+\)/.test(body); // establishes its own non-ink ground
+  // expand comma-separated selector lists into individual (sel, body) declarations
+  const decls = rules.flatMap((r) => r.prelude.split(",").map((sel) => ({ sel: sel.trim(), body: r.body })));
+  const bad: string[] = [];
+  for (const [container, members] of Object.entries(INK)) {
+    const scopedRe = new RegExp("\\." + container + "(?![-\\w])");
+    for (const member of members) {
+      const want = new Set(member.split("."));
+      const cands = decls.filter((d) => {
+        if (lastSimple(d.sel).includes(":")) return false;               // skip :hover/:focus states
+        const ls = clsOf(lastSimple(d.sel));
+        return ls.size === want.size && [...want].every((c) => ls.has(c)) && colorOf(d.body);
+      });
+      if (!cands.length) continue;
+      const scoped = cands.filter((d) => scopedRe.test(d.sel));
+      const winner = (scoped.length ? scoped : cands).slice(-1)[0];       // scoped beats global; later beats earlier
+      const col = colorOf(winner.body);
+      if ((col === "ink" || col === "ink-2") && !selfBg(winner.body)) bad.push(`${container} › ${member} (--${col})`);
+    }
+  }
+  ok("type on an ink ground uses --frame-ink/--frame-mute, never --ink/--ink-2", bad.length === 0, bad.join(" · "));
+}
+
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — register surface: ${pass}/${pass + fail} assertions`);
 if (fail > 0) process.exit(1);

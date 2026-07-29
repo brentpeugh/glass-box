@@ -636,6 +636,11 @@ html,body,#root{ height:100%; overflow:hidden; }
 .brief-head{ background:var(--ink); border-bottom:2px solid var(--dye); padding:12px 22px; color:var(--frame-ink); }
 .brief-head .brief-tag{ color:var(--frame-mute); border-color:var(--frame-mute); }
 .brief-head .brief-status.untested{ color:var(--frame-mute); border-color:var(--frame-mute); }
+/* §4 fix: type on the ink head is frame-ink (prominent) / frame-mute (recessive) — the Stage-4
+   valence sweep set these foregrounds to --ink/--ink-2, invisible on the ink ground. */
+.brief-head .brief-status.holds, .brief-head .brief-status.weakened{ color:var(--frame-ink); border-color:var(--frame-mute); }
+.brief-head .brief-src.live{ color:var(--frame-ink); border-color:var(--frame-mute); }
+.brief-head .brief-src.fallback{ color:var(--frame-mute); border-color:var(--frame-mute); }
 .brief-x{ color:var(--frame-mute); }
 .brief-x:hover{ color:var(--frame-ink); }
 .brief-thesis{ font-family:'IBM Plex Serif',Georgia,serif; }
