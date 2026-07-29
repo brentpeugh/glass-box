@@ -7,7 +7,9 @@
    breakpoints) are PRESERVED verbatim (§7). The register→token mapping is recorded in
    analysis/surfaces.md. radius → 0 · shadows/gradients/tints/danger-fills → removed.
    =================================================================================== */
-.caliper{
+/* Token block on :root (was .caliper) so --field is visible to html/body — the app is full-bleed:
+   --field is the only ground, edge to edge, no lighter page frame. */
+:root{
   --field:#edeff0;
   --ink:#15181b; --ink-2:#5a6169; --label:#6e757c;
   --scribe:#ccd0d3; --scribe-strong:#a5abb1;
@@ -19,7 +21,8 @@
   --t-tab:12px;   /* tabular numerals + their row labels ONLY — a role, applied to every table uniformly */
   --in-1:4px; --in-2:8px; --in-3:16px; --out:32px;
   --w-hair:1px; --w-series:1.75px; --mk:6px;
-  font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--ink);background:var(--field);min-height:100vh;padding:0 0 48px;background-attachment:fixed;}
+}
+.caliper{ font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--ink);background:var(--field);min-height:100vh;padding:0 0 48px;background-attachment:fixed;}
 .caliper *{box-sizing:border-box;}
 .hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 22px;border-bottom:2px solid var(--dye);background:var(--ink);flex-wrap:wrap;gap:8px;}
 .hdr-mark{font-family:'IBM Plex Sans',sans-serif;font-weight:700;letter-spacing:.22em;font-size:20px;color:var(--frame-ink);}
@@ -329,7 +332,9 @@ button.dt-num:hover{ color:var(--dye); }
 .tb-panel .dtable{ flex:1 1 auto; min-height:0; overflow-y:auto; }
 
 /* ===== contain to viewport: tighten vertical rhythm, harden no-scroll ===== */
-html,body,#root{ height:100%; overflow:hidden; }
+/* full bleed: no UA body margin/padding, --field the ground behind everything (covered by .caliper
+   but painted so there is no light flash before mount and no edge shows through). */
+html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:var(--field); }
 .caliper{ height:100vh; max-height:100vh; }
 .hdr{ padding:10px var(--pad); }
 .honesty{ padding-top:8px; padding-bottom:8px; }

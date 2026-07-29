@@ -58,7 +58,7 @@ const blocks = walk(css);
 const isAt = (p: string) => p.startsWith("@");
 const isStep = (p: string) => /^(\d+%|from|to)(\s*,\s*(\d+%|from|to))*$/.test(p);
 const rules = blocks.filter((b) => !isAt(b.prelude) && !isStep(b.prelude));
-const tokenBlock = rules.find((r) => r.prelude === ".caliper");
+const tokenBlock = rules.find((r) => r.prelude === ":root") || rules.find((r) => r.prelude === ".caliper");
 const classesOf = (prelude: string) => (prelude.match(/\.[A-Za-z_][\w-]*/g) || []).map((s) => s.slice(1));
 const hasClassIn = (prelude: string, set: Set<string>) => classesOf(prelude).some((c) => set.has(c));
 
