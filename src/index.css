@@ -26,8 +26,10 @@
 .hdr-sub{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--frame-mute);margin-left:14px;}
 .hdr-r{display:flex;align-items:center;gap:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--frame-mute);}
 .lens{font-weight:600;letter-spacing:.12em;border:1px solid var(--ink);padding:3px 8px;}
-.live{color:var(--ink-2);display:flex;align-items:center;gap:6px;} .live-dot{width:7px;height:7px;border-radius:0;background:var(--pos);display:inline-block;}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+/* §4: live/loading indicator — the status WORDING ("curated live" / "Model unavailable") carries the
+   distinction; the dot is a neutral tick, not a green valence signal. */
+.live{color:var(--ink-2);display:flex;align-items:center;gap:6px;} .live-dot{width:7px;height:7px;border-radius:0;background:var(--ink-2);display:inline-block;}
+/* §4: @keyframes pulse/grow deleted — dead (defined, never applied); the register carries no keyframe motion. */
 .stage{max-width:1000px;margin:0 auto;padding:30px 24px 0;}
 .sec-head{display:flex;align-items:baseline;gap:12px;margin:34px 0 14px;border-bottom:1px solid var(--scribe);padding-bottom:8px;}
 .sec-head:first-child{margin-top:6px;}
@@ -52,7 +54,7 @@
 .node-glyph{color:var(--dye);font-size:11px;width:12px;} .node-label{font-size:14px;font-weight:500;}
 /* §4: proxy disclosure is a source-key, not a danger tag — a superscript letter in dye that a
    foot source-line on the raising panel resolves (route-to-source, the one job dye carries). */
-.proxy{font-family:'IBM Plex Mono',monospace;font-size:.72em;font-weight:600;color:var(--dye);margin-left:1px;}
+.proxy{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--dye);margin-left:1px;}  /* a <sup>: UA smaller+raised, no ladder-breaking font-size of its own */
 .src-note{font-family:'IBM Plex Mono',monospace;font-size:var(--t-1);color:var(--ink-2);line-height:1.4;margin-top:8px;}
 .co-note{font-family:'IBM Plex Mono',monospace;font-size:var(--t-1);color:var(--ink-2);line-height:1.35;margin-top:3px;}
 .node-op{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-2);background:var(--field);padding:1px 6px;border-radius:0;}
@@ -78,7 +80,6 @@
 .wf-xlab{font-family:'IBM Plex Sans',sans-serif;font-size:10px;fill:var(--ink);} .wf-xval{font-family:'IBM Plex Mono',monospace;font-size:10px;fill:var(--ink-2);}
 .wf-conn{stroke:var(--scribe-strong);stroke-width:1;stroke-dasharray:2 2;}
 .wf-anchor{fill:var(--ink);shape-rendering:crispEdges;} .wf-up{fill:var(--ink);shape-rendering:crispEdges;} .wf-down{fill:var(--ink-2);shape-rendering:crispEdges;}
-@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 .ln-path{fill:none;stroke:var(--ink);stroke-width:2.25;stroke-linejoin:round;stroke-linecap:round;} .ln-bench{stroke:var(--ink-2);stroke-width:var(--w-hair);stroke-dasharray:1 3;} .ln-bench-lab{font-family:'IBM Plex Mono',monospace;font-size:10px;fill:var(--ink-2);}
 .ln-pt{cursor:pointer;} .ln-dot{fill:var(--ink);}
 .ln-pt:hover .ln-dot{r:7;}
@@ -89,15 +90,13 @@
 .co-l{font-size:14px;color:var(--ink);font-weight:500;} .co-basis{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-2);}
 .linecard{margin-top:16px;}
 @media(max-width:780px){.bridges,.strip{grid-template-columns:1fr;}.fside-v{font-size:40px;}.hdr-sub{display:none;}}
-@media(prefers-reduced-motion:reduce){.wf-bar,.live-dot{animation:none;}.trace{transition:none;}}
+@media(prefers-reduced-motion:reduce){.trace{transition:none;}}
 
 .wf-axis.r{fill:var(--ink-2);}
-.co-bar{ fill:var(--frame-mute); shape-rendering:crispEdges; cursor:pointer; transition:fill .12s; } .co-bar:hover{ fill:var(--frame-mute); }
+.co-bar{ fill:var(--frame-mute); shape-rendering:crispEdges; cursor:pointer; } .co-bar:hover{ fill:var(--frame-mute); }  /* §4: no transition — it's a value-bearing mark */
 .area{fill-opacity:1;cursor:pointer;}
 .area-lab{ font-family:'IBM Plex Sans',sans-serif; font-size:var(--t-2); font-weight:600; fill:var(--field); paint-order:stroke; stroke:var(--ink); stroke-width:2px; stroke-linejoin:round; }
-.legend{display:flex;gap:16px;margin:0 0 8px 4px;flex-wrap:wrap;}
-.chip{display:flex;align-items:center;gap:6px;background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink);cursor:pointer;padding:2px 2px;}
-.chip:hover{color:var(--dye);} .sw{width:10px;height:10px;display:inline-block;border-radius:0;}
+/* §3/§4: legend/chip/swatch styling removed — charts carry direct end-labels, no colour key. */
 
 /* ---- entry screen ---- */
 .entry{max-width:760px;margin:0 auto;padding:13vh 24px 0;}
@@ -146,7 +145,7 @@
 .dbg{border:1px solid var(--ink);background:var(--field);margin:0 0 4px;font-family:'IBM Plex Mono',monospace;}
 .dbg-h{background:var(--ink);color:var(--field);font-size:11px;letter-spacing:.08em;padding:6px 24px;display:flex;justify-content:space-between;align-items:center;}
 .dbg-meta{color:var(--frame-mute);font-size:11px;letter-spacing:.04em;}
-.dbg-rej{background:var(--field);color:var(--neg);font-size:11px;padding:6px 24px;border-bottom:1px solid var(--scribe);}
+.dbg-rej{background:var(--field);color:var(--ink-2);font-size:11px;padding:6px 24px;border-bottom:1px solid var(--scribe);}  /* §4: rejection reason is annotation prose — ink-2, not neg */
 .dbg-cols{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--scribe);}
 .dbg-col{background:var(--field);padding:8px 14px;min-width:0;}
 .dbg-cap{font-size:11px;color:var(--dye);letter-spacing:.05em;margin-bottom:5px;text-transform:uppercase;}
@@ -167,8 +166,9 @@
 .ans-q{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:20px;margin-bottom:5px;}
 .ans-intent{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-2);margin-bottom:10px;}
 .ans-intent b{color:var(--ink);}
-.ans.declined{border-left:3px solid var(--neg);}
-.ans-decline{font-size:14px;color:var(--neg);font-style:italic;}
+/* §4: a declined/failed query is a status — the "not in the data contract" wording carries it. */
+.ans.declined{border-left:3px solid var(--scribe-strong);}
+.ans-decline{font-size:14px;color:var(--ink-2);font-style:italic;}
 
 /* ===== LAYOUT PASS — governed 8px grid (base --u), full-width field ===== */
 .caliper{ --u:8px; --measure:1440px; --gap:24px; --pad:32px; }   /* structural (§7): --field(1440px) renamed --measure so --field is the ground colour */
@@ -273,7 +273,6 @@
 .dlab{ font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:500; fill:var(--ink); }
 .wf-grid{ shape-rendering:crispEdges; }
 .wf-axis{ font-size:10px; }
-.legend{ display:flex; gap:14px; margin-bottom:2px; }
 
 /* ===== institutional data table ===== */
 .tpanel{ display:flex; flex-direction:column; gap:6px; }
@@ -398,7 +397,7 @@ html,body,#root{ height:100%; overflow:hidden; }
 .hdr{ display:flex; align-items:center; gap:20px; flex-wrap:nowrap; }
 .hdr-l{ flex:0 0 auto; }
 .hdr-status{ flex:1 1 auto; min-width:0; font-size:14px; color:var(--frame-mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.hdr-status.live .live-dot{ background:var(--pos); }
+.hdr-status.live .live-dot{ background:var(--ink-2); }
 .hdr-r{ flex:0 0 auto; }
 .honesty{ display:none; }
 .stage{ padding-top:6px; padding-bottom:6px; gap:6px; }
@@ -430,12 +429,15 @@ html,body,#root{ height:100%; overflow:hidden; }
 /* epistemic type badge — the headline of the thesis */
 .ptype{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.07em; padding:2px 6px; border:1px solid; white-space:nowrap; flex:0 0 auto; }
 .ptype.extracted{ color:var(--ink); border-color:var(--scribe-strong); }
-.ptype.calculated{ color:var(--dye); border-color:var(--dye); }
-.ptype.modeled{ color:var(--neg); border-color:var(--neg); background:transparent; }
+/* §4: epistemic type is a LABEL, not a route (dye) or a variance (neg) — the word
+   EXTRACTED/CALCULATED/MODELED/FINDING carries it. Ink text; border weight is the only differ. */
+.ptype.calculated{ color:var(--ink); border-color:var(--scribe-strong); }
+.ptype.modeled{ color:var(--ink); border-color:var(--ink); background:transparent; }
 .ptype.finding{ color:var(--ink); border-color:var(--ink); }
 .node-head{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
 .rows-scroll{ overflow:visible; }
-.rows-recon{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--pos); margin-top:6px; padding:5px 8px; background:transparent; border-left:2px solid var(--pos); }
+/* §4: reconciliation is a verify status — the ✓/✗/· mark carries it, not a green/red fill. Ink + hairline. */
+.rows-recon{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink); margin-top:6px; padding:5px 8px; background:transparent; border-left:2px solid var(--scribe); }
 
 /* full-height drawer: clear the old overlay's height/width caps */
 .workarea{ align-items:stretch; }
@@ -456,8 +458,10 @@ html,body,#root{ height:100%; overflow:hidden; }
 .rows-stat{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }
 
 /* error boundary — a throw shows this instead of whiting out the app */
-.err-screen{ max-width:640px; margin:12vh auto; padding:28px; border:1px solid var(--neg); background:var(--field); }
-.err-h{ font-family:'IBM Plex Sans',sans-serif; font-weight:600; font-size:20px; color:var(--neg); margin-bottom:10px; }
+/* §4: the error boundary is a status — the "Something threw" wording + the 2px ink frame carry it,
+   not a red border/heading. (Colour previously carried alarm here — flagged; neutralised per three-job rule.) */
+.err-screen{ max-width:640px; margin:12vh auto; padding:28px; border:2px solid var(--ink); background:var(--field); }
+.err-h{ font-family:'IBM Plex Sans',sans-serif; font-weight:600; font-size:20px; color:var(--ink); margin-bottom:10px; }
 .err-msg{ font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--ink); background:transparent; padding:12px; overflow:auto; white-space:pre-wrap; }
 .err-btn{ margin-top:14px; font-family:'IBM Plex Mono',monospace; font-size:11px; border:1px solid var(--scribe); background:none; padding:6px 12px; cursor:pointer; }
 
@@ -503,7 +507,9 @@ html,body,#root{ height:100%; overflow:hidden; }
 
 /* curation contract: source badge, loading, violations */
 .brief-src{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.06em; padding:3px 8px; }
-.brief-src.live{ color:var(--pos); border:1px solid var(--pos); background:transparent; }
+/* §4: live vs fallback read is a status — the ◈/○ glyph + "model-authored"/"deterministic" wording
+   carries it, not a green tag. Neutral hairline tags; live in full ink, fallback muted. */
+.brief-src.live{ color:var(--ink); border:1px solid var(--scribe); background:transparent; }
 .brief-src.fallback{ color:var(--ink-2); border:1px solid var(--scribe); }
 .brief-load{ padding:44px 30px; text-align:center; color:var(--ink); font-size:14px; line-height:1.5; }
 .brief-viol{ padding:9px 22px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ink-2); border-top:1px solid var(--scribe); background:var(--field); }
@@ -519,7 +525,8 @@ html,body,#root{ height:100%; overflow:hidden; }
 
 /* query → recurate: echo card + confirm action */
 .recur-act{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:8px; padding:10px 12px; background:var(--field); border:1px solid var(--scribe); font-size:14px; color:var(--ink); }
-.frame-tick.warn{ color:var(--neg); border-color:var(--neg); }
+/* §4: "nothing surfaced" is a status — the word carries it; ink, not neg. */
+.frame-tick.warn{ color:var(--ink); border-color:var(--ink); }
 
 /* query → recurate: ranked findings list within a domain */
 .recur-list{ margin-top:8px; border:1px solid var(--scribe); background:var(--field); }
@@ -620,7 +627,7 @@ html,body,#root{ height:100%; overflow:hidden; }
 .hdr .trust-link{ color:var(--dye); background:none; border:none; cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:11px; }
 .hdr .disclose{ color:var(--dye); font-style:normal; }
 .hdr-status b{ color:var(--frame-ink); }
-.hdr .live-dot{ background:var(--pos); }
+.hdr .live-dot{ background:var(--frame-mute); }
 .hdr-menu button{ color:var(--ink); }
 
 .cx-axlab{ font-family:'IBM Plex Sans',sans-serif; font-size:10px; font-weight:600; fill:var(--ink-2); letter-spacing:.06em; text-transform:uppercase; }
@@ -643,8 +650,9 @@ html,body,#root{ height:100%; overflow:hidden; }
 .dbg-close:hover{ color:var(--frame-ink); }
 
 /* computed reconcile mark (trust UI — ✓ verified / ✗ mismatch / · descriptive) */
-.rows-recon .recon-mark{ color:var(--pos); font-weight:600; }
-.rows-recon.bad .recon-mark{ color:var(--neg); }
+/* §4: the ✓/✗ glyph is the signal; ink, weight only. */
+.rows-recon .recon-mark{ color:var(--ink); font-weight:600; }
+.rows-recon.bad .recon-mark{ color:var(--ink); font-weight:700; }
 
 /* Text-over-data occlusion is a DEFECT for a renderer whose claim is honest presentation, and the
    perturb button guarantees the data moves — so every in-plot label carves its own channel with a

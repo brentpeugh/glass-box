@@ -46,7 +46,7 @@ function RowsLeaf({ leaf, parentVal }) {
     reconciles = parentVal ? RTOL(sum, parentVal.value) : null;
   } else if (r.kind === "opps") {
     stat = (<span><b>{r.won}</b> won / <b>{r.n}</b> closed deals · full audit trail</span>);
-    body = (<table className="rows-tbl"><thead><tr><th>deal</th><th>segment</th><th>stage</th></tr></thead><tbody>{r.rows.map((o, i) => (<tr key={i}><td className="mono">{o.opp_id}</td><td className="mono">{o.segment}</td><td className={`mono ${o.stage === "won" ? "pos" : "neg"}`}>{o.stage}</td></tr>))}</tbody></table>);
+    body = (<table className="rows-tbl"><thead><tr><th>deal</th><th>segment</th><th>stage</th></tr></thead><tbody>{r.rows.map((o, i) => (<tr key={i}><td className="mono">{o.opp_id}</td><td className="mono">{o.segment}</td><td className="mono">{o.stage}</td></tr>))}</tbody></table>);{/* §4: won/lost is a categorical status — the stage word carries it, not a pos/neg cell */}
     note = `closed opportunities, resolved live from the pipeline`;
     recon = <>{r.won} won ÷ {r.n} closed = <b className="mono">{r.n ? (r.won / r.n * 100).toFixed(1) : "—"}%</b> — reconciles to the value above</>;
     reconciles = parentVal && r.n ? RTOL(r.won / r.n * 100, parentVal.value) : null;
