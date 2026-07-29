@@ -793,12 +793,26 @@ function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding, so
 }
 
 function EntryScreen({ onEnter }) {
-  return (<div className="entry">
-    <div className="entry-mark">⟡ CALIPER</div>
-    <div className="entry-sub">Caliper Systems · synthetic · ~$40M ARR vertical SaaS. The engine has computed the quarter. Enter as a role — the dashboard is curated for what you're accountable for (live when the model is reachable, deterministic otherwise), from the same findings.</div>
-    <div className="entry-roles">
-      {Object.entries(ROLES).map(([k, r]) => (<button key={k} className="role" onClick={() => onEnter(k)}><span className="role-k">{k}</span><span className="role-l">{r.label}</span><span className="role-f">{r.focus}</span></button>))}
+  let quarters = 0, rows = 0;
+  try { quarters = E.QUARTERS.length; } catch {}
+  try { rows = BASE_DS ? BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length : 0; } catch {}
+  return (<div className="entry-shell">
+    <div className="entry">
+      <div className="entry-mark">⟡ CALIPER</div>
+      <div className="entry-sub">
+        <p className="entry-line">Caliper Systems — a synthetic ~$40M ARR vertical SaaS; the engine has computed the quarter.</p>
+        <p className="entry-line">Enter as a role; the board leads with what you're accountable for, from one set of findings.</p>
+      </div>
+      <div className="entry-roles">
+        {Object.entries(ROLES).map(([k, r]) => (<button key={k} className="role" onClick={() => onEnter(k)}>
+          <span className="role-k">{k}</span>
+          <span className="role-f">{r.focus}</span>
+        </button>))}
+      </div>
     </div>
+    <footer className="rail-foot">
+      <div className="foot-status"><span className="foot-src">⟡</span> {quarters} quarters · <b>{rows.toLocaleString()}</b> source rows · deterministic engine core</div>
+    </footer>
   </div>);
 }
 
