@@ -311,7 +311,7 @@ button.dt-num:hover{ color:var(--dye); }
 .rail{ grid-column:1; grid-row:1 / -1; background:var(--ink); border-right:2px solid var(--dye); display:flex; flex-direction:column; align-items:stretch; overflow:hidden; z-index:2; }
 .rail-mark{ font-family:'IBM Plex Sans',sans-serif; font-weight:700; font-size:var(--t-2); letter-spacing:.12em; color:var(--frame-ink); text-align:center; line-height:1.15; padding:12px 4px 14px; overflow-wrap:anywhere; border-bottom:1px solid var(--frame-mute); }
 .rail-grp{ display:flex; flex-direction:column; }
-.rail-bottom{ margin-top:auto; }   /* the empty middle: secondary group sits at the foot of the rail */
+.rail-bottom{ margin-top:auto; margin-bottom:var(--in-3); }   /* empty middle; secondary group lifted one step off the bottom edge */
 .railbtn{ display:block; width:100%; background:none; border:none; border-top:1px solid transparent; border-bottom:2px solid transparent; color:var(--frame-mute); font-family:'IBM Plex Mono',monospace; font-size:var(--t-2); font-weight:600; letter-spacing:.08em; text-transform:uppercase; text-align:center; line-height:1.18; padding:10px 5px; cursor:pointer; overflow-wrap:normal; word-break:normal; hyphens:none; }
 .railbtn:hover{ color:var(--frame-ink); }
 .railbtn.on{ color:var(--frame-ink); border-bottom-color:var(--frame-ink); }   /* 2px underline for the active role — no glyph, no fill */
@@ -319,13 +319,13 @@ button.dt-num:hover{ color:var(--dye); }
 .rail-menu-wrap .hdr-menu{ left:100%; bottom:0; top:auto; right:auto; margin-left:4px; }   /* Tools sits low: menu opens up-and-right, clear of the rail */
 
 /* the footer band: ink ground, --bar tall. Curation status (was top rail) + proxy footnote (was in body). */
-.rail-foot{ grid-column:2; grid-row:2; height:var(--bar); background:var(--ink); border-top:2px solid var(--dye); display:flex; align-items:center; gap:24px; padding:0 var(--pad); overflow:hidden; }
-.foot-status{ flex:1 1 auto; min-width:0; font-family:'IBM Plex Mono',monospace; font-size:var(--t-2); color:var(--frame-mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.foot-status b{ color:var(--frame-ink); font-weight:600; }
-.foot-status .disclose{ color:var(--frame-mute); font-style:italic; }
-.rail-foot .live-dot{ background:var(--frame-mute); }
-.foot-note{ flex:0 1 auto; min-width:0; max-width:44%; font-family:'IBM Plex Mono',monospace; font-size:var(--t-1); line-height:1.25; color:var(--frame-mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.rail-foot .proxy{ color:var(--frame-ink); }   /* the footnote key, prominent on ink */
+/* footer is a SURFACE, not chrome: --field ground, a hairline scribe-strong rule above it — no ink
+   band, so no heavy L where it used to meet the rail at the bottom-left. It carries body text
+   (status + proxy note) in ink/ink-2; the proxy key + disclose keep their default dye on the field. */
+.rail-foot{ grid-column:2; grid-row:2; height:var(--bar); background:var(--field); border-top:var(--w-hair) solid var(--scribe-strong); display:flex; align-items:center; gap:24px; padding:0 var(--pad); overflow:hidden; }
+.foot-status{ flex:1 1 auto; min-width:0; font-family:'IBM Plex Mono',monospace; font-size:var(--t-2); color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.foot-status b{ color:var(--ink); font-weight:600; }
+.foot-note{ flex:0 1 auto; min-width:0; max-width:44%; font-family:'IBM Plex Mono',monospace; font-size:var(--t-1); line-height:1.25; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .stage{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:12px; padding:12px var(--pad) 52px; max-width:none; margin:0; overflow:hidden; }
 .scorecard{ flex:0 0 auto; margin:0; }
 /* board fills remaining height; chart rows flex, table row sizes to content */
@@ -362,7 +362,7 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .caliper{ height:100vh; max-height:100vh; }
 .hdr{ padding:10px var(--pad); }
 .honesty{ padding-top:8px; padding-bottom:8px; }
-.stage{ gap:8px; padding:8px var(--pad) 8px; }
+.stage{ gap:8px; padding:8px var(--in-3) 8px; }   /* board body frame: side padding --pad(32)→--in-3(16) */
 .scorecard{ gap:10px; }
 .kcell{ padding:9px 12px; }
 .kcell-v{ font-size:20px; }
@@ -403,7 +403,7 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .chart-h{ margin-bottom:3px; }
 .chart-title{ font-size:11px; }
 .chart-tag{ font-size:11px; }
-.tb-panel{ padding:7px 9px; }
+.tb-panel{ padding:5px 8px; }   /* per-panel padding 7px 9px → 5px 8px */
 .mx-cell{ font-size:14px; padding:4px 5px 4px 0; }
 .mx-lab{ font-size:14px; }
 .dt-num{ font-size:14px; } .dt-seg{ font-size:14px; }
@@ -441,7 +441,7 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 
 /* ===== robust fit: every level can shrink to its allocation (no estimate, no clip) ===== */
 *{ box-sizing:border-box; }
-.stage{ padding-bottom:52px; }
+.stage{ padding-bottom:var(--in-3); }   /* was 52px — the pooled empty band; reclaimed to the grid */
 .tb-panel,.cpanel,.tpanel,.cfill,.split-minor{ min-height:0; }
 .tb-panel .cfill{ flex:1 1 auto; }
 /* dominant-plus-rail: the big panel's chart fills its taller region */

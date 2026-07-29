@@ -105,7 +105,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
     "recur", "pb-reset", "sf-badge", "drawer-t", "dbg-cap", "asked", "asked-h", "disclose",
     // structural accent that frames the traceable field
     "hdr", "sec-n", "card", "anno", "role", "frame-tick", "brief-head", "dbg-h", "fband",
-    "rail", "rail-foot",
+    "rail",
   ]);
   const dyeBad: string[] = [], second: string[] = [];
   for (const r of rules) {
@@ -219,8 +219,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
     "hdr": ["hdr-mark", "hdr-sub", "hdr-r", "hdr-status", "lensbtn", "recur", "trust-link", "disclose"],
     "dbg-h": ["dbg-title", "dbg-meta", "dbg-close"],
     "rail": ["rail-mark", "railbtn"],
-    "rail-foot": ["foot-status", "foot-note"],
-  };
+  };  // .rail-foot is a --field surface (Tuning 1a), not an ink container — its text is ink/ink-2
   const lastSimple = (p: string) => p.trim().split(/\s+|>|\+|~/).filter(Boolean).pop() || "";
   const clsOf = (sel: string) => new Set((sel.match(/\.[A-Za-z_][\w-]*/g) || []).map((s) => s.slice(1)));
   const colorOf = (body: string) => { const m = body.match(/(?:^|[;{\s])color:\s*var\(--([\w-]+)\)/); return m ? m[1] : null; };
