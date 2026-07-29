@@ -358,12 +358,15 @@ button.dt-num:hover{ color:var(--dye); }
 .qmodal-note{ font-size:11px; color:var(--ink-2); margin:8px 0 4px; }
 .qmodal-results{ overflow-y:auto; min-height:0; margin-top:8px; }
 
-/* ===== aspect partition grid ===== */
-.partition{ flex:1 1 auto; min-height:0; display:grid; gap:12px; grid-template-columns:repeat(12,1fr); align-content:start; }
-.tb-panel{ background:var(--field); border:1px solid var(--scribe); padding:10px 12px; min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
-/* §1d: the salient band is a full-width section — a --w-hair scribe-strong rule divides it from the
-   chart grid below, edge to edge (the band spans all 12 columns). */
-.tb-panel.asp-band{ border:none; border-bottom:var(--w-hair) solid var(--scribe-strong); background:none; padding:0 0 3px; overflow:visible; }
+/* ===== §1e lattice: one continuous --field plane divided by rules, not tiles on a ground =====
+   board = salient band (a section) stacked above the chart grid. The salient↔grid boundary is a
+   single --scribe-strong rule on the band; the chart panels are a gap-as-rule lattice: the grid
+   background is --scribe and 1px gaps reveal it as single hairlines between panels (no borders, so
+   no double lines, no outer-edge insets). Panels keep --field so the plane reads continuous. */
+.board{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+.board-band{ flex:0 0 auto; border-bottom:var(--w-hair) solid var(--scribe-strong); padding-bottom:3px; }
+.partition{ flex:1 1 auto; min-height:0; display:grid; gap:12px; grid-template-columns:repeat(12,1fr); align-content:start; background:var(--scribe); }
+.tb-panel{ background:var(--field); border:none; padding:10px 12px; min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
 .tb-panel .cpanel{ height:100%; display:flex; flex-direction:column; }
 .tb-panel .cfill{ flex:1 1 auto; height:auto; min-height:0; }
 .tb-panel .tpanel{ height:100%; display:flex; flex-direction:column; min-height:0; } .tb-panel .tpanel .matrix{ flex:1 1 auto; min-height:0; overflow-y:auto; } .tb-panel .tpanel .dtable-wrap{ flex:1 1 auto; min-height:0; overflow-y:auto; }
@@ -380,7 +383,7 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .scorecard{ gap:0; }
 .kcell{ padding:9px 12px; }
 .kcell-v{ font-size:20px; }
-.partition{ gap:10px; }
+.partition{ gap:var(--w-hair); }   /* §1e: the 1px gap IS the rule (grid bg = --scribe shows through) */
 .tb-panel{ padding:8px 11px; }
 .chart-h{ margin-bottom:4px; }
 /* compress the finding band */

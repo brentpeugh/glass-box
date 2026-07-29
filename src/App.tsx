@@ -801,15 +801,28 @@ function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding, so
   const tables = modelTables.length ? modelTables : (catalog["segment_table"] ? [{ widget: "segment_table", _kind: "table" }] : []);
   const p = PARTITIONS[selectPartition(findings.length, modelCharts, charts, tables.length, partitionPref)];
   const placed = fillPartition(p, findings, charts, tables, role);
-  return (<div className="partition" style={{ gridTemplateRows: p.rowsT }}>
-    {placed.map((pl, i) => (
-      <div key={i} className={`tb-panel asp-${pl.region.a}`} style={{ gridColumn: `${pl.region.c[0]} / ${pl.region.c[1]}`, gridRow: `${pl.region.r[0]} / ${pl.region.r[1]}` }}>
-        {pl.block.widget === "salient_band"
-          ? <div className="block emph-hero"><SalientBand finding={finding} role={role} onPick={onPick} /></div>
-          : pl.block._kind === "finding_card"
-          ? <Block block={pl.block} catalog={catalog} onPick={onPick} dim={null} source={source} />
-          : <Widget id={pl.block.widget} catalog={catalog} onPick={onPick} dim={null} />}
-      </div>))}
+  // §1e lattice: the salient band is a SECTION, not a chart cell — lift it out of the grid so the
+  // chart panels form a clean gap-as-rule lattice (--scribe) and the salient↔grid boundary is a
+  // single --scribe-strong rule on the band container (no doubled line). Chart rows shift up by the
+  // band row and the leading "auto" drops from the row template.
+  const bandPlaced = placed.filter((pl) => pl.region.a === "band");
+  const chartPlaced = placed.filter((pl) => pl.region.a !== "band");
+  const hasBand = bandPlaced.length > 0;
+  const chartRowsT = hasBand ? p.rowsT.replace(/^auto\s+/, "") : p.rowsT;
+  const shift = hasBand ? 1 : 0;
+  const cellContent = (pl) => pl.block.widget === "salient_band"
+    ? <div className="block emph-hero"><SalientBand finding={finding} role={role} onPick={onPick} /></div>
+    : pl.block._kind === "finding_card"
+    ? <Block block={pl.block} catalog={catalog} onPick={onPick} dim={null} source={source} />
+    : <Widget id={pl.block.widget} catalog={catalog} onPick={onPick} dim={null} />;
+  return (<div className="board">
+    {bandPlaced.map((pl, i) => <div key={"b" + i} className="board-band">{cellContent(pl)}</div>)}
+    <div className="partition" style={{ gridTemplateRows: chartRowsT }}>
+      {chartPlaced.map((pl, i) => (
+        <div key={i} className={`tb-panel asp-${pl.region.a}`} style={{ gridColumn: `${pl.region.c[0]} / ${pl.region.c[1]}`, gridRow: `${pl.region.r[0] - shift} / ${pl.region.r[1] - shift}` }}>
+          {cellContent(pl)}
+        </div>))}
+    </div>
   </div>);
 }
 
