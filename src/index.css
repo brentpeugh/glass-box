@@ -174,7 +174,7 @@
 .ans-decline{font-size:14px;color:var(--ink-2);font-style:italic;}
 
 /* ===== LAYOUT PASS — governed 8px grid (base --u), full-width field ===== */
-.caliper{ --u:8px; --measure:1440px; --gap:24px; --pad:32px; }   /* structural (§7): --field(1440px) renamed --measure so --field is the ground colour */
+.caliper{ --u:8px; --measure:1440px; --gap:24px; --pad:32px; --bar:56px; }   /* --bar: the one frame constant — left-rail WIDTH = footer HEIGHT, so the bottom-left corner is square */
 /* content field: generous framing margins are structural, not wasted (Silence over Noise) */
 .stage{ max-width:var(--measure); margin:0 auto; padding:0 var(--pad) 48px; }
 .honesty{ padding-left:var(--pad); padding-right:var(--pad); }
@@ -300,8 +300,32 @@ button.dt-num:hover{ color:var(--dye); }
 .tb-finding{ }
 
 /* ===== fixed viewport: fill the screen, no scroll ===== */
-.caliper{ height:100vh; display:flex; flex-direction:column; overflow:hidden; padding:0; }
-.hdr,.honesty{ flex:0 0 auto; }
+/* ===== frame: full-height left rail | content | footer band (Tuning 1) ===== */
+/* the rail grid applies only to the board (role set); entry/error/loading stay plain block .caliper */
+.caliper.has-rail{ height:100vh; max-height:100vh; overflow:hidden; padding:0;
+  display:grid; grid-template-columns:var(--bar) 1fr; grid-template-rows:1fr var(--bar); }
+.frame-main{ grid-column:2; grid-row:1; min-width:0; min-height:0; overflow:hidden; display:flex; flex-direction:column; }
+.honesty{ flex:0 0 auto; }
+
+/* the rail: ink ground, full height, --bar wide. Primary group top, secondary bottom, empty between. */
+.rail{ grid-column:1; grid-row:1 / -1; background:var(--ink); border-right:2px solid var(--dye); display:flex; flex-direction:column; align-items:stretch; overflow:hidden; z-index:2; }
+.rail-mark{ font-family:'IBM Plex Sans',sans-serif; font-weight:700; font-size:var(--t-2); letter-spacing:.12em; color:var(--frame-ink); text-align:center; line-height:1.15; padding:12px 4px 14px; overflow-wrap:anywhere; border-bottom:1px solid var(--frame-mute); }
+.rail-grp{ display:flex; flex-direction:column; }
+.rail-bottom{ margin-top:auto; }   /* the empty middle: secondary group sits at the foot of the rail */
+.railbtn{ display:block; width:100%; background:none; border:none; border-top:1px solid transparent; border-bottom:2px solid transparent; color:var(--frame-mute); font-family:'IBM Plex Mono',monospace; font-size:var(--t-2); font-weight:600; letter-spacing:.08em; text-transform:uppercase; text-align:center; line-height:1.18; padding:10px 5px; cursor:pointer; overflow-wrap:normal; word-break:normal; hyphens:none; }
+.railbtn:hover{ color:var(--frame-ink); }
+.railbtn.on{ color:var(--frame-ink); border-bottom-color:var(--frame-ink); }   /* 2px underline for the active role — no glyph, no fill */
+.rail-menu-wrap{ position:relative; }
+.rail-menu-wrap .hdr-menu{ left:100%; bottom:0; top:auto; right:auto; margin-left:4px; }   /* Tools sits low: menu opens up-and-right, clear of the rail */
+
+/* the footer band: ink ground, --bar tall. Curation status (was top rail) + proxy footnote (was in body). */
+.rail-foot{ grid-column:2; grid-row:2; height:var(--bar); background:var(--ink); border-top:2px solid var(--dye); display:flex; align-items:center; gap:24px; padding:0 var(--pad); overflow:hidden; }
+.foot-status{ flex:1 1 auto; min-width:0; font-family:'IBM Plex Mono',monospace; font-size:var(--t-2); color:var(--frame-mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.foot-status b{ color:var(--frame-ink); font-weight:600; }
+.foot-status .disclose{ color:var(--frame-mute); font-style:italic; }
+.rail-foot .live-dot{ background:var(--frame-mute); }
+.foot-note{ flex:0 1 auto; min-width:0; max-width:44%; font-family:'IBM Plex Mono',monospace; font-size:var(--t-1); line-height:1.25; color:var(--frame-mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rail-foot .proxy{ color:var(--frame-ink); }   /* the footnote key, prominent on ink */
 .stage{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:12px; padding:12px var(--pad) 52px; max-width:none; margin:0; overflow:hidden; }
 .scorecard{ flex:0 0 auto; margin:0; }
 /* board fills remaining height; chart rows flex, table row sizes to content */

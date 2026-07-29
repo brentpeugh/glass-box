@@ -1021,10 +1021,9 @@ function Scorecard({ role, scorecardKeys, onPick }) {
   // deterministic persona set only if curation is unavailable. Every cell engine-resolved + traceable.
   const set = (scorecardKeys && scorecardKeys.length ? scorecardKeys : (KPI_SET[role] || KPI_SET.CFO));
   const resolved = set.map((m) => resolveKpi(m)).filter(Boolean);
-  const proxy = resolved.find((r) => r.mv.epistemic === "proxy" && r.mv.note);
+  // proxy footnote key (sup "a") stays on the cell label; the note itself renders in the footer band.
   return (<div className="scorecard">
     {resolved.map((res, i) => <KpiCell key={i} res={res} onPick={onPick} />)}
-    {proxy && <div className="src-note"><sup className="proxy">a</sup> {proxy.mv.label} — {proxy.mv.note}</div>}
   </div>);
 }
 
@@ -1142,42 +1141,57 @@ function AppInner() {
 
   if (!role) return (<div className="caliper"><EntryScreen onEnter={enter} /></div>);
 
+  // Proxy footnote lifted to the footer band (was a line inside the scorecard). Resolve the same
+  // scorecard set the Scorecard renders, and pull the one proxy metric's disclosure note.
+  const scSet = (state.curation && state.curation.scorecardKeys && state.curation.scorecardKeys.length) ? state.curation.scorecardKeys : (KPI_SET[role] || KPI_SET.CFO);
+  const footNote = state.loading ? null : scSet.map((m) => resolveKpi(m)).filter(Boolean).find((r) => r.mv.epistemic === "proxy" && r.mv.note);
+
   return (
-    <div className="caliper">
-      
-      <header className="hdr">
-        <div className="hdr-l"><span className="hdr-mark">⟡ CALIPER</span><span className="hdr-sub">Caliper Systems · synthetic</span></div>
-        <div className={`hdr-status ${state.source}`}>
-          {state.loading ? <span><span className="live-dot" /> curating the {role} dashboard — the model is arranging the engine's findings…</span>
-            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · overall #1: {state.disclosure.label} → {state.disclosure.owner.role} view</em>}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>}</span>
-            : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>}</span>}
+    <div className="caliper has-rail">
+
+      {/* full-height left rail — Strata grammar: primary at the top, secondary at the bottom, empty between */}
+      <nav className="rail">
+        <div className="rail-mark">CALIPER</div>
+        <div className="rail-grp rail-top">
+          {Object.keys(ROLES).map((k) => <button key={k} className={`railbtn lens ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
+          <button className="railbtn" onClick={() => setShowQuery(true)} title="interrogate the engine">Ask engine</button>
         </div>
-        <div className="hdr-r">
-          {Object.keys(ROLES).map((k) => <button key={k} className={`lensbtn ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
-          <button className="recur brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">◈ read</button>
-          <button className="recur" onClick={() => setShowQuery(true)} title="interrogate the engine">⌕</button>
-          <button className={`recur ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">⟲ perturb</button>
-          <div className="hdr-menu-wrap">
-            <button className="recur" onClick={() => setShowMenu((v) => !v)} title="tools">⋯</button>
+        <div className="rail-grp rail-bottom">
+          <div className="rail-menu-wrap">
+            <button className="railbtn" onClick={() => setShowMenu((v) => !v)} title="tools">More</button>
             {showMenu && <div className="hdr-menu" onMouseLeave={() => setShowMenu(false)}>
               <button onClick={() => { delete cache.current[role]; enter(role); setShowMenu(false); }}>↻ re-curate</button>
               <button onClick={() => { setShowDebug(true); setShowMenu(false); }}>◱ curation log</button>
               <button onClick={() => { setShowTrust(true); setShowMenu(false); }}>⛨ trust contract</button>
             </div>}
           </div>
+          <button className="railbtn brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">Model read</button>
+          <button className={`railbtn ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">Change data</button>
         </div>
-      </header>
+      </nav>
 
-      {perturbation && <div className="perturb-banner"><span className="pb-tag">DATA PERTURBED</span><span className="pb-lbl">{PERTURBATIONS[perturbation].label}</span><span className="pb-note">{PERTURBATIONS[perturbation].note} The engine recomputed salience from the changed data — the finding you see below re-derived on its own, no code change.</span><button className="pb-reset" onClick={resetPerturbation}>reset data ›</button></div>}
+      <div className="frame-main">
+        {perturbation && <div className="perturb-banner"><span className="pb-tag">DATA PERTURBED</span><span className="pb-lbl">{PERTURBATIONS[perturbation].label}</span><span className="pb-note">{PERTURBATIONS[perturbation].note} The engine recomputed salience from the changed data — the finding you see below re-derived on its own, no code change.</span><button className="pb-reset" onClick={resetPerturbation}>reset data ›</button></div>}
 
-      {showDebug && <div className="brief-overlay"><DebugPanel d={state.debug} onClose={() => setShowDebug(false)} /></div>}
+        {showDebug && <div className="brief-overlay"><DebugPanel d={state.debug} onClose={() => setShowDebug(false)} /></div>}
 
-      <div className={`workarea ${picked ? "drawer-open" : ""}`}>
-        <main className="stage">
-          {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} finding={state.curation && state.curation.finding} source={state.source} /></>}
-        </main>
-        <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
+        <div className={`workarea ${picked ? "drawer-open" : ""}`}>
+          <main className="stage">
+            {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} finding={state.curation && state.curation.finding} source={state.source} /></>}
+          </main>
+          <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
+        </div>
       </div>
+
+      {/* footer band — the curation status string (was top rail) + the proxy footnote (was in the body) */}
+      <footer className="rail-foot">
+        <div className={`foot-status ${state.source}`}>
+          {state.loading ? <span><span className="live-dot" /> curating the {role} dashboard — the model is arranging the engine's findings…</span>
+            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · overall #1: {state.disclosure.label} → {state.disclosure.owner.role} view</em>}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>}</span>
+            : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>}</span>}
+        </div>
+        {footNote && <div className="foot-note"><sup className="proxy">a</sup> {footNote.mv.label} — {footNote.mv.note}</div>}
+      </footer>
 
       {showBrief && <div className="brief-overlay"><AnalystRead role={role} catalog={catalog} curation={state.curation} onPick={(p) => { setPicked(p); setShowBrief(false); }} onClose={() => setShowBrief(false)} /></div>}
       {showTrust && <div className="brief-overlay"><TrustPanel audit={audit.current} onClose={() => setShowTrust(false)} /></div>}

@@ -105,6 +105,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
     "recur", "pb-reset", "sf-badge", "drawer-t", "dbg-cap", "asked", "asked-h", "disclose",
     // structural accent that frames the traceable field
     "hdr", "sec-n", "card", "anno", "role", "frame-tick", "brief-head", "dbg-h", "fband",
+    "rail", "rail-foot",
   ]);
   const dyeBad: string[] = [], second: string[] = [];
   for (const r of rules) {
@@ -217,6 +218,8 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
     "brief-head": ["brief-tag", "brief-x", "brief-src.live", "brief-src.fallback", "brief-status.untested", "brief-status.holds", "brief-status.weakened"],
     "hdr": ["hdr-mark", "hdr-sub", "hdr-r", "hdr-status", "lensbtn", "recur", "trust-link", "disclose"],
     "dbg-h": ["dbg-title", "dbg-meta", "dbg-close"],
+    "rail": ["rail-mark", "railbtn"],
+    "rail-foot": ["foot-status", "foot-note"],
   };
   const lastSimple = (p: string) => p.trim().split(/\s+|>|\+|~/).filter(Boolean).pop() || "";
   const clsOf = (sel: string) => new Set((sel.match(/\.[A-Za-z_][\w-]*/g) || []).map((s) => s.slice(1)));
