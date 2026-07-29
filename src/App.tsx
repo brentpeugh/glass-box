@@ -1151,7 +1151,7 @@ function AppInner() {
 
       {/* full-height left rail — Strata grammar: primary at the top, secondary at the bottom, empty between */}
       <nav className="rail">
-        <div className="rail-mark">CALIPER</div>
+        <div className="rail-mark" title="Caliper">⟡</div>
         <div className="rail-grp rail-top">
           {Object.keys(ROLES).map((k) => <button key={k} className={`railbtn lens ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
           <button className="railbtn" onClick={() => setShowQuery(true)} title="interrogate the engine">Ask engine</button>

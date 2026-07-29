@@ -235,9 +235,12 @@
 /* §7 SANCTIONED STRUCTURAL CHANGE: KPI scorecard sizes to content, not six equal columns, so the
    longest role label ("Enterprise ARR Share") takes what it needs and the shortest returns it. The
    row still fills the width (space-between); nothing moves position — only the internal division. */
-.scorecard{ display:grid; grid-template-columns:repeat(6,auto); justify-content:space-between; gap:16px; margin:4px 0 8px; }
-.kcell{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; background:var(--field); border:1px solid var(--scribe); border-radius:0; padding:12px 15px; cursor:pointer; text-align:left; font-family:inherit; min-width:0; transition:border-color .12s; } .kcell:hover{ border-color:var(--scribe-strong); }
-.kcell:hover{ border-top-color:var(--ink); }
+/* §1b: KPI cells → one continuous strip. No boxes: no per-cell border/background; --w-hair verticals
+   divide the cells; one --scribe-strong rule below the band. Columns: equal 1fr (tested — CRO fits). */
+.scorecard{ display:grid; grid-template-columns:repeat(6,1fr); gap:0; margin:4px 0 8px; border-bottom:var(--w-hair) solid var(--scribe-strong); }
+.kcell{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; background:none; border:none; border-left:var(--w-hair) solid var(--scribe); border-radius:0; padding:12px 15px; cursor:pointer; text-align:left; font-family:inherit; min-width:0; }
+.kcell:first-child{ border-left:none; }
+.kcell:hover .kcell-v{ color:var(--dye); }   /* no box to light up — the value tints to the route colour */
 .kcell-v{ font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:20px; letter-spacing:-.02em; color:var(--ink); }
 .kcell-l{ font-family:'IBM Plex Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--ink-2); display:flex; align-items:center; gap:5px; }
 .kcell-b{ font-family:'IBM Plex Mono',monospace; font-size:10px; margin-top:2px; color:var(--ink-2); } .kcell-b.good{ color:var(--pos); } .kcell-b.bad{ color:var(--neg); }
@@ -309,12 +312,16 @@ button.dt-num:hover{ color:var(--dye); }
 
 /* the rail: ink ground, full height, --bar wide. Primary group top, secondary bottom, empty between. */
 .rail{ grid-column:1; grid-row:1 / -1; background:var(--ink); border-right:2px solid var(--dye); display:flex; flex-direction:column; align-items:stretch; overflow:hidden; z-index:2; }
-.rail-mark{ font-family:'IBM Plex Sans',sans-serif; font-weight:700; font-size:var(--t-2); letter-spacing:.12em; color:var(--frame-ink); text-align:center; line-height:1.15; padding:12px 4px 14px; overflow-wrap:anywhere; border-bottom:1px solid var(--frame-mute); }
+/* §1b: the mark (the wordmark's diamond glyph, extracted) sits in the rail head, sized to fit 56px
+   without wrapping, centred, frame-ink on ink. */
+.rail-mark{ font-family:'IBM Plex Sans',sans-serif; font-weight:400; font-size:var(--t-4); color:var(--frame-ink); text-align:center; line-height:1; padding:14px 4px; border-bottom:var(--w-hair) solid var(--frame-mute); }
 .rail-grp{ display:flex; flex-direction:column; }
 .rail-bottom{ margin-top:auto; margin-bottom:var(--in-3); }   /* empty middle; secondary group lifted one step off the bottom edge */
 .railbtn{ display:block; width:100%; background:none; border:none; border-top:1px solid transparent; border-bottom:2px solid transparent; color:var(--frame-mute); font-family:'IBM Plex Mono',monospace; font-size:var(--t-2); font-weight:600; letter-spacing:.08em; text-transform:uppercase; text-align:center; line-height:1.18; padding:10px 5px; cursor:pointer; overflow-wrap:normal; word-break:normal; hyphens:none; }
 .railbtn:hover{ color:var(--frame-ink); }
-.railbtn.on{ color:var(--frame-ink); border-bottom-color:var(--frame-ink); }   /* 2px underline for the active role — no glyph, no fill */
+.railbtn.on{ color:var(--frame-ink); border-bottom-color:var(--frame-ink); }   /* secondary group (perturb) active: 2px underline */
+/* §1b: active ROLE gets a --field fill on the ink ground — the board cutting into the rail. Roles only. */
+.railbtn.lens.on{ background:var(--field); color:var(--ink); border-bottom-color:transparent; }
 .rail-menu-wrap{ position:relative; }
 .rail-menu-wrap .hdr-menu{ left:100%; bottom:0; top:auto; right:auto; margin-left:4px; }   /* Tools sits low: menu opens up-and-right, clear of the rail */
 
@@ -363,7 +370,7 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .hdr{ padding:10px var(--pad); }
 .honesty{ padding-top:8px; padding-bottom:8px; }
 .stage{ gap:8px; padding:8px var(--in-3) 8px; }   /* board body frame: side padding --pad(32)→--in-3(16) */
-.scorecard{ gap:10px; }
+.scorecard{ gap:0; }
 .kcell{ padding:9px 12px; }
 .kcell-v{ font-size:20px; }
 .partition{ gap:10px; }
@@ -430,7 +437,7 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .hdr-r{ flex:0 0 auto; }
 .honesty{ display:none; }
 .stage{ padding-top:6px; padding-bottom:6px; gap:6px; }
-.scorecard{ gap:8px; }
+.scorecard{ gap:0; }
 .kcell{ padding:7px 11px; }
 /* band contained so the trend fits inside it, not growing it */
 .block>div.fband{ padding:8px 16px; }
