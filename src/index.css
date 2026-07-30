@@ -255,7 +255,10 @@
 @media(max-width:640px){ .scorecard{ grid-template-columns:repeat(2,1fr); } }
 
 /* ===== featured band hero (compact, horizontal — instrument density) ===== */
-.block>div.fband{ display:flex; align-items:center; gap:36px; background:var(--field); border:1px solid var(--scribe); border-left:3px solid var(--dye); border-radius:0; padding:16px 22px; }
+/* 1e follow-up: the salient band is NOT a card and not marked as the lead finding — the board is the
+   callout. Full bleed, no side edges, no left accent bar; only the scribe-strong section rules above
+   (scorecard) and below (.board-band) frame it. */
+.block>div.fband{ display:flex; align-items:center; gap:36px; background:none; border:none; border-radius:0; padding:16px 22px; }
 .fband .fside-v{ font-size:40px; }
 .fband .fside{ padding-left:14px; }
 .fband-verb{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-2); }
