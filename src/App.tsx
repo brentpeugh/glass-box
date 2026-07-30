@@ -986,11 +986,10 @@ function DebugPanel({ d, onClose }) {
     <div className="dbg-h"><span className="dbg-title">CURATION LOG · {d.role} <span className="dbg-meta">source: {c.source}{d.model ? ` · ${d.model}` : ""} · {v.length} validator action(s)</span></span>{onClose && <button className="dbg-close" onClick={onClose}>✕</button>}</div>
     {v.length > 0 && <div className="dbg-rej">validator: {v.join(" · ")}</div>}
     <div className="dbg-cols">
-      <div className="dbg-col"><div className="dbg-cap">① {isLive ? "model proposed (judgment)" : "deterministic fallback — no model"}</div><pre className="dbg-pre">{JSON.stringify({ thesis: c.thesis, evidence: c.evidenceIds, tests: c.testIds, widgets: c.widgetIds, partition: c.partitionPref }, null, 1)}</pre></div>
+      <div className="dbg-col"><div className="dbg-cap">① {isLive ? "model proposed (judgment)" : "deterministic fallback — no model"}</div><pre className="dbg-pre">{JSON.stringify({ thesis: c.thesis, evidence: c.evidenceIds, tests: c.testIds, widgets: c.widgetIds }, null, 1)}</pre></div>
       <div className="dbg-col"><div className="dbg-cap">② engine enforced (truth)</div><pre className="dbg-pre">{`evidence:  ${c.evidenceIds.length} values, every one traceable
 tests:     ${c.testIds.length} (${c.testIds.length ? "incl. falsifier" : "none"})
 widgets:   ${c.widgetIds.length} on-domain, engine-computed
-partition: ${c.partitionPref || "(role default)"}
 prose:     numeral-free (guard ${v.some((x) => x.includes("numeral")) ? "fired" : "clean"})
 verdict:   ${isLive ? "COHERENT → rendered live" : "fell back to deterministic"}`}</pre></div>
     </div>
@@ -1132,9 +1131,9 @@ function AppInner() {
       const selected = composeBoard(spec, catalog).panels.length;
       const stats = { selected, candidates, evidence: (curation.evidenceIds || []).length, tests: (curation.testIds || []).length, rejected: (curation.violations || []).filter((v) => /drop|reject/.test(v)).length, rows };
       pushAudit({ kind: "curation", role: roleKey, finding: curation.finding ? curation.finding.label : "—", source: curation.source, detail: `chose ${stats.selected} panels, ${stats.evidence} evidence, ${stats.tests} tests · ${stats.rejected} rejected · ${(curation.violations || []).length} validator actions` });
-      return { loading: false, curation, spec, stats, disclosure, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
+      return { loading: false, curation, spec, stats, disclosure, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
     } catch (e) {
-      return { loading: false, curation: null, spec: FALLBACK[roleKey], partitionPref: null, source: "fallback", rejected: 0, framingRejected: 0, err: String(e).slice(0, 120), debug: null };
+      return { loading: false, curation: null, spec: FALLBACK[roleKey], source: "fallback", rejected: 0, framingRejected: 0, err: String(e).slice(0, 120), debug: null };
     }
   }
   async function enter(roleKey) {

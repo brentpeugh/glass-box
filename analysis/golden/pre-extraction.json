@@ -611,7 +611,6 @@
               "grouped_growth",
               "small_mult_arr"
             ],
-            "partitionPref": null,
             "scorecardKeys": [
               "cac_payback",
               "magic_number",
@@ -642,97 +641,17 @@
             "small_mult_arr"
           ],
           "board": {
-            "partitionId": "band_hero_row",
-            "shape": "hero",
-            "regions": [
+            "lede": "salient_band",
+            "panels": [
               {
-                "a": "band",
-                "c": [
-                  1,
-                  13
-                ],
-                "r": [
-                  1,
-                  2
-                ],
-                "widget": "salient_band",
-                "kind": "finding_card"
-              },
-              {
-                "a": "twothird",
-                "c": [
-                  1,
-                  9
-                ],
-                "r": [
-                  2,
-                  4
-                ],
-                "widget": "magic_line",
-                "kind": "line"
-              },
-              {
-                "a": "third",
-                "c": [
-                  9,
-                  13
-                ],
-                "r": [
-                  2,
-                  3
-                ],
                 "widget": "efficiency_combo",
                 "kind": "combo"
               },
               {
-                "a": "third",
-                "c": [
-                  9,
-                  13
-                ],
-                "r": [
-                  3,
-                  4
-                ],
-                "widget": "accel_line",
+                "widget": "magic_line",
                 "kind": "line"
               },
               {
-                "a": "third",
-                "c": [
-                  1,
-                  5
-                ],
-                "r": [
-                  4,
-                  5
-                ],
-                "widget": "segment_stack",
-                "kind": "stacked_area"
-              },
-              {
-                "a": "third",
-                "c": [
-                  5,
-                  9
-                ],
-                "r": [
-                  4,
-                  5
-                ],
-                "widget": "efficiency_bullets",
-                "kind": "bullet"
-              },
-              {
-                "a": "third",
-                "c": [
-                  9,
-                  13
-                ],
-                "r": [
-                  4,
-                  5
-                ],
                 "widget": "metric_matrix",
                 "kind": "matrix"
               }
@@ -770,7 +689,6 @@
               "dumbbell_ret",
               "heatmap_retention"
             ],
-            "partitionPref": null,
             "scorecardKeys": [
               "ent_share",
               "nrr",
@@ -800,99 +718,19 @@
             "heatmap_retention"
           ],
           "board": {
-            "partitionId": "band_trio_trio",
-            "shape": "grid",
-            "regions": [
+            "lede": "salient_band",
+            "panels": [
               {
-                "a": "band",
-                "c": [
-                  1,
-                  13
-                ],
-                "r": [
-                  1,
-                  2
-                ],
-                "widget": "salient_band",
-                "kind": "finding_card"
-              },
-              {
-                "a": "third",
-                "c": [
-                  1,
-                  5
-                ],
-                "r": [
-                  2,
-                  3
-                ],
                 "widget": "bridge_smb",
                 "kind": "waterfall"
               },
               {
-                "a": "third",
-                "c": [
-                  5,
-                  9
-                ],
-                "r": [
-                  2,
-                  3
-                ],
                 "widget": "bridge_enterprise",
                 "kind": "waterfall"
               },
               {
-                "a": "third",
-                "c": [
-                  9,
-                  13
-                ],
-                "r": [
-                  2,
-                  3
-                ],
                 "widget": "bridge_blended",
                 "kind": "waterfall"
-              },
-              {
-                "a": "third",
-                "c": [
-                  1,
-                  5
-                ],
-                "r": [
-                  3,
-                  4
-                ],
-                "widget": "hbar_nrr",
-                "kind": "hbar"
-              },
-              {
-                "a": "third",
-                "c": [
-                  5,
-                  9
-                ],
-                "r": [
-                  3,
-                  4
-                ],
-                "widget": "pareto_arr",
-                "kind": "pareto"
-              },
-              {
-                "a": "third",
-                "c": [
-                  9,
-                  13
-                ],
-                "r": [
-                  3,
-                  4
-                ],
-                "widget": "treemap_arr",
-                "kind": "treemap"
               }
             ]
           }
@@ -1499,7 +1337,6 @@
               "dumbbell_ret",
               "heatmap_retention"
             ],
-            "partitionPref": null,
             "scorecardKeys": [
               "ent_share",
               "nrr",
@@ -1529,99 +1366,19 @@
             "heatmap_retention"
           ],
           "board": {
-            "partitionId": "band_trio_trio",
-            "shape": "grid",
-            "regions": [
+            "lede": "salient_band",
+            "panels": [
               {
-                "a": "band",
-                "c": [
-                  1,
-                  13
-                ],
-                "r": [
-                  1,
-                  2
-                ],
-                "widget": "salient_band",
-                "kind": "finding_card"
-              },
-              {
-                "a": "third",
-                "c": [
-                  1,
-                  5
-                ],
-                "r": [
-                  2,
-                  3
-                ],
                 "widget": "bridge_smb",
                 "kind": "waterfall"
               },
               {
-                "a": "third",
-                "c": [
-                  5,
-                  9
-                ],
-                "r": [
-                  2,
-                  3
-                ],
                 "widget": "bridge_enterprise",
                 "kind": "waterfall"
               },
               {
-                "a": "third",
-                "c": [
-                  9,
-                  13
-                ],
-                "r": [
-                  2,
-                  3
-                ],
                 "widget": "bridge_blended",
                 "kind": "waterfall"
-              },
-              {
-                "a": "third",
-                "c": [
-                  1,
-                  5
-                ],
-                "r": [
-                  3,
-                  4
-                ],
-                "widget": "hbar_nrr",
-                "kind": "hbar"
-              },
-              {
-                "a": "third",
-                "c": [
-                  5,
-                  9
-                ],
-                "r": [
-                  3,
-                  4
-                ],
-                "widget": "pareto_arr",
-                "kind": "pareto"
-              },
-              {
-                "a": "third",
-                "c": [
-                  9,
-                  13
-                ],
-                "r": [
-                  3,
-                  4
-                ],
-                "widget": "treemap_arr",
-                "kind": "treemap"
               }
             ]
           }
@@ -1657,7 +1414,6 @@
               "dumbbell_ret",
               "heatmap_retention"
             ],
-            "partitionPref": null,
             "scorecardKeys": [
               "ent_share",
               "nrr",
@@ -1687,99 +1443,19 @@
             "heatmap_retention"
           ],
           "board": {
-            "partitionId": "band_trio_trio",
-            "shape": "grid",
-            "regions": [
+            "lede": "salient_band",
+            "panels": [
               {
-                "a": "band",
-                "c": [
-                  1,
-                  13
-                ],
-                "r": [
-                  1,
-                  2
-                ],
-                "widget": "salient_band",
-                "kind": "finding_card"
-              },
-              {
-                "a": "third",
-                "c": [
-                  1,
-                  5
-                ],
-                "r": [
-                  2,
-                  3
-                ],
                 "widget": "bridge_smb",
                 "kind": "waterfall"
               },
               {
-                "a": "third",
-                "c": [
-                  5,
-                  9
-                ],
-                "r": [
-                  2,
-                  3
-                ],
                 "widget": "bridge_enterprise",
                 "kind": "waterfall"
               },
               {
-                "a": "third",
-                "c": [
-                  9,
-                  13
-                ],
-                "r": [
-                  2,
-                  3
-                ],
                 "widget": "bridge_blended",
                 "kind": "waterfall"
-              },
-              {
-                "a": "third",
-                "c": [
-                  1,
-                  5
-                ],
-                "r": [
-                  3,
-                  4
-                ],
-                "widget": "hbar_nrr",
-                "kind": "hbar"
-              },
-              {
-                "a": "third",
-                "c": [
-                  5,
-                  9
-                ],
-                "r": [
-                  3,
-                  4
-                ],
-                "widget": "pareto_arr",
-                "kind": "pareto"
-              },
-              {
-                "a": "third",
-                "c": [
-                  9,
-                  13
-                ],
-                "r": [
-                  3,
-                  4
-                ],
-                "widget": "treemap_arr",
-                "kind": "treemap"
               }
             ]
           }

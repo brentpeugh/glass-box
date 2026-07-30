@@ -97,7 +97,6 @@ export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDoma
   const tG = guardFraming(cur.thesis || "", allowedLabels), wG = guardFraming(cur.whyRole || "", allowedLabels);
   if (tG.violated || wG.violated) violations.push("authored numerals stripped from prose");
   const scorecardKeys = (cur.scorecardKeys || []).filter((k: string) => HEADLINE_KEYS.includes(k)).slice(0, 6);
-  const partitionPref = ["analytical", "hero", "balanced"].includes(cur.partitionPref) ? cur.partitionPref : null;
   const viable = evidenceIds.length > 0 && hasFalsifier && tG.text.length > 0;
-  return { viable, violations, curation: viable ? { thesis: tG.text, whyRole: wG.text, evidenceIds, testIds, widgetIds, partitionPref, scorecardKeys, rationaleTags: cur.rationaleTags || [], source: "live" } : null };
+  return { viable, violations, curation: viable ? { thesis: tG.text, whyRole: wG.text, evidenceIds, testIds, widgetIds, scorecardKeys, rationaleTags: cur.rationaleTags || [], source: "live" } : null };
 }

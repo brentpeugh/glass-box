@@ -23,9 +23,9 @@
  *     niceScale. The model selects a widget id from a catalog whose data and scales are
  *     engine-produced; it has no channel that touches an axis. (There is no ChartSpec; the
  *     model cannot emit one.)
- * S4. LAYOUT is a deterministic rule-based packer over a shape derived from the composition's
- *     weight distribution. The model's one hint (partitionPref ∈ three values) only reinforces
- *     the derived shape; no coordinate ever crosses the boundary.
+ * S4. LAYOUT is fixed and deterministic: a lede row over three equal chart slots (composeBoard).
+ *     The model selects WHICH panels (capped at three, in its own order); it never chooses where
+ *     they go and emits no layout hint. No coordinate ever crosses the boundary.
  * S5. COMPARISONS/verdicts (clears vs breaches, delta) live in MetricValue.basis, computed
  *     engine-side. The model never authors a benchmark verdict.
  *
@@ -173,7 +173,6 @@ export interface CurationRequest {
   evidenceIds: string[];       // must be in the finding's metric neighborhood
   testIds: string[];           // must include >= 1 falsifier, or the read is not viable
   widgetIds: string[];         // must be catalog ids in the finding's related domains
-  partitionPref?: "analytical" | "hero" | "balanced" | null;  // advisory only (S4)
   scorecardKeys: string[];     // headline-strip metric keys
   rationaleTags?: string[];    // short non-numeric tags
 }

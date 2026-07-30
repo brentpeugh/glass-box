@@ -42,7 +42,7 @@ export function fallbackCuration(fact) {
   return {
     thesis: `The most statistically anomalous signal in the book is ${fact.label} — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.`,
     whyRole: "It is the largest deviation the engine surfaced from the data, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
-    evidenceIds, testIds: nb.testIds, widgetIds, partitionPref: null,
+    evidenceIds, testIds: nb.testIds, widgetIds,
     scorecardKeys: FALLBACK_SCORECARD[nb.domain] || FALLBACK_SCORECARD.efficiency,
     rationaleTags: ["top salient anomaly", nb.domain], source: "fallback",
   };
@@ -79,7 +79,7 @@ WIDGETS (charts you may select, prioritized): ${JSON.stringify(widgetMenu)}
 HEADLINE (metric keys for the vital-signs strip — pick 6 that matter to the ${focus.role} for THIS finding): ${JSON.stringify(headlineMenu)}
 
 Return ONLY this JSON, nothing around it:
-{"thesis":"1-2 sentences, NO numbers — the story that matters for the ${focus.role}","whyRole":"1 sentence, NO numbers — why it matters to the ${focus.role}","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["exactly 3 ids from WIDGETS composing the board — complementary views, most important first"],"partitionPref":"one of: analytical (dense data-grid lead) | hero (one dominant panel + rail) | balanced","scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
+{"thesis":"1-2 sentences, NO numbers — the story that matters for the ${focus.role}","whyRole":"1 sentence, NO numbers — why it matters to the ${focus.role}","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["exactly 3 ids from WIDGETS composing the board — complementary views, most important first"],"scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
 }
 // callModel is an INJECTED dependency (docs/briefs/extraction.md §4): the default is byte-identical
 // to the shipped seam, so the app is unchanged; a Node harness can inject a direct API call or a
