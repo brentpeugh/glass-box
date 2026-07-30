@@ -1,7 +1,7 @@
 # Retired: the aspect-partition layout engine (`src/layout.ts`)
 
 **Retired in:** Tuning 2, Stage A (composition change to a fixed lede + three chart slots).
-**Removed in commit:** `<STAGE-A-SHA>` (filled in the follow-up commit; git history is the archive).
+**Removed in commit:** `c3ef2d2` (`reskin(tuning 2a): the lede board — composition to three panels`). Git history is the archive.
 
 This records what the retired code did and why it was removed, so the deletion is auditable
 without reconstructing it from `git log -p`.
