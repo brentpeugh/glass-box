@@ -35,13 +35,14 @@
    stray voice. The class rules below win by specificity where they apply. */
 button,input,select,textarea,pre,code{ font-family:inherit; }
 
-/* §2c — THE ELEVEN TEXT CLASSES. Every text-bearing rule resolves to exactly one; the class is
+/* §2c — THE TWELVE TEXT CLASSES. Every text-bearing rule resolves to exactly one; the class is
    decided by what the text DOES, not where it lives. Six ladder sizes, two voices. Enforced by
    validate-surface.ts (membership + mono-only-on-note/machine + tabular on figure classes). */
 .t-hero    { font-family:var(--font-sans); font-size:var(--t-6);   font-weight:700; font-variant-numeric:var(--num); }
 .t-lede    { font-family:var(--font-sans); font-size:var(--t-5);   font-weight:600; }
 .t-value   { font-family:var(--font-sans); font-size:var(--t-4);   font-weight:700; font-variant-numeric:var(--num); }
 .t-prose   { font-family:var(--font-sans); font-size:var(--t-3);   font-weight:400; }
+.t-name    { font-family:var(--font-sans); font-size:var(--t-3);   font-weight:400; }   /* sentence case, no tracking — row/segment/node/series NAMES (label is orientation-only) */
 .t-action  { font-family:var(--font-sans); font-size:var(--t-3);   font-weight:600; }
 .t-datum   { font-family:var(--font-sans); font-size:var(--t-tab); font-weight:700; font-variant-numeric:var(--num); }
 .t-title   { font-family:var(--font-sans); font-size:var(--t-2);   font-weight:600; text-transform:uppercase; letter-spacing:.14em; }
@@ -76,7 +77,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .inspect{background:none;border:none;font-family:var(--font-sans);font-size:11px;color:var(--dye);cursor:pointer;padding:8px 0;letter-spacing:.03em;} .inspect:hover{color:var(--ink);}
 .trace{max-height:0;overflow:hidden;transition:max-height .4s ease;} .trace.open{max-height:2400px;}
 .trace-inner{border-top:1px solid var(--scribe);padding:14px 0 18px;}
-.anno{font-family:var(--font-sans);font-size:11px;line-height:1.5;color:var(--ink-2);border-left:2px solid var(--dye);padding:3px 0 3px 10px;margin:12px 0;max-width:74ch;} .anno-top{margin:2px 0 14px;}
+.anno{font-family:var(--font-sans);font-size:var(--t-3);line-height:1.5;color:var(--ink-2);padding:3px 0;margin:12px 0;max-width:74ch;} .anno-top{margin:2px 0 14px;}   /* prose — dye left bar removed (decorative, not a route) */
 .node{position:relative;} .node-kids{border-left:1px solid var(--dye);margin-left:6px;}
 .node-head{display:flex;align-items:baseline;gap:10px;padding:6px 0;cursor:pointer;}
 .node-glyph{color:var(--dye);font-size:11px;width:12px;} .node-label{font-size:14px;font-weight:400;}
@@ -86,7 +87,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .src-note{font-family:var(--font-mono);font-size:var(--t-1);color:var(--ink-2);line-height:1.4;margin-top:8px;}   /* note */
 .co-note{font-family:var(--font-mono);font-size:var(--t-1);color:var(--ink-2);line-height:1.35;margin-top:3px;}   /* note */
 .node-op{font-family:var(--font-mono);font-size:var(--t-1);color:var(--ink-2);background:var(--field);padding:1px 6px;border-radius:0;}   /* note — machine operator */
-.node-val{margin-left:auto;font-family:var(--font-sans);font-variant-numeric:var(--num);font-weight:700;font-size:var(--t-tab);} .mono{font-family:var(--font-mono);font-variant-numeric:var(--num);}   /* datum · .mono=machine */
+.node-val{margin-left:auto;font-family:var(--font-sans);font-variant-numeric:var(--num);font-weight:700;font-size:var(--t-4);} .mono{font-family:var(--font-mono);font-variant-numeric:var(--num);}   /* value · .mono=machine */
 .node-desc{font-size:14px;color:var(--ink-2);line-height:1.5;margin:0 0 6px 22px;max-width:66ch;}
 .rows{margin:6px 0 10px 22px;border:1px solid var(--scribe);background:var(--field);padding:12px;}
 .rows-stat{display:flex;align-items:center;gap:8px;font-size:var(--t-tab);flex-wrap:wrap;margin-bottom:10px;font-family:var(--font-mono);font-variant-numeric:var(--num);}   /* machine */
@@ -94,7 +95,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
    the label after each carries the category; the squares are uniform ink-2, no pos/neg. */
 .dot{width:8px;height:8px;border-radius:0;display:inline-block;margin-left:6px;} .dot.ember,.dot.ember2,.dot.verdant{background:var(--ink-2);}
 .rows-tbl{width:100%;border-collapse:collapse;font-size:14px;}
-.rows-tbl th{text-align:right;font-family:var(--font-sans);font-weight:400;font-size:var(--t-2);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);padding:4px 10px;border-bottom:1px solid var(--scribe);} .rows-tbl th:first-child{text-align:left;}   /* label */
+.rows-tbl th{text-align:right;font-family:var(--font-mono);font-variant-numeric:var(--num);font-weight:400;font-size:var(--t-tab);color:var(--ink-2);padding:4px 10px;border-bottom:1px solid var(--scribe);} .rows-tbl th:first-child{text-align:left;}   /* machine — trace table header */
 .rows-tbl td{font-family:var(--font-mono);font-variant-numeric:var(--num);font-size:var(--t-tab);padding:4px 10px;text-align:right;border-bottom:1px solid var(--scribe);} .rows-tbl td:first-child{text-align:left;}   /* machine — trace rows / IDs */
 .rows-tbl td.neg{color:var(--neg);} .rows-tbl td.pos{color:var(--pos);}
 .bridges{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:16px;}
@@ -123,7 +124,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .wf-axis.r{fill:var(--ink-2);}
 .co-bar{ fill:var(--frame-mute); shape-rendering:crispEdges; cursor:pointer; } .co-bar:hover{ fill:var(--frame-mute); }  /* §4: no transition — it's a value-bearing mark */
 .area{fill-opacity:1;cursor:pointer;}
-.area-lab{ font-family:'IBM Plex Sans',sans-serif; font-size:var(--t-2); font-weight:400; fill:var(--field); paint-order:stroke; stroke:var(--ink); stroke-width:2px; stroke-linejoin:round; }
+.area-lab{ font-family:var(--font-sans); font-size:var(--t-3); font-weight:400; fill:var(--field); paint-order:stroke; stroke:var(--ink); stroke-width:2px; stroke-linejoin:round; }   /* name — series end-label */
 /* §3/§4: legend/chip/swatch styling removed — charts carry direct end-labels, no colour key. */
 
 /* ---- entry screen ---- */
@@ -167,7 +168,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 /* ---- trace drawer ---- */
 .drawer{position:sticky;bottom:0;left:0;right:0;background:var(--field);border-top:2px solid var(--ink);box-shadow:none;max-height:52vh;overflow:auto;z-index:20;}
 .drawer-bar{display:flex;justify-content:space-between;align-items:center;padding:9px 24px;border-bottom:1px solid var(--scribe);position:sticky;top:0;background:var(--field);}
-.drawer-t{font-family:var(--font-sans);font-size:11px;letter-spacing:.1em;color:var(--dye);}
+.drawer-t{font-family:var(--font-sans);font-size:var(--t-2);letter-spacing:.1em;}   /* dye removed — the metric name is a title, not a route */
 .drawer-x{font-family:var(--font-sans);font-size:11px;border:1px solid var(--scribe);background:none;cursor:pointer;padding:3px 9px;color:var(--ink-2);} .drawer-x:hover{color:var(--ink);}
 .drawer-body{padding:14px 24px 22px;max-width:1000px;margin:0 auto;}
 .loading{font-family:var(--font-sans);color:var(--ink-2);padding:60px;text-align:center;font-size:var(--t-3);letter-spacing:.3em;}   /* prose */
@@ -319,7 +320,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .dt-row{ display:grid; grid-template-columns:1.4fr 1fr 0.8fr 0.9fr 0.9fr; align-items:center; padding:7px 2px; border-bottom:1px solid var(--scribe); }
 .dt-head{ font-family:var(--font-sans); font-weight:400; font-size:var(--t-2); text-transform:uppercase; letter-spacing:.14em; color:var(--ink-2); border-bottom:1px solid var(--scribe); padding-bottom:6px; }   /* label */
 .dt-head span:not(:first-child){ text-align:right; justify-self:end; }
-.dt-seg{ font-family:var(--font-sans); font-weight:400; font-size:var(--t-2); text-transform:uppercase; letter-spacing:.14em; color:var(--ink); }   /* label — row label */
+.dt-seg{ font-family:var(--font-sans); font-weight:400; font-size:var(--t-3); color:var(--ink); }   /* name — segment row label */
 .dt-num{ font-family:var(--font-sans); font-weight:700; font-size:var(--t-tab); font-variant-numeric:var(--num); color:var(--ink); background:none; border:none; cursor:pointer; padding:0; justify-self:end; text-align:right; }   /* datum */
 button.dt-num:hover{ color:var(--dye); }
 /* §4: segment-table values are LEVELS — ink, no pos/neg (tone dropped in the JSX too). */
@@ -438,7 +439,7 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .mx-row{ display:grid; grid-template-columns:98px repeat(8,1fr); align-items:center; }
 .mx-row:not(.mx-head){ border-bottom:1px solid var(--scribe); }
 .mx-head{ font-family:var(--font-sans); font-weight:400; font-size:var(--t-2); letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); border-bottom:1px solid var(--scribe); padding-bottom:3px; margin-bottom:1px; }   /* label */
-.mx-lab{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; text-transform:uppercase; letter-spacing:.14em; color:var(--ink); }   /* label — row label */
+.mx-lab{ font-family:var(--font-sans); font-size:var(--t-3); font-weight:400; color:var(--ink); }   /* name — metric row label */
 .mx-cell{ text-align:right; font-family:var(--font-sans); font-weight:700; font-size:var(--t-tab); font-variant-numeric:var(--num); padding:5px 7px 5px 0; color:var(--ink); }   /* datum */
 .mx-cell.v{ background:none; border:none; cursor:pointer; }
 .mx-cell.v:hover{ color:var(--dye); }
@@ -453,8 +454,8 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .chart-tag{ font-size:var(--t-tab); }
 .tb-panel{ padding:5px 8px; }   /* per-panel padding 7px 9px → 5px 8px */
 .mx-cell{ font-size:var(--t-tab); padding:4px 5px 4px 0; }
-.mx-lab{ font-size:var(--t-2); }
-.dt-num{ font-size:var(--t-tab); } .dt-seg{ font-size:var(--t-2); }
+.mx-lab{ font-size:var(--t-3); }
+.dt-num{ font-size:var(--t-tab); } .dt-seg{ font-size:var(--t-3); }
 
 /* ===== finding band dual-trend panel ===== */
 .block>div.fband{ gap:24px; }
@@ -679,7 +680,7 @@ body.modal-open{ overflow:hidden; }
 .dmb-a{ fill:var(--scribe-strong); } .dmb-b.up, .dmb-b.down{ fill:var(--ink); }
 
 /* batch-2 charts */
-.tm-lab{ font-family:'IBM Plex Sans',sans-serif; font-size:10px; font-weight:400; fill:var(--field); }
+.tm-lab{ font-family:var(--font-sans); font-size:var(--t-3); font-weight:400; fill:var(--field); }   /* name — segment name */
 .tm-val{ font-family:var(--font-sans); font-variant-numeric:var(--num); font-weight:700; font-size:var(--t-tab); fill:var(--field); }   /* datum */
 .hm-cell.none{ fill:var(--scribe); opacity:.4; }
 .disclose{ color:var(--dye); font-style:normal; }
@@ -750,7 +751,7 @@ body.modal-open{ overflow:hidden; }
 /* ===== tabular role (--t-tab): tabular numerals and their row labels ONLY, applied to every
    table on the board uniformly (metric_matrix, segment table, source-rows). Placed last so it
    governs regardless of the earlier density passes. Column headers stay tracked-caps at --t-2. */
-.mx-cell, .mx-lab, .dt-num, .dt-seg, .rows-tbl td { font-size:var(--t-tab); }
+.mx-cell, .dt-num, .rows-tbl td { font-size:var(--t-tab); }   /* datum/machine figures; name labels (mx-lab, dt-seg) stay --t-3 */
 
 /* ===== register fix 1: tracked-caps label role — uniform tracking .10em on every tracked-caps
    label, every surface (the scattered per-site values / the §4 .16em were never derived). One rule. */

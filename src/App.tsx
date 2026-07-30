@@ -72,7 +72,7 @@ function TraceNode({ node, depth, isFinding }) {
         <span className={`ptype ${ptype.toLowerCase()}`}>{ptype}</span>
         <span className="node-label">{node.label}</span>
         <span className="node-op">{node.provenance.op}</span>
-        <span className="node-val mono">{val}</span>
+        <span className="node-val">{val}</span>
       </div>
       {open && <div className="node-desc">{node.provenance.description}{node.note ? ` — ${node.note}` : ""}</div>}
       {open && kids ? <div className="node-kids">{node.provenance.inputs.map((inp, i) => inp.kind === "metric" ? <TraceNode key={i} node={E.store.get(inp.id)} depth={depth + 1} /> : <RowsLeaf key={i} leaf={inp} parentVal={node} />)}</div> : null}
@@ -116,7 +116,7 @@ function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
         <div className="brief-ev">
           {evidence.map((mv, i) => (
             <button key={i} className="ev-card" onClick={() => onPick({ node: mv })}>
-              <div className="ev-top"><span className="ev-val mono">{fmtMV(mv)}</span><span className="ev-lbl">{mv.label}</span></div>
+              <div className="ev-top"><span className="ev-val">{fmtMV(mv)}</span><span className="ev-lbl">{mv.label}</span></div>
               <div className="ev-trace">trace ▸</div>
             </button>
           ))}
@@ -366,7 +366,7 @@ function SalientBand({ finding, role, onPick }) {
   return (<div className="fband">
     <div className="fband-vals">
       <div className="sf-primary">
-        <span className="sf-val mono">{fmtMV(primary)}</span>
+        <span className="sf-val">{fmtMV(primary)}</span>
         <span className="sf-lbl">{primary.label}</span>
         {basis != null && <span className="sf-badge">vs {basis.thr}{primary.unit === "percent" ? "%" : ""} benchmark</span>}
       </div>

@@ -102,9 +102,9 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
     // interactive source-routes
     "inspect", "node-glyph", "node-kids", "proxy", "chart-title", "chart-trace", "fband-inspect",
     "dt-num", "mx-cell", "kcell-v", "ev-trace", "test-run", "trust-link", "bridge-trace", "chip", "recur-rank",
-    "recur", "pb-reset", "sf-badge", "drawer-t", "dbg-cap", "asked", "asked-h", "disclose", "foot-src",
+    "recur", "pb-reset", "sf-badge", "dbg-cap", "asked", "asked-h", "disclose", "foot-src",
     // structural accent that frames the traceable field
-    "hdr", "sec-n", "card", "anno", "role", "frame-tick", "brief-head", "dbg-h", "fband",
+    "hdr", "sec-n", "card", "role", "frame-tick", "brief-head", "dbg-h", "fband",
     "rail",
   ]);
   const dyeBad: string[] = [], second: string[] = [];
@@ -258,8 +258,8 @@ const isMono = (body: string) => /var\(--font-mono\)|IBM Plex Mono/.test(body);
 // (family, size, weight) triples
 const CLASSES: Record<string, [string, number, number]> = {
   hero: ["sans", 40, 700], lede: ["sans", 26, 600], value: ["sans", 20, 700], prose: ["sans", 14, 400],
-  action: ["sans", 14, 600], datum: ["sans", 12, 700], title: ["sans", 11, 600], label: ["sans", 11, 400],
-  scaffold: ["sans", 10, 400], note: ["mono", 10, 400], machine: ["mono", 12, 400],
+  name: ["sans", 14, 400], action: ["sans", 14, 600], datum: ["sans", 12, 700], title: ["sans", 11, 600],
+  label: ["sans", 11, 400], scaffold: ["sans", 10, 400], note: ["mono", 10, 400], machine: ["mono", 12, 400],
 };
 const TRIPLES = new Set(Object.values(CLASSES).map(([f, s, w]) => `${f}|${s}|${w}`));
 const MARKS = new Set(["rail-mark"]);   // the brand glyph (⟡) is not a text class — exempt
@@ -267,7 +267,7 @@ const MARKS = new Set(["rail-mark"]);   // the brand glyph (⟡) is not a text c
   const bad: string[] = [];
   for (const r of rules) {
     if (r === tokenBlock || hasClassIn(r.prelude, MARKS)) continue;
-    if (/^\.t-(hero|lede|value|prose|action|datum|title|label|scaffold|note|machine)$/.test(r.prelude.trim())) continue; // the canonical defs
+    if (/^\.t-(hero|lede|value|prose|name|action|datum|title|label|scaffold|note|machine)$/.test(r.prelude.trim())) continue; // the canonical defs
     const size = declVal(r.body, "font-size"), weight = declVal(r.body, "font-weight");
     if (!size || !weight || size === "inherit") continue;   // only rules that define both
     const px = sizePx(size); if (px == null) continue;       // bad sizes are #9's job
@@ -275,7 +275,7 @@ const MARKS = new Set(["rail-mark"]);   // the brand glyph (⟡) is not a text c
     const fam = isMono(r.body) ? "mono" : "sans";
     if (!TRIPLES.has(`${fam}|${px}|${wt}`)) bad.push(`${r.prelude} → ${fam} ${px}/${wt}`);
   }
-  ok("every type rule resolves to one of the 11 text classes (no ad-hoc combinations)", bad.length === 0, bad.join(" · "));
+  ok("every type rule resolves to one of the 12 text classes (no ad-hoc combinations)", bad.length === 0, bad.join(" · "));
 }
 
 // ── 12 · mono marks raw machine output only ───────────────────────────────────────────────────────
