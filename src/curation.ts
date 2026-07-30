@@ -20,11 +20,8 @@ export const WIDGET_DOMAIN: Record<string, string> = {
   indexed_arr: "growth", grouped_growth: "growth", small_mult_arr: "growth",
   dumbbell_ret: "retention", heatmap_retention: "retention",
 };
-// Board-COMPOSITION relatedness: which chart families visually complete a board of a given domain.
-// This is deliberately NOT the analytical-coherence relation (a concentration board tops up with
-// concentration/growth charts, not retention bridges — see the top-up in App.tsx). It is a distinct
-// concept from admissibleLenses() below, which governs what the model may be OFFERED and ADMITTED.
-export const RELATED_DOMAINS: Record<string, string[]> = { retention: ["retention", "concentration"], efficiency: ["efficiency", "growth"], growth: ["growth", "concentration"], concentration: ["concentration", "growth"] };
+// (RELATED_DOMAINS retired in Tuning 2, Stage A — its only remaining consumer was the board top-up,
+// now removed with the fixed three-slot composition. See analysis/retired-layout.md.)
 
 // The finding's admissible analytical lenses — the SINGLE source of truth for both what the prompt
 // OFFERS (buildCurationPrompt) and what the validator ADMITS (validateCurationCore). Engine-computed

@@ -8,10 +8,10 @@ import { fileURLToPath } from "url";
 
 import { E, initEngine, setBaseDS, BASE_DS } from "../src/engine";
 import { buildCatalog, CHART_MENU } from "../src/catalog";
-import { deriveShape, selectPartition, fillPartition, PARTITIONS } from "../src/layout";
+import { composeBoard, CHART_KINDS, BOARD_SLOTS } from "../src/layout";
 import { fallbackCuration, curate, offeredWidgets } from "../src/curate";
 import { perturbedDataset } from "../src/perturbations";
-import { WIDGET_DOMAIN, RELATED_DOMAINS, validateCurationCore, admissibleLenses } from "../src/curation";
+import { WIDGET_DOMAIN, validateCurationCore, admissibleLenses } from "../src/curation";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -31,48 +31,50 @@ function roleScopedTopFinding(roleKey: string) {
   const inScope = E.computeSalience().find((f: any) => scope.includes(E.findingNeighborhood(f).domain));
   return inScope ? { ...inScope, scope: { window: [E.QUARTERS[E.QUARTERS.length - 5], E.QUARTERS[E.QUARTERS.length - 1]] } } : E.topFinding();
 }
-const chart = (kind: string, widget: string) => ({ _kind: kind, widget });
+const catalog = buildCatalog();
+const specOf = (lead: string, chartIds: string[]) => ({ sections: [{ heading: "", blocks: [{ widget: lead }, ...chartIds.map((w) => ({ widget: w }))] }] });
 
 console.log("CURATION MODULE PROOF (extraction reachability)\n");
 
-// 1 — deriveShape + partition selection + fill over three synthetic weight distributions.
-//     Every placed item lands in a region; no region is double-filled; the partition is real.
-const DISTS: Record<string, any[]> = {
-  concentrated: [chart("matrix", "metric_matrix"), chart("line", "magic_line"), chart("line", "accel_line"), chart("hbar", "hbar_nrr")],   // one heavy + light → hero
-  diffuse: [chart("combo", "efficiency_combo"), chart("waterfall", "bridge_smb"), chart("waterfall", "bridge_enterprise"), chart("hbar", "hbar_nrr"), chart("stacked_area", "segment_stack")], // comparable → grid/balanced
-  single: [chart("line", "magic_line")],   // one item → compact
+// 1 — composeBoard (the fixed three-slot layout that retired PARTITIONS/deriveShape/selectPartition/
+//     fillPartition — see analysis/retired-layout.md): the lede is the finding-card; the panels are
+//     the model's chart/table blocks in model order, capped at BOARD_SLOTS, drawn ONLY from the spec
+//     (nothing injected), no duplicates.
+const CASES: Record<string, { lead: string; charts: string[]; expect: number }> = {
+  "three-panel": { lead: "salient_band", charts: ["efficiency_combo", "magic_line", "metric_matrix"], expect: 3 },
+  "over-cap":    { lead: "salient_band", charts: ["efficiency_combo", "bridge_smb", "bridge_enterprise", "hbar_nrr", "segment_stack"], expect: 3 },
+  "under-fill":  { lead: "masking_card", charts: ["bridge_smb"], expect: 1 },
 };
-for (const [label, charts] of Object.entries(DISTS)) {
-  const shape = deriveShape(charts);
-  const findings = [chart("finding_card", "salient_band")];
-  const tables = [chart("table", "segment_table")];
-  const partId = selectPartition(findings.length, charts, charts, tables.length, null);
-  const p = PARTITIONS[partId];
-  const placed = fillPartition(p, findings, charts, tables, "CFO");
-  const regionKeys = placed.map((pl: any) => `${pl.region.c}|${pl.region.r}`);
-  const noDoubleFill = new Set(regionKeys).size === regionKeys.length;
-  const allItemsKnown = placed.every((pl: any) => [...charts, ...findings, ...tables].some((it) => it.widget === pl.block.widget));
-  const validPartition = !!p && Array.isArray(p.regions) && p.regions.length > 0;
-  ok(`deriveShape/${label}: shape=${shape} → partition '${partId}' valid, ${placed.length} placed, no double-fill`,
-    validPartition && noDoubleFill && allItemsKnown && placed.length > 0,
-    `valid=${validPartition} noDouble=${noDoubleFill} known=${allItemsKnown} placed=${placed.length}`);
+for (const [label, c] of Object.entries(CASES)) {
+  const { lede, panels } = composeBoard(specOf(c.lead, c.charts), catalog);
+  const specWidgets = new Set([c.lead, ...c.charts]);
+  const ledeOk = !!lede && lede.widget === c.lead && catalog[c.lead].kind === "finding_card";
+  const countOk = panels.length === c.expect && panels.length <= BOARD_SLOTS;
+  const subsetOk = panels.every((p: any) => specWidgets.has(p.widget));
+  const noDup = new Set(panels.map((p: any) => p.widget)).size === panels.length;
+  const kindsOk = panels.every((p: any) => CHART_KINDS.has(p._kind) || p._kind === "table");
+  ok(`composeBoard/${label}: lede=${lede?.widget}, ${panels.length}≤${BOARD_SLOTS} panels, spec-subset, no dup`,
+    !!ledeOk && countOk && subsetOk && noDup && kindsOk,
+    `lede=${ledeOk} count=${countOk}(${panels.length}) subset=${subsetOk} noDup=${noDup} kinds=${kindsOk}`);
 }
 
-// 2 — selectPartition is deterministic for identical input.
-const charts2 = DISTS.diffuse;
-const a = selectPartition(1, charts2, charts2, 1, null);
-const b = selectPartition(1, charts2, charts2, 1, null);
-ok(`selectPartition deterministic (identical input → '${a}')`, a === b, `${a} vs ${b}`);
+// 2 — composeBoard is deterministic for identical input.
+const det = (s: any) => composeBoard(s, catalog).panels.map((p: any) => p.widget).join(",");
+const s2 = specOf("salient_band", ["efficiency_combo", "magic_line", "metric_matrix"]);
+const a = det(s2), b = det(s2);
+ok(`composeBoard deterministic (identical input → [${a}])`, a === b, `${a} vs ${b}`);
 
-// 3 — buildCatalog: filtering the built catalog by a finding's related domains yields only
-//     on-domain forms (the board's top-up rule), and the set is non-empty.
-const catalog = buildCatalog();
-const anchorCFO = roleScopedTopFinding("CFO");
-const domain = E.findingNeighborhood(anchorCFO).domain;
-const related = RELATED_DOMAINS[domain] || [domain];
-const onDomain = Object.keys(catalog).filter((id) => WIDGET_DOMAIN[id] && related.includes(WIDGET_DOMAIN[id]));
-const allOnDomain = onDomain.every((id) => related.includes(WIDGET_DOMAIN[id]));
-ok(`buildCatalog: ${onDomain.length} forms in finding domains [${related.join(",")}], all on-domain`, onDomain.length > 0 && allOnDomain);
+// 3 — bounded composition (Tuning 2 §b): the board renders ONLY what the model chose — no menu
+//     top-up, no default table. A two-chart selection renders exactly two panels (not padded to
+//     three), and every rendered panel is a form the model selected.
+{
+  const chosen = ["efficiency_combo", "magic_line"];
+  const { panels } = composeBoard(specOf("salient_band", chosen), catalog);
+  const twoNotThree = panels.length === 2;
+  const noInjected = panels.every((p: any) => chosen.includes(p.widget));
+  ok(`bounded top-up: 2-chart selection → ${panels.length} panels, none injected`,
+    twoNotThree && noInjected, `count=${panels.length} noInjected=${noInjected}`);
+}
 
 // 4 — fallbackCuration output matches the golden fixture (base state, both roles).
 for (const role of ["CFO", "CRO"]) {
@@ -130,17 +132,14 @@ await (async () => {
 }
 
 // 8 — registry integrity (inventory §6 recommendation): every CHART_MENU id resolves in
-//     buildCatalog() with a kind in CHART_KINDS (the render-side registry). CHART_KINDS lives in
-//     App.tsx; read it there so the assertion tracks the real source.
+//     buildCatalog() with a kind in CHART_KINDS (the render-side registry). CHART_KINDS is now the
+//     single exported source in src/layout.ts, imported above.
 {
-  const app = fs.readFileSync(path.join(root, "src/App.tsx"), "utf8");
-  const m = app.match(/const CHART_KINDS = new Set\(\[([^\]]*)\]\)/);
-  const CHART_KINDS = new Set((m ? m[1] : "").split(",").map((s) => s.trim().replace(/^["']|["']$/g, "")).filter(Boolean));
   const cat = buildCatalog();
   const menuBad = CHART_MENU.filter((id: string) => !cat[id] || !CHART_KINDS.has(cat[id].kind));
-  ok(`every CHART_MENU id resolves in buildCatalog() with a kind in CHART_KINDS`, !!m && menuBad.length === 0,
-    m ? `unresolved/mismatched: ${menuBad.join(",")}` : "could not read CHART_KINDS from App.tsx");
-  // Report-only (do NOT assert): chart-kind catalog forms absent from CHART_MENU — the top-up gap.
+  ok(`every CHART_MENU id resolves in buildCatalog() with a kind in CHART_KINDS`, menuBad.length === 0,
+    `unresolved/mismatched: ${menuBad.join(",")}`);
+  // Report-only (do NOT assert): chart-kind catalog forms absent from CHART_MENU.
   const chartFormsNotInMenu = Object.keys(cat).filter((id) => CHART_KINDS.has(cat[id].kind) && !CHART_MENU.includes(id));
   console.log(`  · report-only: ${chartFormsNotInMenu.length} chart-kind catalog forms absent from CHART_MENU (not a failure): ${chartFormsNotInMenu.join(", ")}`);
 }

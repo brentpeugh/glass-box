@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
 
-import { WIDGET_DOMAIN, RELATED_DOMAINS, guardFraming, guardDirection, engineHeadline } from "./curation";
+import { WIDGET_DOMAIN, guardFraming, guardDirection, engineHeadline } from "./curation";
 import { E, initEngine, setBaseDS, BASE_DS } from "./engine";
-import { buildCatalog, CHART_MENU } from "./catalog";
-import { PARTITIONS, selectPartition, fillPartition } from "./layout";
+import { buildCatalog } from "./catalog";
+import { composeBoard } from "./layout";
 import { curate, callModel, FALLBACK } from "./curate";
 import { PERTURBATIONS, perturbedDataset } from "./perturbations";
 
@@ -777,51 +777,24 @@ function Block({ block, catalog, onPick, dim, source }) {
     <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={dim} />
   </div>);
 }
-const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar", "bullet", "matrix", "scatter", "pareto", "heatmap", "indexed", "dumbbell", "treemap", "grouped", "quadrant", "small_multiples", "lorenz"]);
-function TemplateBoard({ spec, role, catalog, onPick, partitionPref, finding, source }) {
-  const kind = (id) => catalog[id]?.kind;
-  const all = spec.sections.flatMap((s) => s.blocks).filter((b) => catalog[b.widget]).map((b) => ({ ...b, _kind: kind(b.widget) }));
-  const findings = all.filter((b) => b._kind === "finding_card");
-  // model-curated charts lead; the ranked menu tops up so the partition is always fully filled
-  const modelCharts = all.filter((b) => CHART_KINDS.has(b._kind));
-  const chosen = new Set(modelCharts.map((b) => b.widget));
-  // Domain-scoped top-up: fill empty slots from the SAME domain the finding lives in — so a
-  // concentration board tops up with concentration/growth charts, not retention bridges. The
-  // finding's own domain leads the top-up order, then related domains. Falls back to the fixed
-  // menu only if the finding's domain can't be resolved.
-  const findingDomain = finding ? (() => { try { return E.findingNeighborhood(finding).domain; } catch { return null; } })() : null;
-  const related = findingDomain ? (RELATED_DOMAINS[findingDomain] || [findingDomain]) : null;
-  const scopedIds = related
-    ? Object.keys(catalog).filter((id) => catalog[id] && CHART_KINDS.has(catalog[id].kind) && related.includes(WIDGET_DOMAIN[id]) && !chosen.has(id))
-        .sort((a, b) => (WIDGET_DOMAIN[a] === findingDomain ? 0 : 1) - (WIDGET_DOMAIN[b] === findingDomain ? 0 : 1))
-    : CHART_MENU.filter((id) => catalog[id] && CHART_KINDS.has(catalog[id].kind) && !chosen.has(id));
-  const menuCharts = scopedIds.map((id) => ({ widget: id, _kind: catalog[id].kind }));
-  const charts = [...modelCharts, ...menuCharts];
-  const modelTables = all.filter((b) => b._kind === "table");
-  const tables = modelTables.length ? modelTables : (catalog["segment_table"] ? [{ widget: "segment_table", _kind: "table" }] : []);
-  const p = PARTITIONS[selectPartition(findings.length, modelCharts, charts, tables.length, partitionPref)];
-  const placed = fillPartition(p, findings, charts, tables, role);
-  // §1e lattice: the salient band is a SECTION, not a chart cell — lift it out of the grid so the
-  // chart panels form a clean gap-as-rule lattice (--scribe) and the salient↔grid boundary is a
-  // single --scribe-strong rule on the band container (no doubled line). Chart rows shift up by the
-  // band row and the leading "auto" drops from the row template.
-  const bandPlaced = placed.filter((pl) => pl.region.a === "band");
-  const chartPlaced = placed.filter((pl) => pl.region.a !== "band");
-  const hasBand = bandPlaced.length > 0;
-  const chartRowsT = hasBand ? p.rowsT.replace(/^auto\s+/, "") : p.rowsT;
-  const shift = hasBand ? 1 : 0;
-  const cellContent = (pl) => pl.block.widget === "salient_band"
+// Tuning 2, Stage A: fixed composition. The board is a lede row over three equal chart slots.
+// composeBoard (src/layout.ts) returns the lede finding-card + the model's chart/table panels in
+// model order, capped at three, with NO menu top-up — the rendered panel count equals the model's
+// selection. The §1e lattice is preserved: the lede band is a section (a single --scribe-strong rule
+// below it), the three slots are a gap-as-rule grid (--scribe ground shows through the 1px gaps).
+function TemplateBoard({ spec, role, catalog, onPick, finding, source }) {
+  const { lede, panels } = composeBoard(spec, catalog);
+  const cellContent = (block) => block.widget === "salient_band"
     ? <div className="block emph-hero"><SalientBand finding={finding} role={role} onPick={onPick} /></div>
-    : pl.block._kind === "finding_card"
-    ? <Block block={pl.block} catalog={catalog} onPick={onPick} dim={null} source={source} />
-    : <Widget id={pl.block.widget} catalog={catalog} onPick={onPick} dim={null} />;
+    : block._kind === "finding_card"
+    ? <Block block={block} catalog={catalog} onPick={onPick} dim={null} source={source} />
+    : <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={null} />;
   return (<div className="board">
-    {bandPlaced.map((pl, i) => <div key={"b" + i} className="board-band">{cellContent(pl)}</div>)}
-    <div className="partition" style={{ gridTemplateRows: chartRowsT }}>
-      {chartPlaced.map((pl, i) => (
-        <div key={i} className={`tb-panel asp-${pl.region.a}`} style={{ gridColumn: `${pl.region.c[0]} / ${pl.region.c[1]}`, gridRow: `${pl.region.r[0] - shift} / ${pl.region.r[1] - shift}` }}>
-          {cellContent(pl)}
-        </div>))}
+    {lede && <div className="board-band">{cellContent(lede)}</div>}
+    <div className="partition">
+      {panels.map((block, i) => (
+        <div key={i} className="tb-panel">{cellContent(block)}</div>
+      ))}
     </div>
   </div>);
 }
@@ -1155,7 +1128,9 @@ function AppInner() {
       const nb = curation.finding ? E.findingNeighborhood(curation.finding) : { lenses: [] };
       const candidates = Object.keys(WIDGET_DOMAIN).filter((id) => (nb.lenses || []).includes(WIDGET_DOMAIN[id])).length;
       const rows = BASE_DS ? BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length : 0;
-      const stats = { selected: (curation.widgetIds || []).length, candidates, evidence: (curation.evidenceIds || []).length, tests: (curation.testIds || []).length, rejected: (curation.violations || []).filter((v) => /drop|reject/.test(v)).length, rows };
+      // selected === the panels that actually render (bounded, no top-up), so the rail status is true
+      const selected = composeBoard(spec, catalog).panels.length;
+      const stats = { selected, candidates, evidence: (curation.evidenceIds || []).length, tests: (curation.testIds || []).length, rejected: (curation.violations || []).filter((v) => /drop|reject/.test(v)).length, rows };
       pushAudit({ kind: "curation", role: roleKey, finding: curation.finding ? curation.finding.label : "—", source: curation.source, detail: `chose ${stats.selected} panels, ${stats.evidence} evidence, ${stats.tests} tests · ${stats.rejected} rejected · ${(curation.violations || []).length} validator actions` });
       return { loading: false, curation, spec, stats, disclosure, partitionPref: curation.partitionPref, source: curation.source, rejected: 0, framingRejected: (curation.violations || []).some((v) => v.includes("numeral")) ? 1 : 0, err: null, debug: { curation, violations: curation.violations, raw: curation._debug && curation._debug.raw, prompt: curation._debug && curation._debug.prompt, model: curation._debug && curation._debug.model, role: roleKey } };
     } catch (e) {
@@ -1233,7 +1208,7 @@ function AppInner() {
 
         <div className={`workarea ${picked ? "drawer-open" : ""}`}>
           <main className="stage">
-            {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} partitionPref={state.partitionPref} finding={state.curation && state.curation.finding} source={state.source} /></>}
+            {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} /></>}
           </main>
           <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
         </div>

@@ -20,19 +20,17 @@ import { fileURLToPath } from "url";
 
 // ── MOVED SURFACE (post-extraction: imported from the new module boundary) ──
 import { E, initEngine } from "../src/engine";
-import { buildCatalog, CHART_MENU } from "../src/catalog";
+import { buildCatalog } from "../src/catalog";
 import { fallbackCuration } from "../src/curate";
-import { deriveShape, selectPartition, fillPartition, PARTITIONS } from "../src/layout";
+import { composeBoard } from "../src/layout";
 import { PERTURBATIONS } from "../src/perturbations";
 // ─────────────────────────────────────────────────────────────────────────────────────────
-import { WIDGET_DOMAIN, RELATED_DOMAINS } from "../src/curation";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const base = JSON.parse(fs.readFileSync(path.join(root, "public/caliper_dataset.json"), "utf8"));
 
 // ── replicated glue (stays in App.tsx; copied verbatim so the fixture reflects the real board) ──
-const CHART_KINDS = new Set(["waterfall", "combo", "line", "stacked_area", "hbar", "bullet", "matrix", "scatter", "pareto", "heatmap", "indexed", "dumbbell", "treemap", "grouped", "quadrant", "small_multiples", "lorenz"]);
 const ROLE_SCOPE: any = {
   CFO: ["efficiency", "concentration", "retention"],
   CRO: ["growth", "retention", "concentration"],
@@ -49,30 +47,15 @@ function buildSpec(curation: any) {
   const ids = [...lead, ...(curation.widgetIds || []).filter((id: string) => !lead.includes(id))];
   return { sections: [{ heading: "", blocks: ids.map((id: string, i: number) => (id === "masking_card" || i === 0) ? { widget: id, emphasis: "hero", headline: "", soWhat: i === 0 ? curation.thesis : "" } : { widget: id, emphasis: "standard", headline: "", soWhat: "" }) }] };
 }
-// board derivation — TemplateBoard (App.tsx): compose model + menu charts, pick a partition, fill it
-function deriveBoard(spec: any, catalog: any, role: string, partitionPref: any, finding: any) {
-  const kind = (id: string) => catalog[id]?.kind;
-  const all = spec.sections.flatMap((s: any) => s.blocks).filter((b: any) => catalog[b.widget]).map((b: any) => ({ ...b, _kind: kind(b.widget) }));
-  const findings = all.filter((b: any) => b._kind === "finding_card");
-  const modelCharts = all.filter((b: any) => CHART_KINDS.has(b._kind));
-  const chosen = new Set(modelCharts.map((b: any) => b.widget));
-  const findingDomain = finding ? (() => { try { return E.findingNeighborhood(finding).domain; } catch { return null; } })() : null;
-  const related = findingDomain ? (RELATED_DOMAINS[findingDomain] || [findingDomain]) : null;
-  const scopedIds = related
-    ? Object.keys(catalog).filter((id) => catalog[id] && CHART_KINDS.has(catalog[id].kind) && related.includes(WIDGET_DOMAIN[id]) && !chosen.has(id))
-        .sort((a, b) => (WIDGET_DOMAIN[a] === findingDomain ? 0 : 1) - (WIDGET_DOMAIN[b] === findingDomain ? 0 : 1))
-    : CHART_MENU.filter((id: string) => catalog[id] && CHART_KINDS.has(catalog[id].kind) && !chosen.has(id));
-  const menuCharts = scopedIds.map((id: string) => ({ widget: id, _kind: catalog[id].kind }));
-  const charts = [...modelCharts, ...menuCharts];
-  const modelTables = all.filter((b: any) => b._kind === "table");
-  const tables = modelTables.length ? modelTables : (catalog["segment_table"] ? [{ widget: "segment_table", _kind: "table" }] : []);
-  const partitionId = selectPartition(findings.length, modelCharts, charts, tables.length, partitionPref);
-  const p = PARTITIONS[partitionId];
-  const placed = fillPartition(p, findings, charts, tables, role);
+// board derivation — TemplateBoard (App.tsx): the fixed three-slot composition (Tuning 2, Stage A).
+// composeBoard returns the lede finding-card + the model's chart/table panels (capped at three, no
+// top-up). The retired PARTITIONS/deriveShape/selectPartition/fillPartition machinery is gone
+// (analysis/retired-layout.md); the fixture now records the composed lede + panels.
+function deriveBoard(spec: any, catalog: any) {
+  const { lede, panels } = composeBoard(spec, catalog);
   return {
-    partitionId,
-    shape: deriveShape(modelCharts.length >= 3 ? modelCharts : charts),
-    regions: placed.map((pl: any) => ({ a: pl.region.a, c: pl.region.c, r: pl.region.r, widget: pl.block.widget, kind: pl.block._kind })),
+    lede: lede ? lede.widget : null,
+    panels: panels.map((p: any) => ({ widget: p.widget, kind: p._kind })),
   };
 }
 // perturbedDataset without the module-global BASE_DS — same transform, transparent input setup
@@ -107,7 +90,7 @@ function captureState(label: string, ds: any) {
     const fb = fallbackCuration(anchor);
     const curation = { ...fb, finding: anchor };
     const spec = buildSpec(curation);
-    const board = deriveBoard(spec, catalog, role, curation.partitionPref, curation.finding);
+    const board = deriveBoard(spec, catalog);
     roles[role] = {
       anchor: anchor ? { id: anchor.id, label: anchor.label } : null,
       fallbackCuration: fb,

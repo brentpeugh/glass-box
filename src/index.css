@@ -368,7 +368,10 @@ button.dt-num:hover{ color:var(--dye); }
    no double lines, no outer-edge insets). Panels keep --field so the plane reads continuous. */
 .board{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
 .board-band{ flex:0 0 auto; border-bottom:var(--w-hair) solid var(--scribe-strong); padding-bottom:3px; }
-.partition{ flex:1 1 auto; min-height:0; display:grid; gap:12px; grid-template-columns:repeat(12,1fr); align-content:start; background:var(--scribe); }
+/* Tuning 2, Stage A: three equal, full-height slots (was a 12-col explicit-placement partition). The
+   single row takes all the height the six-panel grid used to split across two rows, so each chart is
+   roughly twice as tall. Gap-as-rule lattice preserved: --scribe ground, 1px gaps reveal it. */
+.partition{ flex:1 1 auto; min-height:0; display:grid; gap:12px; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:minmax(0,1fr); background:var(--scribe); }
 .tb-panel{ background:var(--field); border:none; padding:10px 12px; min-width:0; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
 .tb-panel .cpanel{ height:100%; display:flex; flex-direction:column; }
 .tb-panel .cfill{ flex:1 1 auto; height:auto; min-height:0; }
