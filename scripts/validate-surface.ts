@@ -102,7 +102,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
     // interactive source-routes
     "inspect", "node-glyph", "node-kids", "proxy", "chart-title", "chart-trace", "fband-inspect",
     "dt-num", "mx-cell", "kcell-v", "ev-trace", "test-run", "trust-link", "bridge-trace", "chip", "recur-rank",
-    "recur", "pb-reset", "sf-badge", "dbg-cap", "asked", "asked-h", "disclose", "foot-src",
+    "recur", "pb-reset", "sf-badge", "dbg-cap", "asked", "asked-h", "disclose", "foot-src", "dye-scribe", "lfig",
     // structural accent that frames the traceable field
     "hdr", "sec-n", "card", "role", "frame-tick", "brief-head", "dbg-h", "fband",
     "rail",
@@ -319,6 +319,34 @@ const MARKS = new Set(["rail-mark"]);   // the brand glyph (⟡) is not a text c
   const ct = roleOf("chart-title"), tq = roleOf("test-q");
   ok("chart titles are `title` (not an axis-tick weight)", eq(ct, "title"), `chart-title → ${ct ? ct.join("/") : "?"}`);
   ok("falsifier questions are `action` (not `prose` commentary)", eq(tq, "action"), `test-q → ${tq ? tq.join("/") : "?"}`);
+}
+
+// ── 15 · --plane marks model-authored content, never deterministic (§5, Stage C) ──────────────────
+// The brief's original #5 was "exactly one --plane region" (true when only the read modal used it).
+// The lede is a second region, so relaxing to a count would be the failure this check exists to
+// prevent. Instead: (a) a --plane background lives only on a `.plane` selector, and (b) that class is
+// applied in JSX ONLY by a model-authored predicate, with the deterministic branch getting `field`.
+// Putting deterministic prose on --plane is the same class of error as the six surfaces fixed in 2a.
+// TEETH: an unconditional `className="lede-prose plane"`, or plane in the deterministic branch, trips.
+{
+  const bad: string[] = [];
+  // (a) CSS: --plane background only on a `.plane` selector
+  for (const r of rules) {
+    if (r === tokenBlock) continue;
+    if (/background(?:-color)?:\s*var\(--plane\)/.test(r.body) && !/\.plane\b/.test(r.prelude)) bad.push(`css ${r.prelude} paints --plane`);
+  }
+  // (b) JSX: every className mentioning the `plane` class is a model-gated ternary (plane=true, field=false)
+  const jsx = stripAll(appTsx);
+  const modelPred = /\bisModel\b|\bisLive\b|\bauthored\b|source\s*===?\s*["'`]live["'`]/;
+  const sites = [...jsx.matchAll(/className=(\{`[^`]*`\}|"[^"]*"|'[^']*')/g)].map((m) => m[1]).filter((s) => /\bplane\b/.test(s));
+  if (sites.length === 0) bad.push("no --plane region renders (the lede ground is missing)");
+  for (const s of sites) {
+    const t = s.replace(/\s+/g, " ");
+    const m = t.match(/([^?{}]*)\?([^:]*):([^}]*)/);   // cond ? trueBranch : falseBranch
+    const good = m && modelPred.test(m[1]) && /\bplane\b/.test(m[2]) && /\bfield\b/.test(m[3]);
+    if (!good) bad.push(`jsx unconditional/mis-gated --plane: ${t.slice(0, 70)}`);
+  }
+  ok("--plane marks model-authored content wherever it renders, never deterministic (§5)", bad.length === 0, bad.join(" · "));
 }
 
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — register surface: ${pass}/${pass + fail} assertions`);

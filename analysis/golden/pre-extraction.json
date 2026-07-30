@@ -582,8 +582,8 @@
             "label": "CAC Payback vs benchmark"
           },
           "fallbackCuration": {
-            "thesis": "The most statistically anomalous signal in the book is CAC Payback vs benchmark — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.",
-            "whyRole": "It is the largest deviation the engine surfaced from the data, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
+            "thesis": "CAC Payback stands at 21 months against a 12-month benchmark, which it currently breaches.",
+            "whyRole": "This is the largest deviation from benchmark the engine measured, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
             "evidenceIds": [
               "cac.25Q4",
               "magic.25Q4",
@@ -664,8 +664,8 @@
             "label": "ARR spread across segments"
           },
           "fallbackCuration": {
-            "thesis": "The most statistically anomalous signal in the book is ARR spread across segments — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.",
-            "whyRole": "It is the largest deviation the engine surfaced from the data, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
+            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data.",
+            "whyRole": "This is the largest deviation from benchmark the engine measured, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
             "evidenceIds": [
               "arr.SMB.25Q4",
               "arr.Mid-Market.25Q4",
@@ -1312,8 +1312,8 @@
             "label": "ARR spread across segments"
           },
           "fallbackCuration": {
-            "thesis": "The most statistically anomalous signal in the book is ARR spread across segments — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.",
-            "whyRole": "It is the largest deviation the engine surfaced from the data, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
+            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data.",
+            "whyRole": "This is the largest deviation from benchmark the engine measured, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
             "evidenceIds": [
               "arr.SMB.25Q4",
               "arr.Mid-Market.25Q4",
@@ -1389,8 +1389,8 @@
             "label": "ARR spread across segments"
           },
           "fallbackCuration": {
-            "thesis": "The most statistically anomalous signal in the book is ARR spread across segments — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.",
-            "whyRole": "It is the largest deviation the engine surfaced from the data, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
+            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data.",
+            "whyRole": "This is the largest deviation from benchmark the engine measured, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
             "evidenceIds": [
               "arr.SMB.25Q4",
               "arr.Mid-Market.25Q4",

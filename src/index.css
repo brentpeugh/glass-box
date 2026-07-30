@@ -15,6 +15,7 @@
   --scribe:#ccd0d3; --scribe-strong:#a5abb1;
   --frame-ink:#d8dbdd; --frame-mute:#8b939b;
   --dye:#1f539f; --pos:#2f6b4a; --neg:#9c3a2c;
+  --plane:#e4e7e9;   /* §4: the ground that marks MODEL-AUTHORED prose (a subtle step off --field); never renders on deterministic content */
   --scrim: rgba(21,24,27,.34);                                  /* fallback for engines without color-mix */
   --scrim: color-mix(in srgb, var(--ink) 34%, transparent);    /* both declarations stay in the token block */
   --t-1:10px; --t-2:11px; --t-3:14px; --t-4:20px; --t-5:26px; --t-6:40px;
@@ -124,7 +125,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .wf-axis.r{fill:var(--ink-2);}
 .co-bar{ fill:var(--frame-mute); shape-rendering:crispEdges; cursor:pointer; } .co-bar:hover{ fill:var(--frame-mute); }  /* §4: no transition — it's a value-bearing mark */
 .area{fill-opacity:1;cursor:pointer;}
-.area-lab{ font-family:var(--font-sans); font-size:var(--t-3); font-weight:400; fill:var(--field); paint-order:stroke; stroke:var(--ink); stroke-width:2px; stroke-linejoin:round; }   /* name — series end-label */
+.area-lab{ font-family:var(--font-sans); font-size:var(--t-1); font-weight:400; fill:var(--field); paint-order:stroke; stroke:var(--ink); stroke-width:2px; stroke-linejoin:round; }   /* scaffold — plot-sized */
 /* §3/§4: legend/chip/swatch styling removed — charts carry direct end-labels, no colour key. */
 
 /* ---- entry screen ---- */
@@ -393,7 +394,26 @@ button.dt-num:hover{ color:var(--dye); }
    background is --scribe and 1px gaps reveal it as single hairlines between panels (no borders, so
    no double lines, no outer-edge insets). Panels keep --field so the plane reads continuous. */
 .board{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
-.board-band{ flex:0 0 auto; border-bottom:var(--w-hair) solid var(--scribe-strong); padding-bottom:3px; }
+.board-band{ flex:0 0 auto; border-bottom:var(--w-hair) solid var(--scribe-strong); }
+
+/* ===== Stage C — the lede: model prose (left, ~70%) over its evidence figures (right, ~30%) ===== */
+.lede{ display:grid; grid-template-columns:7fr 3fr; align-items:stretch; }
+.lede-prose{ padding:9px 16px 11px; display:flex; flex-direction:column; gap:5px; min-width:0; }
+/* the correctness point: --plane iff the prose is model-authored; the ordinary --field iff deterministic */
+.lede-prose.plane{ background:var(--plane); }
+.lede-prose.field{ background:var(--field); }
+.lede-ground{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); }   /* label */
+.lede-sentence{ font-family:var(--font-sans); font-size:var(--t-3); font-weight:400; line-height:1.5; color:var(--ink); margin:0; max-width:72ch; }   /* prose */
+/* dye-scribed figure: route-to-source, not emphasis — inherits the prose size/weight (sans, not the
+   brief's pre-2c mono), tabular digits, --dye with a 1px dye underline, clickable to its trace. */
+.dye-scribe{ font:inherit; font-variant-numeric:var(--num); background:none; border:none; padding:0; cursor:pointer; color:var(--dye); text-decoration:underline; text-decoration-color:var(--dye); text-decoration-thickness:1px; text-underline-offset:2px; }
+.dye-scribe:hover{ color:var(--ink); text-decoration-color:var(--ink); }
+.lede-figures{ display:flex; flex-direction:column; border-left:var(--w-hair) solid var(--scribe); }   /* de-carded: ruled rows, no bordered boxes */
+.lfig{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:5px 16px; background:none; border:none; border-bottom:var(--w-hair) solid var(--scribe); cursor:pointer; text-align:left; width:100%; }
+.lfig:last-child{ border-bottom:none; }
+.lfig:hover .lfig-v{ color:var(--dye); }
+.lfig-l{ font-family:var(--font-sans); font-size:var(--t-3); font-weight:400; color:var(--ink-2); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }   /* name */
+.lfig-v{ font-family:var(--font-sans); font-variant-numeric:var(--num); font-size:var(--t-tab); font-weight:700; color:var(--ink); flex:0 0 auto; }   /* datum */
 /* Tuning 2, Stage A: three equal, full-height slots (was a 12-col explicit-placement partition). The
    single row takes all the height the six-panel grid used to split across two rows, so each chart is
    roughly twice as tall. Gap-as-rule lattice preserved: --scribe ground, 1px gaps reveal it. */
@@ -680,7 +700,7 @@ body.modal-open{ overflow:hidden; }
 .dmb-a{ fill:var(--scribe-strong); } .dmb-b.up, .dmb-b.down{ fill:var(--ink); }
 
 /* batch-2 charts */
-.tm-lab{ font-family:var(--font-sans); font-size:var(--t-3); font-weight:400; fill:var(--field); }   /* name — segment name */
+.tm-lab{ font-family:var(--font-sans); font-size:var(--t-1); font-weight:400; fill:var(--field); }   /* scaffold — plot-sized */
 .tm-val{ font-family:var(--font-sans); font-variant-numeric:var(--num); font-weight:700; font-size:var(--t-tab); fill:var(--field); }   /* datum */
 .hm-cell.none{ fill:var(--scribe); opacity:.4; }
 .disclose{ color:var(--dye); font-style:normal; }

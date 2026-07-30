@@ -35,13 +35,54 @@ const FALLBACK_SCORECARD = {
 export function offeredWidgets(nb, catalog) {
   return Object.keys(catalog).filter((id) => admissibleLenses(nb).includes(WIDGET_DOMAIN[id]));
 }
+// Per-metric quarter series for the deterministic lede's duration streak (mirrors App's METRIC_SERIES;
+// App imports FROM curate, so it can't be shared the other way — a small, engine-backed replica).
+const LEDE_SERIES: Record<string, (q: any, primary: any, i: number) => number | null> = {
+  cac: (q) => { try { return E.cacPayback(q).value; } catch { return null; } },
+  magic: (q) => { try { return E.magicNumber(q).value; } catch { return null; } },
+  grossMargin: (q) => { try { return E.grossMargin(q).value; } catch { return null; } },
+  qoq: (q) => { try { return E.qoqGrowth(q).value; } catch { return null; } },
+  r40: (q, _p, i) => { try { return i >= 4 ? E.ruleOf40(q).value : null; } catch { return null; } },
+  arr: (q, primary) => { try { const p = String((primary && primary.id) || "").split("."); const seg = p.length === 3 ? p[1] : null; return seg ? E.segArr(seg, q).value : E.companyArr(q).value; } catch { return null; } },
+  nrr: (q, primary) => { try { const p = String((primary && primary.id) || "").split("."); const seg = p.length >= 3 && E.SEGMENTS.includes(p[1]) ? p[1] : null; const qi = E.QUARTERS.indexOf(q); if (qi < 4) return null; return E.nrr(seg, E.QUARTERS[qi - 4], q).value; } catch { return null; } },
+};
+const NUMWORD = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+const numWord = (n: number) => NUMWORD[n] || String(n);
+const fmtMoney = (v: number) => { const a = Math.abs(v); return (v < 0 ? "−$" : "$") + (a >= 1e9 ? (a / 1e9).toFixed(1) + "B" : a >= 1e6 ? (a / 1e6).toFixed(1) + "M" : a >= 1e3 ? (a / 1e3).toFixed(0) + "K" : a.toFixed(0)); };
+const fmtVal = (v: number, u: string) => u === "usd" ? fmtMoney(v) : u === "percent" ? v.toFixed(1) + "%" : u === "ratio" ? v.toFixed(2) + "x" : u === "months" ? v.toFixed(0) + " months" : u === "pp" ? v.toFixed(0) + " pp" : v.toFixed(0);
+const fmtBench = (v: number, u: string) => u === "usd" ? fmtMoney(v) : u === "percent" ? v + "%" : u === "ratio" ? v + "x" : u === "months" ? v + "-month" : "" + v;
+// The DETERMINISTIC lede: the finding STATED plainly — value, benchmark, direction, duration. The
+// model lede INTERPRETS; this one states. They differ in kind so the difference marks the boundary.
+export function ledeFacts(finding: any) {
+  try {
+    const primary = (finding.mvs || [])[0];
+    if (!primary || !primary.basis) return null;
+    const b = primary.basis, u = primary.unit;
+    const value = fmtVal(primary.value, u), bench = fmtBench(b.thr, u);
+    const breached = b.good === "above" ? primary.value < b.thr : primary.value > b.thr;
+    // duration: trailing consecutive quarters the metric moved in the UNFAVOURABLE direction
+    let streak = 0;
+    const sf = LEDE_SERIES[finding.metric];
+    if (sf) {
+      const vals = E.QUARTERS.map((q: any, i: number) => sf(q, primary, i)).filter((v: any) => v != null);
+      for (let k = vals.length - 1; k > 0; k--) { const worse = b.good === "above" ? vals[k] < vals[k - 1] : vals[k] > vals[k - 1]; if (worse) streak++; else break; }
+    }
+    const tail = streak >= 2 ? ` and has deteriorated for ${numWord(streak)} consecutive quarters`
+      : breached ? ", which it currently breaches" : ", which it clears";
+    return { label: primary.label, primary, value, bench, breached, streak,
+      sentence: `${primary.label} stands at ${value} against a ${bench} benchmark${tail}.` };
+  } catch { return null; }
+}
 export function fallbackCuration(fact) {
   const nb = E.findingNeighborhood(fact);
   const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => admissibleLenses(nb).includes(WIDGET_DOMAIN[id]));
   const evidenceIds = [...new Set([...(fact.mvs || []).map((m) => m.id), ...nb.metricIds])].slice(0, 6);
+  const facts = ledeFacts(fact);
   return {
-    thesis: `The most statistically anomalous signal in the book is ${fact.label} — it stands out sharply against the rest of the metrics, which is where decision risk concentrates.`,
-    whyRole: "It is the largest deviation the engine surfaced from the data, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
+    // deterministic: state the engine facts plainly (value · benchmark · direction · duration); do NOT
+    // imitate the model's interpretive voice — the difference in kind demonstrates the boundary.
+    thesis: facts ? facts.sentence : `${fact.label} is the top finding the engine surfaced from this quarter's data.`,
+    whyRole: "This is the largest deviation from benchmark the engine measured, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
     evidenceIds, testIds: nb.testIds, widgetIds,
     scorecardKeys: FALLBACK_SCORECARD[nb.domain] || FALLBACK_SCORECARD.efficiency,
     rationaleTags: ["top salient anomaly", nb.domain], source: "fallback",

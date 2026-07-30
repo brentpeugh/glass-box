@@ -4,7 +4,7 @@ import { WIDGET_DOMAIN, guardFraming, guardDirection, engineHeadline } from "./c
 import { E, initEngine, setBaseDS, BASE_DS } from "./engine";
 import { buildCatalog } from "./catalog";
 import { composeBoard } from "./layout";
-import { curate, callModel, FALLBACK } from "./curate";
+import { curate, callModel, FALLBACK, ledeFacts } from "./curate";
 import { PERTURBATIONS, perturbedDataset } from "./perturbations";
 
 
@@ -782,18 +782,52 @@ function Block({ block, catalog, onPick, dim, source }) {
 // model order, capped at three, with NO menu top-up — the rendered panel count equals the model's
 // selection. The §1e lattice is preserved: the lede band is a section (a single --scribe-strong rule
 // below it), the three slots are a gap-as-rule grid (--scribe ground shows through the 1px gaps).
-function TemplateBoard({ spec, role, catalog, onPick, finding, source }) {
-  const { lede, panels } = composeBoard(spec, catalog);
-  const cellContent = (block) => block.widget === "salient_band"
-    ? <div className="block emph-hero"><SalientBand finding={finding} role={role} onPick={onPick} /></div>
-    : block._kind === "finding_card"
-    ? <Block block={block} catalog={catalog} onPick={onPick} dim={null} source={source} />
-    : <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={null} />;
+function TemplateBoard({ spec, role, catalog, onPick, finding, source, curation }) {
+  const { panels } = composeBoard(spec, catalog);   // finding_card excluded from panels; the lede row renders it
   return (<div className="board">
-    {lede && <div className="board-band">{cellContent(lede)}</div>}
+    {finding && <div className="board-band"><Lede finding={finding} source={source} curation={curation} role={role} onPick={onPick} /></div>}
     <div className="partition">
       {panels.map((block, i) => (
-        <div key={i} className="tb-panel">{cellContent(block)}</div>
+        <div key={i} className="tb-panel"><Widget id={block.widget} catalog={catalog} onPick={onPick} dim={null} /></div>
+      ))}
+    </div>
+  </div>);
+}
+// Stage C — the lede. Prose left, evidence figures right. The GROUND is conditional and this is the
+// correctness point: --plane marks model-authored prose; the ordinary --field marks deterministic
+// prose. Inherits the read modal's source→label switch; putting deterministic prose on --plane would
+// be the same class of error as the six surfaces corrected in 2a. The deterministic lede STATES the
+// finding (value/benchmark/direction/duration, with each figure dye-scribed to its source); the model
+// lede INTERPRETS (numeral-free — its figures live in the evidence column). They differ in kind.
+const NUMWORD = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+function LedeDeterministic({ facts, onPick }) {
+  const route = () => onPick({ node: facts.primary });
+  return (<p className="lede-sentence">
+    {facts.label} stands at <button className="dye-scribe" onClick={route}>{facts.value}</button> against a <button className="dye-scribe" onClick={route}>{facts.bench}</button> benchmark
+    {facts.streak >= 2 ? <> and has deteriorated for {NUMWORD[facts.streak] || facts.streak} consecutive quarters.</>
+      : facts.breached ? <>, which it currently breaches.</> : <>, which it clears.</>}
+  </p>);
+}
+function Lede({ finding, source, curation, role, onPick }) {
+  if (!finding) return null;
+  const isModel = source === "live" && curation && curation.thesis;
+  const facts = ledeFacts(finding);
+  const evIds = (curation && curation.evidenceIds && curation.evidenceIds.length) ? curation.evidenceIds : (finding.mvs || []).map((m) => m.id);
+  const evidence = evIds.map((id) => { try { return E.store.get(id); } catch { return null; } }).filter(Boolean).slice(0, 4);
+  return (<div className="lede">
+    <div className={`lede-prose ${isModel ? "plane" : "field"}`}>
+      <span className="lede-ground">{isModel ? "model-authored" : "deterministic"}</span>
+      {isModel
+        ? <p className="lede-sentence">{curation.thesis}</p>
+        : facts
+        ? <LedeDeterministic facts={facts} onPick={onPick} />
+        : <p className="lede-sentence">{finding.label} is the engine's top finding this quarter.</p>}
+    </div>
+    <div className="lede-figures">
+      {evidence.map((mv, i) => (
+        <button key={i} className="lfig" onClick={() => onPick({ node: mv })}>
+          <span className="lfig-l">{mv.label}</span><span className="lfig-v">{fmtMV(mv)}</span>
+        </button>
       ))}
     </div>
   </div>);
@@ -1207,7 +1241,7 @@ function AppInner() {
 
         <div className={`workarea ${picked ? "drawer-open" : ""}`}>
           <main className="stage">
-            {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} /></>}
+            {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} curation={state.curation} /></>}
           </main>
           <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
         </div>
