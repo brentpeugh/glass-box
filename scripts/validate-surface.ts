@@ -195,10 +195,10 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
 }
 
 // ── 9 · every font-size resolves to the ladder or --t-tab ────────────────────────────────────────
-// Ladder = --t-1 10 · --t-2 11 · --t-3 14 · --t-4 20 · --t-6 40 (+ --t-tab 12 for tabular). TEETH:
-// pre-reskin had 29 distinct font-size values → trips hard.
+// Ladder = --t-1 10 · --t-2 11 · --t-3 14 · --t-4 20 · --t-5 26 · --t-6 40 (+ --t-tab 12 for tabular).
+// TEETH: pre-reskin had 29 distinct font-size values → trips hard.
 {
-  const okVal = /^(var\(--t-[12346]\)|var\(--t-tab\)|10px|11px|12px|14px|20px|40px|inherit)$/;
+  const okVal = /^(var\(--t-[123456]\)|var\(--t-tab\)|10px|11px|12px|14px|20px|26px|40px|inherit)$/;
   const bad: string[] = [];
   for (const b of blocks)
     for (const d of b.body.match(/font-size:\s*[^;}]+/g) || []) {
@@ -244,6 +244,81 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
     }
   }
   ok("type on an ink ground uses --frame-ink/--frame-mute, never --ink/--ink-2", bad.length === 0, bad.join(" · "));
+}
+
+// ── 11 · the eleven text classes (§2c) ────────────────────────────────────────────────────────────
+// Every type-defining rule (sets BOTH font-size and font-weight) resolves to exactly one of the
+// eleven (family, size, weight) triples — no ad-hoc combinations. The class is decided by what the
+// text does; a chart title and a modal title are the same class. TEETH: post-2b chart titles are
+// (mono,11,400) — mono is legal only at 10/12 — so they are NOT a class and trip here.
+const SIZE: Record<string, number> = { "--t-1": 10, "--t-2": 11, "--t-3": 14, "--t-4": 20, "--t-5": 26, "--t-6": 40, "--t-tab": 12, "10px": 10, "11px": 11, "12px": 12, "14px": 14, "20px": 20, "26px": 26, "40px": 40 };
+const sizePx = (v: string) => { const m = v.trim().match(/var\((--t-[\w-]+)\)/); return m ? SIZE[m[1]] : SIZE[v.trim()]; };
+const declVal = (body: string, prop: string) => { const m = body.match(new RegExp("(?:^|[;{\\s])" + prop + ":\\s*([^;}]+)")); return m ? m[1].trim() : null; };
+const isMono = (body: string) => /var\(--font-mono\)|IBM Plex Mono/.test(body);
+// (family, size, weight) triples
+const CLASSES: Record<string, [string, number, number]> = {
+  hero: ["sans", 40, 700], lede: ["sans", 26, 600], value: ["sans", 20, 700], prose: ["sans", 14, 400],
+  action: ["sans", 14, 600], datum: ["sans", 12, 700], title: ["sans", 11, 600], label: ["sans", 11, 400],
+  scaffold: ["sans", 10, 400], note: ["mono", 10, 400], machine: ["mono", 12, 400],
+};
+const TRIPLES = new Set(Object.values(CLASSES).map(([f, s, w]) => `${f}|${s}|${w}`));
+const MARKS = new Set(["rail-mark"]);   // the brand glyph (⟡) is not a text class — exempt
+{
+  const bad: string[] = [];
+  for (const r of rules) {
+    if (r === tokenBlock || hasClassIn(r.prelude, MARKS)) continue;
+    if (/^\.t-(hero|lede|value|prose|action|datum|title|label|scaffold|note|machine)$/.test(r.prelude.trim())) continue; // the canonical defs
+    const size = declVal(r.body, "font-size"), weight = declVal(r.body, "font-weight");
+    if (!size || !weight || size === "inherit") continue;   // only rules that define both
+    const px = sizePx(size); if (px == null) continue;       // bad sizes are #9's job
+    const wt = parseInt(weight, 10); if (isNaN(wt)) continue;
+    const fam = isMono(r.body) ? "mono" : "sans";
+    if (!TRIPLES.has(`${fam}|${px}|${wt}`)) bad.push(`${r.prelude} → ${fam} ${px}/${wt}`);
+  }
+  ok("every type rule resolves to one of the 11 text classes (no ad-hoc combinations)", bad.length === 0, bad.join(" · "));
+}
+
+// ── 12 · mono marks raw machine output only ───────────────────────────────────────────────────────
+// --font-mono appears only on .note and .machine — source lines, provenance rows, IDs, JSON. On any
+// other selector mono is decorative. TEETH: post-2b put mono on kcell-v, dt-num, chart-title, the KPI
+// labels … → trips.
+{
+  const NOTE_MACHINE = new Set(["src-note", "co-note", "foot-note", "foot-status", "ev-trace", "brief-viol", "node-op", "dbg-meta", "proxy", "rows-recon", "err-msg", "rows-stat", "rows-tbl", "dbg-pre", "mono", "t-note", "t-machine"]);
+  const bad: string[] = [];
+  for (const r of rules) {
+    if (r === tokenBlock) continue;
+    if (isMono(r.body) && !hasClassIn(r.prelude, NOTE_MACHINE)) bad.push(r.prelude);
+  }
+  ok("--font-mono only on .note / .machine (raw machine output), never decorative", bad.length === 0, bad.join(", "));
+}
+
+// ── 13 · tabular figures ──────────────────────────────────────────────────────────────────────────
+// Every class carrying figures — hero, value, datum, machine — sets tabular-nums (uniform-width digits
+// without a monospace face, the two-voice rule's whole point). Checked on the canonical class defs.
+{
+  const bad: string[] = [];
+  for (const cls of ["t-hero", "t-value", "t-datum", "t-machine"]) {
+    const r = rules.find((x) => x.prelude.trim() === "." + cls);
+    if (!r || !/font-variant-numeric:[^;}]*(tabular-nums|var\(--num\))/.test(r.body)) bad.push(cls);
+  }
+  ok("tabular-nums on every figure class (hero, value, datum, machine)", bad.length === 0, `missing: ${bad.join(", ")}`);
+}
+
+// ── 14 · role teeth — the two drifts the class system exists to catch ──────────────────────────────
+// A chart title and a modal title do the same job → both `title` (600, caps). A falsifier question is a
+// clickable proposition → `action` (600), not `prose` (400) commentary. TEETH: post-2b chart-title is
+// (mono,11,400) and .test-q is (sans,14,400) — both trip.
+{
+  const roleOf = (cls: string): [string, number, number] | null => {
+    const r = rules.find((x) => classesOf(x.prelude).includes(cls) && declVal(x.body, "font-size") && declVal(x.body, "font-weight"));
+    if (!r) return null;
+    const px = sizePx(declVal(r.body, "font-size")!); const wt = parseInt(declVal(r.body, "font-weight")!, 10);
+    return [isMono(r.body) ? "mono" : "sans", px as number, wt];
+  };
+  const eq = (a: [string, number, number] | null, cls: string) => !!a && `${a[0]}|${a[1]}|${a[2]}` === `${CLASSES[cls][0]}|${CLASSES[cls][1]}|${CLASSES[cls][2]}`;
+  const ct = roleOf("chart-title"), tq = roleOf("test-q");
+  ok("chart titles are `title` (not an axis-tick weight)", eq(ct, "title"), `chart-title → ${ct ? ct.join("/") : "?"}`);
+  ok("falsifier questions are `action` (not `prose` commentary)", eq(tq, "action"), `test-q → ${tq ? tq.join("/") : "?"}`);
 }
 
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — register surface: ${pass}/${pass + fail} assertions`);
