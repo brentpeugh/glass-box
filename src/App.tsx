@@ -1127,7 +1127,6 @@ function AppInner() {
   const cache = React.useRef({});
   const [showQuery, setShowQuery] = useState(false);
   const [showBrief, setShowBrief] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
   const [showTrust, setShowTrust] = useState(false);
   const audit = React.useRef([]);
   const [auditN, setAuditN] = useState(0);
@@ -1279,9 +1278,11 @@ function AppInner() {
       {/* full-height left rail — Strata grammar: primary at the top, secondary at the bottom, empty between */}
       <nav className="rail">
         <div className="rail-mark" title="Caliper">⟡</div>
-        {/* Top = the view parameter (which role's board). Bottom = actions on the current board, in an
-            escalating order — read the model's conclusion, interrogate it, then change the data underneath
-            and watch it re-derive; each is a larger claim than the one before. MORE is overflow chrome, last. */}
+        {/* Top = the view parameter (which role's board). Bottom = ACTIONS on the current board, in an
+            escalating order — read the model's conclusion, interrogate it, change the data underneath and
+            watch it re-derive, then re-run the arrangement; each is a larger claim than the one before.
+            MORE is gone: re-curate is an action, the curation log folded into the Trust panel, and the
+            trust contract is reached from the footer claim. */}
         <div className="rail-grp rail-top">
           {Object.keys(ROLES).map((k) => <button key={k} className={`railbtn lens ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
         </div>
@@ -1289,14 +1290,7 @@ function AppInner() {
           <button className="railbtn brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">Model read</button>
           <button className="railbtn" onClick={() => setShowQuery(true)} title="ask your data">Ask data</button>
           <button className={`railbtn ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">Shift data</button>
-          <div className="rail-menu-wrap">
-            <button className="railbtn" onClick={() => setShowMenu((v) => !v)} title="tools">More</button>
-            {showMenu && <div className="hdr-menu" onMouseLeave={() => setShowMenu(false)}>
-              <button onClick={() => { delete cache.current[role]; enter(role); setShowMenu(false); }}>↻ re-curate</button>
-              <button onClick={() => { setShowDebug(true); setShowMenu(false); }}>◱ curation log</button>
-              <button onClick={() => { setShowTrust(true); setShowMenu(false); }}>⛨ trust contract</button>
-            </div>}
-          </div>
+          <button className="railbtn" onClick={() => { delete cache.current[role]; enter(role); }} title="re-curate — re-run the model's arrangement">Re-curate</button>
         </div>
       </nav>
 

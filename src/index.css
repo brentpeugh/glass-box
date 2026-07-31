@@ -329,8 +329,6 @@ button.dt-num:hover{ color:var(--dye); }
 .railbtn.on{ color:var(--frame-ink); border-bottom-color:var(--frame-ink); }   /* secondary group (perturb) active: 2px underline */
 /* §1b: active ROLE gets a --field fill on the ink ground — the board cutting into the rail. Roles only. */
 .railbtn.lens.on{ background:var(--field); color:var(--ink); border-bottom-color:transparent; }
-.rail-menu-wrap{ position:relative; }
-.rail-menu-wrap .hdr-menu{ left:100%; bottom:0; top:auto; right:auto; margin-left:4px; }   /* Tools sits low: menu opens up-and-right, clear of the rail */
 
 /* the footer band: ink ground, --bar tall. Curation status (was top rail) + proxy footnote (was in body). */
 /* footer is a SURFACE, not chrome: --field ground, a hairline scribe-strong rule above it — no ink
@@ -671,13 +669,6 @@ body.modal-open{ overflow:hidden; }
 .both-hd{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
 .both-lbl{ font-family:var(--font-sans); font-weight:600; font-size:var(--t-2); letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); }   /* title */
 
-/* header tools menu (secondary actions collapsed) */
-.hdr-menu-wrap{ position:relative; display:inline-block; }
-.hdr-menu{ position:absolute; right:0; top:calc(100% + 4px); background:var(--field); border:1px solid var(--ink); box-shadow:none; z-index:50; min-width:150px; }
-.hdr-menu button{ display:block; width:100%; text-align:left; padding:9px 13px; background:none; border:none; border-bottom:1px solid var(--scribe); font-family:var(--font-sans); font-size:11px; color:var(--ink); cursor:pointer; }
-.hdr-menu button:last-child{ border-bottom:none; }
-.hdr-menu button:hover{ background:var(--field); color:var(--ink); }
-
 /* status strip link + trust panel */
 .trust-link{ background:none; border:none; color:var(--dye); font-family:var(--font-sans); font-size:inherit; cursor:pointer; padding:0; border-bottom:1px dotted var(--dye); }
 .trust-link:hover{ color:var(--ink); }
@@ -747,7 +738,6 @@ body.modal-open{ overflow:hidden; }
 .hdr .disclose{ color:var(--dye); font-style:normal; }
 .hdr-status b{ color:var(--frame-ink); }
 .hdr .live-dot{ background:var(--frame-mute); }
-.hdr-menu button{ color:var(--ink); }
 
 .cx-axlab{ font-family:var(--font-sans); font-size:10px; font-weight:400; fill:var(--ink-2); letter-spacing:.10em; text-transform:uppercase; }   /* scaffold */
 /* ===== modals ===== */
