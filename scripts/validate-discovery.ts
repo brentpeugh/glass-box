@@ -111,5 +111,33 @@ ok("4. masking is NOT the selected top finding",
     `namesOk=${namesOk} digitStillTrips=${digitStillTrips} stripIsRequired=${stripIsRequired}`);
 }
 
+// 11 — token substitution (Tuning 4): model prose carries {tokens}, never digits. The guard strips
+//      valid token slots before the digit test, so a digit INSIDE a token NAME ({rule_of_40}) does not
+//      false-trip, while a bare digit outside a token still rejects. This is the structural form of
+//      "no number reaches the screen unengineered", on the most prominent prose on the board.
+{
+  const tokenProseOk = !guardFraming("{cac_payback} sits above its {cac_payback_benchmark} benchmark").violated
+    && !guardFraming("{rule_of_40} trails target").violated;     // digit inside a token name is fine
+  const bareDigitTrips = guardFraming("{cac_payback} is 21 months over target").violated;   // a bare digit still trips
+  ok("11. token slots pass the digit guard; a bare digit outside a token still trips",
+    tokenProseOk && bareDigitTrips, `tokenProseOk=${tokenProseOk} bareDigitTrips=${bareDigitTrips}`);
+}
+
+// 12 — the token vocabulary is CLOSED: a curation whose prose uses an UNKNOWN token is inadmissible (an
+//      invented token has no substitution and must never reach the screen); a curation using only
+//      vocabulary tokens is admitted. validateCurationCore takes the finding's token vocabulary.
+{
+  const vocab = ["cac_payback", "cac_payback_benchmark"];
+  const good = validateCurationCore(
+    { thesis: "CAC Payback moves toward {cac_payback}", whyRole: "it matters for the read", evidenceIds: [top.mvs[0].id], testIds: nb.testIds, widgetIds: ["metric_matrix"] },
+    nb, catalog, WIDGET_DOMAIN, [], vocab);
+  const bad = validateCurationCore(
+    { thesis: "CAC Payback moves toward {invented_token}", whyRole: "matters", evidenceIds: [top.mvs[0].id], testIds: nb.testIds, widgetIds: ["metric_matrix"] },
+    nb, catalog, WIDGET_DOMAIN, [], vocab);
+  ok("12. token vocabulary is closed — valid token admitted, unknown token rejected",
+    good.viable === true && bad.viable === false && bad.violations.some((v: string) => v.includes("unknown token")),
+    `good=${good.viable} bad=${bad.viable} viol=${bad.violations.join("|")}`);
+}
+
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — discovery path: ${pass}/${pass + fail} thesis-critical assertions`);
 if (fail > 0) process.exit(1);

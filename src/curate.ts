@@ -54,6 +54,28 @@ const fmtVal = (v: number, u: string) => u === "usd" ? fmtMoney(v) : u === "perc
 const fmtBench = (v: number, u: string) => u === "usd" ? fmtMoney(v) : u === "percent" ? v + "%" : u === "ratio" ? v + "x" : u === "months" ? v + "-month" : "" + v;
 const breachedMV = (m: any) => m && m.basis && (m.basis.good === "above" ? m.value < m.basis.thr : m.value > m.basis.thr);
 const joinList = (a: string[]) => a.length <= 1 ? (a[0] || "") : a.length === 2 ? `${a[0]} and ${a[1]}` : `${a.slice(0, -1).join(", ")}, and ${a[a.length - 1]}`;
+// slug an engine label into a stable token name (lowercase; runs of non-alphanumerics → "_"). A digit
+// in a NAME is fine — it is part of an engine-supplied name (Rule of 40 → rule_of_40), never a value.
+export const slugToken = (label: any) => String(label || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+// The TOKEN VOCABULARY for a finding — the SINGLE source for the prompt (what the model may write), the
+// validator (what it admits), and the renderer (what it substitutes + dye-scribes). One token per
+// evidence metric, named by the slug of its label, rendering the value WITH ITS UNIT; plus a
+// `<slug>_benchmark` token wherever the metric carries a benchmark. Each token records its source node
+// id so the render layer can dye-scribe the substituted value to its trace — exactly as the lede does.
+export function ledeTokens(finding: any) {
+  const nb = E.findingNeighborhood(finding);
+  const ids = [...new Set([...(finding.mvs || []).map((m: any) => m && m.id).filter(Boolean), ...(nb.metricIds || [])])];
+  const tokens: Record<string, any> = {};
+  for (const id of ids) {
+    let mv: any; try { mv = E.store.get(id); } catch { continue; }
+    if (!mv || !mv.label) continue;
+    const name = slugToken(mv.label);
+    if (!name || tokens[name]) continue;
+    tokens[name] = { value: fmtVal(mv.value, mv.unit), nodeId: mv.id, label: mv.label, unit: mv.unit };
+    if (mv.basis) tokens[`${name}_benchmark`] = { value: fmtBench(mv.basis.thr, mv.unit), nodeId: mv.id, label: `${mv.label} benchmark`, unit: mv.unit, benchmark: true };
+  }
+  return tokens;
+}
 // The DETERMINISTIC lede: the finding STATED and ENUMERATED — value/benchmark/breach/duration in the
 // thesis, then a dense composition of the surrounding engine facts (which tracked metrics sit below
 // target, the finding count and domain spread, the source-row count) as the "why". The model lede
@@ -73,8 +95,11 @@ export function ledeFacts(finding: any) {
       for (let k = vals.length - 1; k > 0; k--) { const worse = b.good === "above" ? vals[k] < vals[k - 1] : vals[k] > vals[k - 1]; if (worse) streak++; else break; }
     }
     const streakClause = streak >= 2 ? ` after ${numWord(streak)} consecutive quarters of deterioration` : "";
-    // the thesis is a HEADLINE — no terminal punctuation (the enumeration paragraph below keeps its full stop)
-    const sentence = `${primary.label} stands at ${value} against a ${bench} benchmark, ${breached ? "breaching" : "clearing"} it${streakClause}`;
+    // the thesis is a HEADLINE — no terminal punctuation (the enumeration paragraph below keeps its full
+    // stop). It is a TOKEN TEMPLATE, not a composed string: {slug} / {slug}_benchmark are substituted +
+    // dye-scribed by the same render layer the model path uses — one substitution layer, both paths.
+    const pslug = slugToken(primary.label);
+    const template = `${primary.label} stands at {${pslug}} against a {${pslug}_benchmark} benchmark, ${breached ? "breaching" : "clearing"} it${streakClause}`;
     // enumeration: the surrounding tracked metrics, the finding spread, the row count
     const q = E.QUARTERS, latest = q[q.length - 1], w0 = q[q.length - 5];
     const safeMV = (fn: () => any) => { try { const m = fn(); return m && m.basis ? m : null; } catch { return null; } };
@@ -92,7 +117,7 @@ export function ledeFacts(finding: any) {
       ? `Of the ${numWord(tracked.length)} other tracked metrics, ${joinList(below)} ${below.length === 1 ? "sits" : "sit"} below target${holds.length ? ` while ${joinList(holds)} ${holds.length === 1 ? "holds" : "hold"}` : ""}.`
       : `All ${numWord(tracked.length)} other tracked metrics hold their benchmarks.`;
     const enumeration = `${metricsClause} The engine surfaced ${findings.length} findings across ${numWord(domains.size)} domains, computed from ${rows.toLocaleString()} source rows.`;
-    return { label: primary.label, primary, value, bench, breached, streak, sentence, enumeration };
+    return { label: primary.label, primary, value, bench, breached, streak, template, enumeration };
   } catch { return null; }
 }
 export function fallbackCuration(fact) {
@@ -113,7 +138,7 @@ export function fallbackCuration(fact) {
   return {
     // deterministic: state the anchor plainly (thesis) and enumerate the surrounding engine facts
     // (whyRole) — dense, not interpretive. Do NOT imitate the model's voice; the difference is the point.
-    thesis: facts ? facts.sentence : `${fact.label} is the top finding the engine surfaced from this quarter's data`,
+    thesis: facts ? facts.template : `${fact.label} is the top finding the engine surfaced from this quarter's data`,
     whyRole: facts ? facts.enumeration : "This is the largest deviation from benchmark the engine measured, so it most warrants scrutiny before decisions rest on the headline numbers.",
     evidenceIds, testIds: nb.testIds, widgetIds,
     scorecardKeys: FALLBACK_SCORECARD[nb.domain] || FALLBACK_SCORECARD.efficiency,
@@ -125,10 +150,12 @@ function validateCuration(cur, finding, catalog) {
   // the model may NAME any metric it was shown as evidence — those engine labels (some contain
   // digits, e.g. "Rule of 40") are references, not authored values, so they're whitelisted.
   const evidenceLabels = (nb.metricIds || []).map((id: string) => { try { return E.store.get(id)?.label; } catch { return null; } }).filter(Boolean);
-  return validateCurationCore(cur, nb, catalog, WIDGET_DOMAIN, evidenceLabels);
+  const validTokens = Object.keys(ledeTokens(finding));   // the finding's token vocabulary — an unknown token rejects the curation
+  return validateCurationCore(cur, nb, catalog, WIDGET_DOMAIN, evidenceLabels, validTokens);
 }
 function buildCurationPrompt(focus, finding, nb, catalog) {
   const metricMenu = nb.metricIds.map((id) => ({ id, label: E.store.get(id).label }));
+  const tokenMenu = Object.entries(ledeTokens(finding)).map(([name, t]: [string, any]) => ({ token: `{${name}}`, renders: `${t.label} — value with its unit` }));
   const testMenu = nb.testIds.map((id) => { const t = E.TEST_MENU.find((x) => x.id === id); return { id, question: t.label, falsifier: nb.falsifierIds.includes(id) }; });
   const widgetMenu = offeredWidgets(nb, catalog).map((id) => ({ id, label: catalog[id].title || id }));
   const headlineMenu = HEADLINE_KEYS;
@@ -144,15 +171,18 @@ function buildCurationPrompt(focus, finding, nb, catalog) {
   const domainHint = DOMAIN_HINT[nb.domain] ? "\n" + DOMAIN_HINT[nb.domain] : "";
   return `You are the analytical-judgment layer of a governed analytics system, briefing the ${focus.role}.
 An engine has DETECTED this finding (you did not compute it; you may foreground and FRAME it): "${finding.label}".
-Form the decision-relevant READ for the ${focus.role}. The engine surfaced this top statistical fact from a neutral scan; its finding neighborhood (the menus below) defines what is legible. Do NOT assume the issue is retention, growth, efficiency, or concentration — let the neighborhood and the evidence decide. Choose the framing and widgets most decision-relevant FOR THE ${focus.role}: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Compose a COMPLETE board: select the set of widgets that give a full analytical view of this finding from complementary angles (e.g. the trend over time, the segment/component breakdown, the composition or share, a comparison against benchmark) — exactly 3 panels, ordered most important first. Choose the three most decision-relevant complementary angles; select fewer only if the finding genuinely cannot support three.${domainHint} Select ONLY from the menus below — you may not invent metrics, tests, or widgets, and you may not write any digit in your prose (the engine owns all numbers).
+Form the decision-relevant READ for the ${focus.role}. The engine surfaced this top statistical fact from a neutral scan; its finding neighborhood (the menus below) defines what is legible. Do NOT assume the issue is retention, growth, efficiency, or concentration — let the neighborhood and the evidence decide. Choose the framing and widgets most decision-relevant FOR THE ${focus.role}: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Compose a COMPLETE board: select the set of widgets that give a full analytical view of this finding from complementary angles (e.g. the trend over time, the segment/component breakdown, the composition or share, a comparison against benchmark) — exactly 3 panels, ordered most important first. Choose the three most decision-relevant complementary angles; select fewer only if the finding genuinely cannot support three.${domainHint} Select ONLY from the menus below — you may not invent metrics, tests, or widgets.
+
+Your prose (thesis and whyRole) must contain NO DIGITS and NO UNITS. Every figure is a TOKEN from the TOKENS list, written in curly braces exactly as listed (e.g. {cac_payback}). The engine substitutes each token with its value AND unit at render time and links it to its source — so you write the token alone: "{cac_payback}", NOT "{cac_payback} months" (that would render the unit twice), and NEVER a bare number. You may use ONLY tokens from the list; an unknown token rejects the whole read. Compose ordinary words around the tokens.
 
 EVIDENCE (metric ids you may cite): ${JSON.stringify(metricMenu)}
+TOKENS (the ONLY figures you may write in prose — each renders value+unit and links to source): ${JSON.stringify(tokenMenu)}
 TESTS (you MUST include at least one marked falsifier:true, so your read can fail): ${JSON.stringify(testMenu)}
 WIDGETS (charts you may select, prioritized): ${JSON.stringify(widgetMenu)}
 HEADLINE (metric keys for the vital-signs strip — pick 6 that matter to the ${focus.role} for THIS finding): ${JSON.stringify(headlineMenu)}
 
 Return ONLY this JSON, nothing around it:
-{"thesis":"ONE sentence, NO numbers, NO terminal punctuation — it is a HEADLINE, and the lede is laid out for a single sentence — the story that matters for the ${focus.role}","whyRole":"1 sentence, NO numbers, ending with a full stop — it is a paragraph — why it matters to the ${focus.role}","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["exactly 3 ids from WIDGETS composing the board — complementary views, most important first"],"scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
+{"thesis":"ONE sentence, NO terminal punctuation — a HEADLINE for the ${focus.role}; figures ONLY as {tokens} from the TOKENS list, no digits, no units","whyRole":"1 sentence ending with a full stop — why it matters to the ${focus.role}; figures ONLY as {tokens}, no digits, no units","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["exactly 3 ids from WIDGETS composing the board — complementary views, most important first"],"scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
 }
 // callModel is an INJECTED dependency (docs/briefs/extraction.md §4): the default is byte-identical
 // to the shipped seam, so the app is unchanged; a Node harness can inject a direct API call or a

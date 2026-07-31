@@ -41,17 +41,24 @@ export const HEADLINE_KEYS = ["nrr", "grr", "gross_margin", "magic_number", "cac
 const NUMWORD = /[\u00bc-\u00be\u2150-\u215e]|\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion)\b|\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)[\s-](percent|points?|times|fold|basis|months?|dollars?|thirds?|halves|half|fourths?|fifths?|sixths?|sevenths?|eighths?|ninths?|tenths?)\b/i;
 export function guardFraming(text: any, allowedLabels: string[] = []) {
   const original = String(text || "");
-  let probe = original;
+  // Substitution tokens ({cac_payback}, {rule_of_40}) are engine-vocabulary slots — the engine owns the
+  // value and unit they render, and their VALIDITY is checked separately (unknown tokens reject). Strip
+  // them before the numeral test, so a digit INSIDE a token name (rule_of_40) doesn't false-trip while a
+  // bare digit outside a token still does.
+  let probe = original.replace(/\{[a-z0-9_]+\}/gi, " ");
   // Engine-named objects (e.g. "Rule of 40", "Top-10 ARR Share") legitimately contain digits.
   // NAMING one is REFERENCING an engine object, not authoring a value — so exact label strings
   // (case-insensitive) are stripped before the numeral test, and the guard checks what remains.
-  // A bare digit outside a known label still trips, so no value can be smuggled in.
+  // A bare digit outside a known label/token still trips, so no value can be smuggled in.
   for (const lab of allowedLabels) {
     if (lab && lab.length > 1) probe = probe.replace(new RegExp(lab.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), " ");
   }
   const violated = /\d/.test(probe) || NUMWORD.test(probe);
   return { text: violated ? "" : original, violated };
 }
+// The set of tokens a model string writes ({name}). Used to reject an unknown/invented token — an
+// engine-vocabulary slot that has no substitution must never reach the screen.
+export function usedTokens(text: any): string[] { return [...String(text || "").matchAll(/\{([a-z0-9_]+)\}/gi)].map((m) => m[1]); }
 
 // Directional coherence: the engine owns the VERDICT (does the metric clear/breach its benchmark,
 // is it rising/falling) exactly as it owns the numbers. A framing whose direction language
@@ -82,10 +89,15 @@ export function engineHeadline(grounding: any) {
 // The coherence validator. Pure: it takes the finding's neighborhood (from the engine),
 // the catalog, and the widget-domain map — no renderer state. This is the function the app
 // runs live AND the function the discovery-path test proves.
-export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDomain: Record<string, string> = WIDGET_DOMAIN, allowedLabels: string[] = []) {
+export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDomain: Record<string, string> = WIDGET_DOMAIN, allowedLabels: string[] = [], validTokens: string[] = []) {
   const mSet = new Set(nb.metricIds), tSet = new Set(nb.testIds), fSet = new Set(nb.falsifierIds);
   const rel = admissibleLenses(nb);
   const violations: string[] = [];
+  // token vocabulary: every {token} in the prose must be one the engine supplied for this finding.
+  // An invented/unknown token has no substitution — it must reject the read, never reach the screen.
+  const tokenVocab = new Set(validTokens);
+  const unknownTokens = [...usedTokens(cur.thesis), ...usedTokens(cur.whyRole)].filter((t) => !tokenVocab.has(t));
+  if (unknownTokens.length) violations.push(`unknown token(s) {${[...new Set(unknownTokens)].join("}, {")}} — not in the finding's vocabulary`);
   const evidenceIds = (cur.evidenceIds || []).filter((id: string) => mSet.has(id));
   if (evidenceIds.length < (cur.evidenceIds || []).length) violations.push("evidence outside the finding neighborhood — dropped");
   const testIds = (cur.testIds || []).filter((id: string) => tSet.has(id));
@@ -97,6 +109,6 @@ export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDoma
   const tG = guardFraming(cur.thesis || "", allowedLabels), wG = guardFraming(cur.whyRole || "", allowedLabels);
   if (tG.violated || wG.violated) violations.push("authored numerals stripped from prose");
   const scorecardKeys = (cur.scorecardKeys || []).filter((k: string) => HEADLINE_KEYS.includes(k)).slice(0, 6);
-  const viable = evidenceIds.length > 0 && hasFalsifier && tG.text.length > 0;
+  const viable = evidenceIds.length > 0 && hasFalsifier && tG.text.length > 0 && unknownTokens.length === 0;
   return { viable, violations, curation: viable ? { thesis: tG.text, whyRole: wG.text, evidenceIds, testIds, widgetIds, scorecardKeys, rationaleTags: cur.rationaleTags || [], source: "live" } : null };
 }

@@ -582,7 +582,7 @@
             "label": "CAC Payback vs benchmark"
           },
           "fallbackCuration": {
-            "thesis": "CAC Payback stands at 21 months against a 12-month benchmark, breaching it",
+            "thesis": "CAC Payback stands at {cac_payback} against a {cac_payback_benchmark} benchmark, breaching it",
             "whyRole": "Of the five other tracked metrics, Blended GRR, SaaS Magic Number, and Rule of 40 sit below target while Blended NRR and Gross Margin hold. The engine surfaced 23 findings across four domains, computed from 4,520 source rows.",
             "evidenceIds": [
               "cac.25Q4",

@@ -4,7 +4,7 @@ import { WIDGET_DOMAIN, guardFraming, guardDirection, engineHeadline } from "./c
 import { E, initEngine, setBaseDS, BASE_DS } from "./engine";
 import { buildCatalog } from "./catalog";
 import { composeBoard } from "./layout";
-import { curate, callModel, FALLBACK, ledeFacts, offeredWidgets } from "./curate";
+import { curate, callModel, FALLBACK, ledeFacts, ledeTokens, offeredWidgets } from "./curate";
 import { PERTURBATIONS, perturbedDataset } from "./perturbations";
 
 
@@ -823,14 +823,23 @@ function TemplateBoard({ spec, role, catalog, onPick, finding, source, curation 
 // there is no second signal that could disagree with the label. The deterministic lede STATES the
 // finding (value/benchmark/direction/duration, with each figure dye-scribed to its source); the model
 // lede INTERPRETS (numeral-free — its figures live in the evidence column). They differ in kind.
-const NUMWORD = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
-// the deterministic thesis as inline content (dye-scribed figures route to source); goes INSIDE the
-// fixed .lede-sentence block, so the block is identical in both states — only the content differs.
-function LedeDeterministic({ facts, onPick }) {
-  const route = () => onPick({ node: facts.primary });
-  return (<>
-    {facts.label} stands at <button className="dye-scribe" onClick={route}>{facts.value}</button> against a <button className="dye-scribe" onClick={route}>{facts.bench}</button> benchmark, {facts.breached ? "breaching" : "clearing"} it{facts.streak >= 2 ? <> after {NUMWORD[facts.streak] || facts.streak} consecutive quarters of deterioration</> : null}
-  </>);
+// ONE substitution layer for both paths. The thesis/why are TOKEN TEMPLATES — plain words with {tokens}
+// the engine owns. Each {token} is substituted with its value+unit and dye-scribed to its trace (a
+// route-to-source, not emphasis); the model authors the words, the engine authors every figure. The
+// deterministic ledeFacts template and the model's thesis both render through here — same rendering,
+// only authorship differs. An unknown token (should never survive validation) renders as literal text.
+function Substitute({ template, tokens, onPick }) {
+  if (!template) return null;
+  const parts = String(template).split(/(\{[a-z0-9_]+\})/gi);
+  return (<>{parts.map((part, i) => {
+    const m = part.match(/^\{([a-z0-9_]+)\}$/i);
+    if (m && tokens && tokens[m[1]]) {
+      const tok = tokens[m[1]];
+      const node = (() => { try { return E.store.get(tok.nodeId); } catch { return null; } })();
+      return <button key={i} className="dye-scribe" onClick={() => node && onPick({ node })}>{tok.value}</button>;
+    }
+    return part ? <React.Fragment key={i}>{part}</React.Fragment> : null;
+  })}</>);
 }
 // INVARIANT: identical skeleton in both states. Every block below renders in live AND fallback — only
 // the authorship LABEL and the block CONTENTS differ; the ground is --field either way. No block is
@@ -839,6 +848,10 @@ function Lede({ finding, source, curation, role, onPick }) {
   if (!finding) return null;
   const isModel = source === "live" && curation && curation.thesis;
   const facts = ledeFacts(finding);
+  const tokens = ledeTokens(finding);
+  // both paths carry a token template in curation.thesis (model prose, or the deterministic ledeFacts
+  // template via fallbackCuration); the same Substitute layer renders + dye-scribes either.
+  const thesisTemplate = (curation && curation.thesis) || (facts && facts.template) || finding.label;
   const why = (curation && curation.whyRole) || (facts && facts.enumeration) || "";
   // anchor first, so its evidence card carries the hero figure; then the read's other values
   const anchorId = finding.mvs && finding.mvs[0] ? finding.mvs[0].id : null;
@@ -848,9 +861,9 @@ function Lede({ finding, source, curation, role, onPick }) {
   return (<div className="lede">
     <div className="lede-prose">
       <span className="lede-ground">{isModel ? "model-authored" : "deterministic"}</span>
-      <p className="lede-sentence">{isModel ? curation.thesis : facts ? <LedeDeterministic facts={facts} onPick={onPick} /> : finding.label}</p>
+      <p className="lede-sentence"><Substitute template={thesisTemplate} tokens={tokens} onPick={onPick} /></p>
       <span className="lede-why-lbl">Why it matters for the {role}</span>
-      <p className="lede-why">{why}</p>
+      <p className="lede-why"><Substitute template={why} tokens={tokens} onPick={onPick} /></p>
     </div>
     <div className="lede-figures">
       {evidence.map((mv, i) => <EvidenceCard key={i} mv={mv} onPick={onPick} anchor={i === 0} />)}
