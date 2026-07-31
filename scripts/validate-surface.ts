@@ -198,7 +198,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
 // Ladder = --t-1 10 · --t-2 11 · --t-3 14 · --t-4 20 · --t-5 26 · --t-6 40 (+ --t-tab 12 for tabular).
 // TEETH: pre-reskin had 29 distinct font-size values → trips hard.
 {
-  const okVal = /^(var\(--t-[123456]\)|var\(--t-tab\)|10px|11px|12px|14px|20px|32px|40px|inherit)$/;
+  const okVal = /^(var\(--t-[123456]\)|var\(--t-3b\)|var\(--t-tab\)|10px|11px|12px|14px|16px|20px|26px|40px|inherit)$/;
   const bad: string[] = [];
   for (const b of blocks)
     for (const d of b.body.match(/font-size:\s*[^;}]+/g) || []) {
@@ -251,14 +251,14 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
 // eleven (family, size, weight) triples — no ad-hoc combinations. The class is decided by what the
 // text does; a chart title and a modal title are the same class. TEETH: post-2b chart titles are
 // (mono,11,400) — mono is legal only at 10/12 — so they are NOT a class and trip here.
-const SIZE: Record<string, number> = { "--t-1": 10, "--t-2": 11, "--t-3": 14, "--t-4": 20, "--t-5": 32, "--t-6": 40, "--t-tab": 12, "10px": 10, "11px": 11, "12px": 12, "14px": 14, "20px": 20, "32px": 32, "40px": 40 };
+const SIZE: Record<string, number> = { "--t-1": 10, "--t-2": 11, "--t-3": 14, "--t-3b": 16, "--t-4": 20, "--t-5": 26, "--t-6": 40, "--t-tab": 12, "10px": 10, "11px": 11, "12px": 12, "14px": 14, "16px": 16, "20px": 20, "26px": 26, "40px": 40 };
 const sizePx = (v: string) => { const m = v.trim().match(/var\((--t-[\w-]+)\)/); return m ? SIZE[m[1]] : SIZE[v.trim()]; };
 const declVal = (body: string, prop: string) => { const m = body.match(new RegExp("(?:^|[;{\\s])" + prop + ":\\s*([^;}]+)")); return m ? m[1].trim() : null; };
 const isMono = (body: string) => /var\(--font-mono\)|IBM Plex Mono/.test(body);
 // (family, size, weight) triples
 const CLASSES: Record<string, [string, number, number]> = {
-  hero: ["sans", 40, 700], lede: ["sans", 32, 600], value: ["sans", 20, 700], prose: ["sans", 14, 400],
-  name: ["sans", 14, 400], action: ["sans", 14, 600], datum: ["sans", 12, 700], title: ["sans", 11, 600],
+  hero: ["sans", 40, 700], lede: ["sans", 26, 600], value: ["sans", 20, 700], prose: ["sans", 16, 400],
+  name: ["sans", 14, 400], action: ["sans", 16, 600], datum: ["sans", 12, 700], title: ["sans", 11, 600],
   label: ["sans", 11, 400], scaffold: ["sans", 10, 400], note: ["mono", 10, 400], machine: ["mono", 12, 400],
 };
 const TRIPLES = new Set(Object.values(CLASSES).map(([f, s, w]) => `${f}|${s}|${w}`));
