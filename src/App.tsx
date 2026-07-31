@@ -1271,11 +1271,16 @@ function AppInner() {
       {/* full-height left rail — Strata grammar: primary at the top, secondary at the bottom, empty between */}
       <nav className="rail">
         <div className="rail-mark" title="Caliper">⟡</div>
+        {/* Top = the view parameter (which role's board). Bottom = actions on the current board, in an
+            escalating order — read the model's conclusion, interrogate it, then change the data underneath
+            and watch it re-derive; each is a larger claim than the one before. MORE is overflow chrome, last. */}
         <div className="rail-grp rail-top">
           {Object.keys(ROLES).map((k) => <button key={k} className={`railbtn lens ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
-          <button className="railbtn" onClick={() => setShowQuery(true)} title="interrogate the data">Ask data</button>
         </div>
         <div className="rail-grp rail-bottom">
+          <button className="railbtn brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">Model read</button>
+          <button className="railbtn" onClick={() => setShowQuery(true)} title="ask your data">Ask data</button>
+          <button className={`railbtn ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">Shift data</button>
           <div className="rail-menu-wrap">
             <button className="railbtn" onClick={() => setShowMenu((v) => !v)} title="tools">More</button>
             {showMenu && <div className="hdr-menu" onMouseLeave={() => setShowMenu(false)}>
@@ -1284,8 +1289,6 @@ function AppInner() {
               <button onClick={() => { setShowTrust(true); setShowMenu(false); }}>⛨ trust contract</button>
             </div>}
           </div>
-          <button className="railbtn brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">Model read</button>
-          <button className={`railbtn ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">Shift data</button>
         </div>
       </nav>
 
