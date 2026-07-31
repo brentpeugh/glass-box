@@ -18,7 +18,7 @@
   --plane:#e4e7e9;   /* §4: the ground that marks MODEL-AUTHORED prose (a subtle step off --field); never renders on deterministic content */
   --scrim: rgba(21,24,27,.34);                                  /* fallback for engines without color-mix */
   --scrim: color-mix(in srgb, var(--ink) 34%, transparent);    /* both declarations stay in the token block */
-  --t-1:10px; --t-2:11px; --t-3:14px; --t-3b:16px; --t-4:20px; --t-5:26px; --t-6:40px;
+  --t-1:10px; --t-2:11px; --t-3:14px; --t-3b:16px; --t-4:20px; --t-5:26px;   /* hero+lede share 26 (differ by weight); --t-6/40 retired — see 2j */
   --t-tab:12px;   /* tabular numerals + their row labels ONLY — a role, applied to every table uniformly */
   /* §2c two voices: sans carries everything PRESENTED (language + figures via tabular-nums); mono
      marks raw MACHINE output only (source lines, provenance rows, IDs, JSON). --font-mono appears
@@ -39,7 +39,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 /* §2c — THE TWELVE TEXT CLASSES. Every text-bearing rule resolves to exactly one; the class is
    decided by what the text DOES, not where it lives. Six ladder sizes, two voices. Enforced by
    validate-surface.ts (membership + mono-only-on-note/machine + tabular on figure classes). */
-.t-hero    { font-family:var(--font-sans); font-size:var(--t-6);   font-weight:700; font-variant-numeric:var(--num); }
+.t-hero    { font-family:var(--font-sans); font-size:var(--t-5);   font-weight:700; font-variant-numeric:var(--num); }
 .t-lede    { font-family:var(--font-sans); font-size:var(--t-5);   font-weight:600; }
 .t-value   { font-family:var(--font-sans); font-size:var(--t-4);   font-weight:700; font-variant-numeric:var(--num); }
 .t-prose   { font-family:var(--font-sans); font-size:var(--t-3b);  font-weight:400; }   /* reading text — 16 */
@@ -70,7 +70,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 /* finding card (generic, schema-driven): distributes across the hero's width */
 .fside{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:none;border:none;border-left:3px solid;padding:4px 0 4px 16px;cursor:pointer;text-align:left;font-family:inherit;transition:transform .12s;min-width:0;}
 .fside:hover{transform:translateX(2px);} .fside.good, .fside.bad, .fside.neutral{border-color:var(--scribe);}
-.fside-v{font-family:var(--font-sans);font-variant-numeric:var(--num);font-weight:700;font-size:var(--t-6);line-height:.95;letter-spacing:-.03em;}   /* hero */
+.fside-v{font-family:var(--font-sans);font-variant-numeric:var(--num);font-weight:700;font-size:var(--t-5);line-height:.95;letter-spacing:-.03em;}   /* hero */
 .fside-v{color:var(--ink);}  /* headline level — not coloured by valence */
 .fside-l{font-size:11px;color:var(--ink-2);} .fside-badge{font-family:var(--font-sans);font-size:10px;letter-spacing:.04em;padding:2px 6px;margin-top:3px;align-self:flex-start;}
 .fside-badge.good, .fside-badge.bad{background:var(--field);color:var(--label);}
@@ -119,7 +119,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .co-v{font-family:var(--font-sans);font-variant-numeric:var(--num);font-weight:700;font-size:var(--t-4);letter-spacing:-.01em;color:var(--ink);}   /* value */
 .co-l{font-size:14px;color:var(--ink);font-weight:400;} .co-basis{font-family:var(--font-sans);font-size:11px;color:var(--ink-2);}
 .linecard{margin-top:16px;}
-@media(max-width:780px){.bridges,.strip{grid-template-columns:1fr;}.fside-v{font-size:40px;}.hdr-sub{display:none;}}
+@media(max-width:780px){.bridges,.strip{grid-template-columns:1fr;}.fside-v{font-size:26px;}.hdr-sub{display:none;}}
 @media(prefers-reduced-motion:reduce){.trace{transition:none;}}
 
 .wf-axis.r{fill:var(--ink-2);}
@@ -259,7 +259,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .block>div:not(.frame){ padding:12px; border:1px solid var(--scribe); }
 .block .callout{ padding:12px 14px; }
 /* hero compressed, restrained accent */
-.fside-v{ font-size:40px; }
+.fside-v{ font-size:26px; }
 /* section framing text a touch tighter */
 .frame{ margin-bottom:6px; }
 
@@ -286,7 +286,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
    callout. Full bleed, no side edges, no left accent bar; only the scribe-strong section rules above
    (scorecard) and below (.board-band) frame it. */
 .block>div.fband{ display:flex; align-items:center; gap:36px; background:none; border:none; border-radius:0; padding:16px 22px; }
-.fband .fside-v{ font-size:40px; }
+.fband .fside-v{ font-size:26px; }
 .fband .fside{ padding-left:14px; }
 .fband-verb{ font-family:var(--font-sans); font-weight:400; font-size:var(--t-2); letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); }   /* label */
 .fband-inspect{ margin-left:auto; font-family:var(--font-sans); font-size:11px; color:var(--dye); background:none; border:none; cursor:pointer; padding:0; white-space:nowrap; letter-spacing:.5px; text-transform:uppercase; }
@@ -427,6 +427,7 @@ button.dt-num:hover{ color:var(--dye); }
 .lede-figures{ display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:1fr; }
 .lede-figures .ev-card{ background:none; border:none; padding:12px 16px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; transition:none; }
 .lede-figures .ev-card:hover .ev-val{ color:var(--dye); }   /* the whole cell routes to source */
+.lede-figures .ev-val{ font-size:var(--t-5); font-weight:700; }   /* hero — the evidence column's four values (sans 26 700 tabular) */
 .lede-figures .ev-top{ flex-direction:column; align-items:flex-start; gap:2px; margin-bottom:0; }
 /* the single cross + left outer edge, each drawn once (single-owner) so nothing doubles */
 .lede-figures .ev-card:nth-child(1){ border-left:var(--w-hair) solid var(--scribe); border-right:var(--w-hair) solid var(--scribe); border-bottom:var(--w-hair) solid var(--scribe); }
@@ -461,7 +462,7 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .chart-h{ margin-bottom:4px; }
 /* compress the finding band */
 .block>div.fband{ padding:10px 16px; }
-.fband .fside-v{ font-size:40px; }
+.fband .fside-v{ font-size:26px; }
 .fband{ gap:28px; }
 
 /* ===== horizontal bar + bullet ===== */
@@ -610,7 +611,7 @@ body.modal-open{ overflow:hidden; }
 .ev-card:hover{ border-color:var(--ink-2); }
 .ev-top{ display:flex; align-items:baseline; gap:8px; margin-bottom:6px; }
 .ev-val{ font-family:var(--font-sans); font-variant-numeric:var(--num); font-size:var(--t-4); font-weight:700; color:var(--ink); }   /* value */
-.ev-lbl{ font-size:11px; color:var(--ink-2); }
+.ev-lbl{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); }   /* label — orientation, tracked caps */
 .ev-note{ font-size:14px; line-height:1.45; color:var(--ink); }
 .ev-trace{ font-family:var(--font-mono); font-size:var(--t-1); color:var(--dye); margin-top:8px; }   /* note */
 .brief-tests{ display:flex; flex-direction:column; gap:8px; }
@@ -641,7 +642,7 @@ body.modal-open{ overflow:hidden; }
 
 /* generic salient finding band */
 .sf-primary{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-.sf-val{ font-family:var(--font-sans); font-variant-numeric:var(--num); font-size:var(--t-6); font-weight:700; color:var(--ink); letter-spacing:-0.02em; }   /* hero — the salient figure */
+.sf-val{ font-family:var(--font-sans); font-variant-numeric:var(--num); font-size:var(--t-5); font-weight:700; color:var(--ink); letter-spacing:-0.02em; }   /* hero — the salient figure */
 .sf-lbl{ font-family:'IBM Plex Sans',sans-serif; font-size:11px; font-weight:400; letter-spacing:.3px; color:var(--ink); }
 .sf-badge{ font-family:var(--font-sans); font-size:11px; color:var(--dye); border:1px solid var(--dye); padding:2px 7px; border-radius:0; background:transparent; }
 .sf-ctx{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); max-width:340px; line-height:1.5; }   /* label */
