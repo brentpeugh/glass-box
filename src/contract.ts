@@ -216,6 +216,25 @@ export interface NarrateGrounding {
 }
 
 // ============================================================================
+// 6. SURFACE CONTRACT — inspection vs. workspace  (UI honesty, Tuning 3 §4)
+//    Provenance-adjacent surfaces divide into two kinds, and the division governs overlay behaviour:
+//
+//    INSPECTION surface — shows the derivation OF something already on screen. It must keep its
+//      ORIGIN visible and MARK it (a 2px --dye outline over the element that opened it), so the
+//      "this number, decomposed" relationship is never asserted about an off-screen thing. When the
+//      origin lives inside a workspace, that workspace stays open and shifts aside rather than
+//      collapsing — the origin then is the workspace's own element, not the board.
+//      The TRACE DRAWER is the only inspection surface.
+//
+//    WORKSPACE surface — a place to do work (read, interrogate, audit). It MAY cover the board; it
+//      owns the viewport while open and carries its own context. The READ (analyst read), QUERY,
+//      TRUST contract, and DEBUG (curation log) modals are workspaces.
+//
+//    A workspace becomes subject to the inspection rule only WHEN it is the drawer's origin: then it
+//      must keep that origin (its evidence cell) on screen alongside the drawer.
+// ============================================================================
+
+// ============================================================================
 // NOT IN THIS CONTRACT (by design)
 // ----------------------------------------------------------------------------
 // - No stored metrics or findings in the shipped dataset (raw rows + config only; verified).

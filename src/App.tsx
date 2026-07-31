@@ -1067,8 +1067,8 @@ function Scorecard({ role, scorecardKeys, onPick }) {
   </div>);
 }
 
-function QueryModal({ queries, onAsk, onClose, onPick, onRecurate, onAnswerFully, busy }) {
-  return (<div className="qmodal-bg" onClick={onClose}>
+function QueryModal({ queries, onAsk, onClose, onPick, onRecurate, onAnswerFully, busy, aside }) {
+  return (<div className={`qmodal-bg ${aside ? "aside" : ""}`} onClick={onClose}>
     <div className="qmodal" onClick={(e) => e.stopPropagation()}>
       <div className="qmodal-h"><span className="qmodal-t">Interrogate the data</span><button className="qmodal-x" onClick={onClose}>✕</button></div>
       <QueryBar onAsk={onAsk} busy={busy} />
@@ -1189,6 +1189,23 @@ function AppInner() {
     return () => document.body.classList.remove("modal-open");
   }, [modalOpen]);
 
+  // §4 — the drawer (the sole INSPECTION surface) marks its ORIGIN. A capture-phase click records the
+  // element that opened the drawer — a board cell/caption/value, or, when opened from a modal, the
+  // modal's own element. While the drawer is open a 2px --dye outline is drawn over that element as a
+  // fixed overlay box (decoupled from React's className, so it survives re-renders and works on the
+  // board and inside a modal alike). Distinct from the anchor cell's 2px --ink border: if the origin
+  // IS the lede anchor, both mark it — ink border inside, dye outline just outside (they don't clash).
+  const originRef = useRef(null);
+  const [originBox, setOriginBox] = useState(null);
+  const recordOrigin = (e) => { const t = e.target && e.target.closest ? (e.target.closest("button, .ln-pt") || e.target) : null; if (t && t.getBoundingClientRect) originRef.current = t; };
+  useLayoutEffect(() => {
+    if (!picked) { setOriginBox(null); return; }
+    const measure = () => { const el = originRef.current; if (!el || !el.getBoundingClientRect) return setOriginBox(null); const r = el.getBoundingClientRect(); setOriginBox(r.width && r.height ? { left: r.left, top: r.top, width: r.width, height: r.height } : null); };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [picked, showBrief, showQuery]);
+
   if (!role) return (<div className="caliper"><EntryScreen onEnter={enter} /></div>);
 
   // Proxy footnote lifted to the footer band (was a line inside the scorecard). Resolve the same
@@ -1197,7 +1214,8 @@ function AppInner() {
   const footNote = state.loading ? null : scSet.map((m) => resolveKpi(m)).filter(Boolean).find((r) => r.mv.epistemic === "proxy" && r.mv.note);
 
   return (
-    <div className="caliper has-rail">
+    <div className="caliper has-rail" onClickCapture={recordOrigin}>
+      {originBox && <div className="trace-origin-mark" style={{ left: originBox.left, top: originBox.top, width: originBox.width, height: originBox.height }} />}
 
       {/* full-height left rail — Strata grammar: primary at the top, secondary at the bottom, empty between */}
       <nav className="rail">
@@ -1243,10 +1261,12 @@ function AppInner() {
         {footNote && <div className="foot-note"><sup className="proxy">a</sup> {footNote.mv.label} — {footNote.mv.note}</div>}
       </footer>
 
-      {showBrief && <div className="brief-overlay"><AnalystRead role={role} catalog={catalog} curation={state.curation} onPick={(p) => { setPicked(p); setShowBrief(false); }} onClose={() => setShowBrief(false)} /></div>}
+      {/* §4: the read is a WORKSPACE, but when it is the drawer's ORIGIN it must stay open and shift
+          aside so the origin (its own evidence cell) stays on screen — it must not collapse. */}
+      {showBrief && <div className={`brief-overlay ${picked ? "aside" : ""}`}><AnalystRead role={role} catalog={catalog} curation={state.curation} onPick={(p) => setPicked(p)} onClose={() => setShowBrief(false)} /></div>}
       {showTrust && <div className="brief-overlay"><TrustPanel audit={audit.current} onClose={() => setShowTrust(false)} /></div>}
 
-      {showQuery && <QueryModal queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => { setPicked(p); setShowQuery(false); }} onRecurate={recurate} onAnswerFully={answerFully} busy={queries.some((q) => q.status === "loading")} />}
+      {showQuery && <QueryModal aside={!!picked} queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => setPicked(p)} onRecurate={recurate} onAnswerFully={answerFully} busy={queries.some((q) => q.status === "loading")} />}
     </div>
   );
 }

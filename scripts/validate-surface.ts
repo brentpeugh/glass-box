@@ -102,7 +102,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
     // interactive source-routes
     "node-glyph", "proxy", "chart-title", "chart-trace",
     "dt-num", "mx-cell", "kcell-v", "ev-trace", "test-run", "trust-link", "bridge-trace", "chip", "recur-rank",
-    "recur", "pb-reset", "dbg-cap", "asked", "asked-h", "disclose", "foot-src", "dye-scribe", "lede-figures", "audit-toggle",
+    "recur", "pb-reset", "dbg-cap", "asked", "asked-h", "disclose", "foot-src", "dye-scribe", "lede-figures", "audit-toggle", "trace-origin-mark",
     // structural accent that frames the traceable field
     "hdr", "sec-n", "card", "role", "frame-tick", "brief-head", "dbg-h",
     "rail",
