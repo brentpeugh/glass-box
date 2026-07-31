@@ -588,8 +588,7 @@
               "cac.25Q4",
               "magic.25Q4",
               "r40.25Q4",
-              "gm.25Q4",
-              "nna.25Q4"
+              "gm.25Q4"
             ],
             "testIds": [
               "decompose_cac_payback",

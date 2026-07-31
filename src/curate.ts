@@ -133,7 +133,7 @@ export function fallbackCuration(fact) {
   const widgetIds = Object.keys(WIDGET_DOMAIN)
     .filter((id) => lenses.includes(WIDGET_DOMAIN[id]))
     .sort((a, b) => domainRank.indexOf(WIDGET_DOMAIN[a]) - domainRank.indexOf(WIDGET_DOMAIN[b]));
-  const evidenceIds = [...new Set([...(fact.mvs || []).map((m) => m.id), ...nb.metricIds])].slice(0, 6);
+  const evidenceIds = [...new Set([...(fact.mvs || []).map((m) => m.id), ...nb.metricIds])].slice(0, 4);   // exactly 4 — matches what the lede renders + what the footer reports
   const facts = ledeFacts(fact);
   return {
     // deterministic: state the anchor plainly (thesis) and enumerate the surrounding engine facts
@@ -155,7 +155,7 @@ function validateCuration(cur, finding, catalog) {
 }
 function buildCurationPrompt(focus, finding, nb, catalog) {
   const metricMenu = nb.metricIds.map((id) => ({ id, label: E.store.get(id).label }));
-  const tokenMenu = Object.entries(ledeTokens(finding)).map(([name, t]: [string, any]) => ({ token: `{${name}}`, renders: `${t.label} — value with its unit` }));
+  const tokenMenu = Object.entries(ledeTokens(finding)).map(([name, t]: [string, any]) => ({ token: `{${name}}`, of: t.label, rendersAs: t.value }));   // give the LITERAL rendered string (e.g. "12-month"), so the model can build grammar around it
   const testMenu = nb.testIds.map((id) => { const t = E.TEST_MENU.find((x) => x.id === id); return { id, question: t.label, falsifier: nb.falsifierIds.includes(id) }; });
   const widgetMenu = offeredWidgets(nb, catalog).map((id) => ({ id, label: catalog[id].title || id }));
   const headlineMenu = HEADLINE_KEYS;
@@ -173,7 +173,8 @@ function buildCurationPrompt(focus, finding, nb, catalog) {
 An engine has DETECTED this finding (you did not compute it; you may foreground and FRAME it): "${finding.label}".
 Form the decision-relevant READ for the ${focus.role}. The engine surfaced this top statistical fact from a neutral scan; its finding neighborhood (the menus below) defines what is legible. Do NOT assume the issue is retention, growth, efficiency, or concentration — let the neighborhood and the evidence decide. Choose the framing and widgets most decision-relevant FOR THE ${focus.role}: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Compose a COMPLETE board: select the set of widgets that give a full analytical view of this finding from complementary angles (e.g. the trend over time, the segment/component breakdown, the composition or share, a comparison against benchmark) — exactly 3 panels, ordered most important first. Choose the three most decision-relevant complementary angles; select fewer only if the finding genuinely cannot support three.${domainHint} Select ONLY from the menus below — you may not invent metrics, tests, or widgets.
 
-Your prose (thesis and whyRole) must contain NO DIGITS and NO UNITS. Every figure is a TOKEN from the TOKENS list, written in curly braces exactly as listed (e.g. {cac_payback}). The engine substitutes each token with its value AND unit at render time and links it to its source — so you write the token alone: "{cac_payback}", NOT "{cac_payback} months" (that would render the unit twice), and NEVER a bare number. You may use ONLY tokens from the list; an unknown token rejects the whole read. Compose ordinary words around the tokens.
+Your prose must contain NO DIGITS and NO UNITS. Every figure is a TOKEN from the TOKENS list, written in curly braces exactly as listed (e.g. {cac_payback}). Each token in the list shows what it renders as (its "rendersAs") so you can build grammar around it — but you write the TOKEN, never the rendered text: "{cac_payback}", NOT "{cac_payback} months" (double unit) and NEVER a bare number. You may use ONLY tokens from the list; an unknown token rejects the whole read.
+The THESIS carries the figures (as {tokens}). The WHY-IT-MATTERS is the argument: it must NOT restate any figure that the evidence column already shows — use NO tokens in whyRole; name a metric by its name if the argument needs it, but do not quote a value against its benchmark. Do NOT open the thesis or whyRole with the role name — the board's eyebrow already states the role.
 
 EVIDENCE (metric ids you may cite): ${JSON.stringify(metricMenu)}
 TOKENS (the ONLY figures you may write in prose — each renders value+unit and links to source): ${JSON.stringify(tokenMenu)}
@@ -182,7 +183,7 @@ WIDGETS (charts you may select, prioritized): ${JSON.stringify(widgetMenu)}
 HEADLINE (metric keys for the vital-signs strip — pick 6 that matter to the ${focus.role} for THIS finding): ${JSON.stringify(headlineMenu)}
 
 Return ONLY this JSON, nothing around it:
-{"thesis":"ONE sentence, NO terminal punctuation — a HEADLINE for the ${focus.role}; figures ONLY as {tokens} from the TOKENS list, no digits, no units","whyRole":"1 sentence ending with a full stop — why it matters to the ${focus.role}; figures ONLY as {tokens}, no digits, no units","evidenceIds":["ids from EVIDENCE"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["exactly 3 ids from WIDGETS composing the board — complementary views, most important first"],"scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
+{"thesis":"ONE sentence, NO terminal punctuation — a HEADLINE; figures ONLY as {tokens}, no digits, no units; do not open with the role name","whyRole":"at most TWO sentences ending with a full stop — why this finding bears on the role's decisions; NO {tokens} and NO figures (the values are already in the evidence column), name a metric by name if needed; do not open with the role name","evidenceIds":["EXACTLY 4 ids from EVIDENCE — the lede shows four"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["exactly 3 ids from WIDGETS composing the board — complementary views, most important first"],"scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
 }
 // callModel is an INJECTED dependency (docs/briefs/extraction.md §4): the default is byte-identical
 // to the shipped seam, so the app is unchanged; a Node harness can inject a direct API call or a

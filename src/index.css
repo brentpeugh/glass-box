@@ -66,7 +66,12 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .readout{font-size:14px;line-height:1.6;max-width:62ch;color:var(--ink);margin:22px 0 14px;}
 .trace{max-height:0;overflow:hidden;transition:max-height .4s ease;} .trace.open{max-height:2400px;}
 .trace-inner{border-top:1px solid var(--scribe);padding:14px 0 18px;}
-.anno{font-family:var(--font-sans);font-size:var(--t-3b);line-height:1.5;color:var(--ink-2);padding:3px 0;margin:12px 0;max-width:74ch;} .anno-top{margin:2px 0 14px;}   /* prose — dye left bar removed (decorative, not a route) */
+/* T4e drawer hierarchy: the leaf note is a TERMINAL-EXTRACTION annotation (engine output about the
+   rows), not reading prose — it was mis-tiered at prose 16, out-ranking the node subject (name 14) and
+   value (datum 12). Reassigned to `machine` (mono 12), its true kind, so the subject leads its node.
+   The INTRO (.anno-top) is the drawer's argument — genuine prose — and re-asserts sans 16. */
+.anno{font-family:var(--font-mono);font-size:var(--t-tab);line-height:1.5;color:var(--ink-2);padding:3px 0;margin:10px 0;max-width:74ch;}   /* machine — leaf terminal-extraction note */
+.anno-top{font-family:var(--font-sans);font-size:var(--t-3b);margin:2px 0 14px;}   /* prose — the drawer's intro argument */
 .node{position:relative;min-width:0;} .node-kids{}   /* T3: indent lives inside the name column, not the container — no connector line */
 .ptree{display:flex;flex-direction:column;}
 /* four-column provenance row: [badge · fixed left] [name · flex, indent inside] [operator · fixed left] [value · fixed right] */
@@ -387,12 +392,12 @@ button.dt-num:hover{ color:var(--dye); }
 /* the whole row is the target (a <button>); the run affordance is the discoverability signal, right-
    aligned to the panel edge. On run the row becomes a statement (answer, prose) + a finding (verdict,
    value 20/700) in the affordance's slot — proposition+button reads as statement+finding. */
-.lede-test{ display:flex; align-items:baseline; gap:12px; width:100%; text-align:left; background:none; border:none; padding:6px 0; cursor:pointer; }
+.lede-test{ display:flex; align-items:baseline; gap:12px; width:100%; text-align:left; background:none; border:none; padding:var(--in-1) 0; cursor:pointer; }   /* --in-2 (8px) between rows */
 .lede-test.ran{ cursor:default; }
 .lede-test .test-q{ flex:1; min-width:0; }
-.lede-test .test-run{ flex:0 0 auto; margin-left:auto; }
-.lede-answer{ flex:1; min-width:0; font-family:var(--font-sans); font-size:var(--t-3b); font-weight:400; line-height:1.4; color:var(--ink-2); }   /* prose — the engine's statement */
-.lede-verdict{ flex:0 0 auto; margin-left:auto; font-family:var(--font-sans); font-variant-numeric:var(--num); font-size:var(--t-4); font-weight:700; color:var(--ink); white-space:nowrap; }   /* value — the engine-run finding (no route → no --dye; weight+position carry authorship) */
+.lede-test .test-run{ flex:0 0 auto; margin-left:auto; padding:2px 8px; }   /* tighter than the base — the run affordance must not out-tall the text line, so unrun ≈ run (height-neutral) */
+.lede-answer{ flex:1; min-width:0; font-family:var(--font-sans); font-size:var(--t-3); font-weight:400; line-height:1.4; color:var(--ink-2); }   /* the statement at the question's size (14), weight 400 — NB: sans 14/400 is the `name` tuple (reused knowingly, see report) */
+.lede-verdict{ flex:0 0 auto; margin-left:auto; font-family:var(--font-sans); font-variant-numeric:var(--num); font-size:var(--t-3); font-weight:600; color:var(--ink); white-space:nowrap; }   /* the finding at the question's size (14), weight 600 — the `action` tuple; ink, no --dye (no route). The 600 migrates from question to verdict, so the row height is unchanged */
 /* dye-scribed figure: route-to-source, not emphasis — inherits the lede size/weight (sans, not the
    brief's pre-2c mono), tabular digits, --dye with a 1px dye underline, clickable to its trace. */
 .dye-scribe{ font:inherit; font-variant-numeric:var(--num); background:none; border:none; padding:0; cursor:pointer; color:var(--dye); text-decoration:underline; text-decoration-color:var(--dye); text-decoration-thickness:1px; text-underline-offset:3px; }

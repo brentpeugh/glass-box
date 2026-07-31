@@ -98,8 +98,11 @@ export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDoma
   const tokenVocab = new Set(validTokens);
   const unknownTokens = [...usedTokens(cur.thesis), ...usedTokens(cur.whyRole)].filter((t) => !tokenVocab.has(t));
   if (unknownTokens.length) violations.push(`unknown token(s) {${[...new Set(unknownTokens)].join("}, {")}} — not in the finding's vocabulary`);
-  const evidenceIds = (cur.evidenceIds || []).filter((id: string) => mSet.has(id));
-  if (evidenceIds.length < (cur.evidenceIds || []).length) violations.push("evidence outside the finding neighborhood — dropped");
+  // exactly 4 evidence values — the lede renders 4, so the count the footer reports must equal what
+  // shows (same discipline as the 3-panel target). Off-neighborhood dropped first, then capped to 4.
+  const evidenceIds = (cur.evidenceIds || []).filter((id: string) => mSet.has(id)).slice(0, 4);
+  if (evidenceIds.length < (cur.evidenceIds || []).filter((id: string) => mSet.has(id)).length) violations.push("evidence beyond the four the lede shows — dropped");
+  else if (evidenceIds.length < (cur.evidenceIds || []).length) violations.push("evidence outside the finding neighborhood — dropped");
   const testIds = (cur.testIds || []).filter((id: string) => tSet.has(id));
   if (testIds.length < (cur.testIds || []).length) violations.push("unsupported test id(s) — dropped");
   const widgetIds = (cur.widgetIds || []).filter((id: string) => catalog[id] && rel.includes(widgetDomain[id]));
