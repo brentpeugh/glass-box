@@ -1206,6 +1206,17 @@ function AppInner() {
     return () => document.body.classList.remove("modal-open");
   }, [modalOpen]);
 
+  // §4 inspection rule: a modal is a deliberate change of WORKSPACE. When one OPENS over an existing
+  // drawer, the drawer's origin would be obscured by the scrim — so the inspection tied to the previous
+  // workspace goes with it: the drawer closes. This fires only on the open TRANSITION, so a drawer
+  // opened FROM a modal is unaffected (the modal is already open when that drawer appears).
+  const anyModal = showBrief || showQuery || showTrust || showDebug;
+  const prevAnyModal = React.useRef(false);
+  useEffect(() => {
+    if (anyModal && !prevAnyModal.current && picked) setPicked(null);
+    prevAnyModal.current = anyModal;
+  }, [anyModal, picked]);
+
   // §4 — the drawer (the sole INSPECTION surface) marks its ORIGIN. A capture-phase click records the
   // element that opened the drawer — a board cell/caption/value, or, when opened from a modal, the
   // modal's own element. While the drawer is open a 2px --dye outline is drawn over that element as a
