@@ -178,14 +178,20 @@ function TrustPanel({ audit, onClose }) {
     </div>
   </div>);
 }
-function TraceDrawer({ picked, onClose }) {
+function TraceDrawer({ picked, source, onClose }) {
   if (!picked) return null;
   const node = picked.node;
   const ptype = picked.isFinding ? "FINDING" : node.epistemic === "proxy" ? "MODELED" : (node.provenance?.inputs || []).some((i) => i.kind === "metric") ? "CALCULATED" : "EXTRACTED";
+  // §1 honesty: the second sentence is conditional on authorship — in fallback NO model ran (the board
+  // says "Model unavailable — captured arrangement"), so the drawer must not claim one did. Say the
+  // DIFFERENT thing in each state (not a form vacuously true in both), mirroring the read modal.
+  const arranged = source === "live"
+    ? "The model arranged this board — it did not produce these numbers."
+    : "No model ran — this is the captured deterministic arrangement, and the engine produced these numbers.";
   return (
     <aside className="drawer">
       <div className="drawer-bar"><span className={`ptype ${ptype.toLowerCase()}`}>{ptype}</span><span className="drawer-t">{node.label}</span><button className="drawer-x" onClick={onClose}>✕</button></div>
-      <div className="drawer-body"><div className="anno anno-top">Every value decomposes into extracted or calculated values, all the way to the source rows. The model arranged this board — it did not produce these numbers.</div><TraceNode node={picked.node} depth={0} isFinding={picked.isFinding} /></div>
+      <div className="drawer-body"><div className="anno anno-top">Every value decomposes into extracted or calculated values, all the way to the source rows. {arranged}</div><TraceNode node={picked.node} depth={0} isFinding={picked.isFinding} /></div>
     </aside>
   );
 }
@@ -1223,7 +1229,7 @@ function AppInner() {
           <main className="stage">
             {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard key={`${role}|${perturbation}|${(state.curation && state.curation.finding && state.curation.finding.label) || ""}`} spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} curation={state.curation} /></>}
           </main>
-          <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
+          <TraceDrawer picked={picked} source={state.source} onClose={() => setPicked(null)} />
         </div>
       </div>
 
