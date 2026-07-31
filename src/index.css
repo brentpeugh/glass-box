@@ -51,10 +51,6 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .t-scaffold{ font-family:var(--font-sans); font-size:var(--t-1);   font-weight:400; }
 .t-note    { font-family:var(--font-mono); font-size:var(--t-1);   font-weight:400; text-transform:uppercase; letter-spacing:.10em; }
 .t-machine { font-family:var(--font-mono); font-size:var(--t-tab); font-weight:400; font-variant-numeric:var(--num); }
-.hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 22px;border-bottom:2px solid var(--dye);background:var(--ink);flex-wrap:wrap;gap:8px;}
-.hdr-mark{font-family:'IBM Plex Sans',sans-serif;font-weight:700;letter-spacing:.22em;font-size:20px;color:var(--frame-ink);}
-.hdr-sub{font-family:var(--font-sans);font-size:11px;color:var(--frame-mute);margin-left:14px;}
-.hdr-r{display:flex;align-items:center;gap:14px;font-family:var(--font-sans);font-size:11px;color:var(--frame-mute);}
 .lens{font-weight:600;letter-spacing:.12em;border:1px solid var(--ink);padding:3px 8px;}
 /* §4: live/loading indicator — the status WORDING ("curated live" / "Model unavailable") carries the
    distinction; the dot is a neutral tick, not a green valence signal. */
@@ -116,7 +112,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .co-v{font-family:var(--font-sans);font-variant-numeric:var(--num);font-weight:700;font-size:var(--t-4);letter-spacing:-.01em;color:var(--ink);}   /* value */
 .co-l{font-size:14px;color:var(--ink);font-weight:400;} .co-basis{font-family:var(--font-sans);font-size:11px;color:var(--ink-2);}
 .linecard{margin-top:16px;}
-@media(max-width:780px){.bridges,.strip{grid-template-columns:1fr;}.hdr-sub{display:none;}}
+@media(max-width:780px){.bridges,.strip{grid-template-columns:1fr;}}
 @media(prefers-reduced-motion:reduce){.trace{transition:none;}}
 
 .wf-axis.r{fill:var(--ink-2);}
@@ -140,9 +136,6 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .role-f{font-size:14px;color:var(--ink-2);line-height:1.5;}
 .foot-src{color:var(--dye);font-weight:400;}   /* the source-routing accent — dye's one place on this surface */
 /* ---- header lens + recur ---- */
-.lensbtn{font-family:var(--font-sans);font-size:11px;font-weight:400;letter-spacing:.1em;border:1px solid var(--scribe);background:none;color:var(--ink-2);padding:3px 9px;cursor:pointer;}
-.lensbtn.on{border-color:var(--ink);color:var(--ink);}
-.recur{font-size:11px;border:1px solid var(--scribe);background:none;color:var(--ink-2);cursor:pointer;padding:3px 8px;} .recur:hover{color:var(--ink);}
 /* ---- honesty bar ---- */
 .honesty{font-family:var(--font-sans);font-size:11px;padding:9px 24px;border-bottom:1px solid var(--scribe);color:var(--ink);display:flex;align-items:center;gap:6px;}
 .honesty.live{background:var(--field);} .honesty.fallback{background:var(--field);} .honesty em{color:var(--ink-2);font-style:italic;}
@@ -457,7 +450,6 @@ button.dt-num:hover{ color:var(--dye); }
    but painted so there is no light flash before mount and no edge shows through). */
 html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:var(--field); }
 .caliper{ height:100vh; max-height:100vh; }
-.hdr{ padding:10px var(--pad); }
 .honesty{ padding-top:8px; padding-bottom:8px; }
 .stage{ gap:8px; padding:8px var(--in-3) 8px; }   /* board body frame: side padding --pad(32)→--in-3(16) */
 .scorecard{ gap:0; }
@@ -503,11 +495,6 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .dt-num{ font-size:var(--t-tab); } .dt-seg{ font-size:var(--t-3); }
 
 /* ===== reclaim vertical space: honesty in header, tighter chrome, constrained grid ===== */
-.hdr{ display:flex; align-items:center; gap:20px; flex-wrap:nowrap; }
-.hdr-l{ flex:0 0 auto; }
-.hdr-status{ flex:1 1 auto; min-width:0; font-size:14px; color:var(--frame-mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.hdr-status.live .live-dot{ background:var(--ink-2); }
-.hdr-r{ flex:0 0 auto; }
 .honesty{ display:none; }
 .stage{ padding-top:6px; padding-bottom:6px; gap:0; }   /* §1d: no padding between sections — the scorecard's scribe-strong rule is the KPI↔board boundary, edge to edge */
 .scorecard{ gap:0; }
@@ -657,7 +644,6 @@ body.modal-open{ overflow:hidden; }
 
 /* perturbation banner — §4: a MODE indicator, not a variance. No danger-hue; the mode is carried by
    a solid-ink stamp ("DATA PERTURBED"), a 2px ink rule under the banner, and the note prose. */
-.recur.on{ background:var(--ink); color:var(--frame-ink); border-color:var(--ink); }
 .perturb-banner{ display:flex; align-items:center; gap:14px; padding:11px 22px; background:transparent; border-bottom:2px solid var(--ink); }
 .pb-tag{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--field); background:var(--ink); border:1px solid var(--ink); padding:3px 9px; white-space:nowrap; }   /* label */
 .pb-lbl{ font-weight:400; font-size:14px; color:var(--ink); white-space:nowrap; }
@@ -727,11 +713,6 @@ body.modal-open{ overflow:hidden; }
 .cx-bench-lab{ font-family:var(--font-sans); font-size:10px; fill:var(--ink-2); }   /* scaffold */
 .cx-dlab{ font-family:var(--font-sans); font-variant-numeric:var(--num); font-size:var(--t-tab); font-weight:700; fill:var(--ink); }   /* datum */
 /* danger tint removed (§3) */
-
-/* navy header — light chrome elements */
-.hdr .lensbtn{ color:var(--frame-mute); border:1px solid var(--frame-mute); background:transparent; font-family:'IBM Plex Sans',sans-serif; font-weight:600; letter-spacing:.10em; font-size:11px; padding:4px 12px; border-radius:0; cursor:pointer; }
-.hdr .lensbtn.on{ color:var(--ink); background:var(--frame-ink); border-color:var(--frame-ink); }
-.hdr .lensbtn:hover:not(.on){ color:var(--frame-ink); border-color:var(--frame-mute); }
 
 .cx-axlab{ font-family:var(--font-sans); font-size:10px; font-weight:400; fill:var(--ink-2); letter-spacing:.10em; text-transform:uppercase; }   /* scaffold */
 /* ===== modals ===== */
