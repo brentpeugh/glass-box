@@ -1,6 +1,6 @@
 // Extracted from App.tsx (docs/briefs/extraction.md). Behaviour-preserving move — no logic change.
 // The curation path — the one I/O boundary (callModel). fallbackCuration is deterministic.
-import { E } from "./engine";
+import { E, BASE_DS } from "./engine";
 import { WIDGET_DOMAIN, HEADLINE_KEYS, validateCurationCore, admissibleLenses } from "./curation";
 
 // All model calls go through one seam. In production this hits the Netlify function
@@ -51,15 +51,19 @@ const numWord = (n: number) => NUMWORD[n] || String(n);
 const fmtMoney = (v: number) => { const a = Math.abs(v); return (v < 0 ? "−$" : "$") + (a >= 1e9 ? (a / 1e9).toFixed(1) + "B" : a >= 1e6 ? (a / 1e6).toFixed(1) + "M" : a >= 1e3 ? (a / 1e3).toFixed(0) + "K" : a.toFixed(0)); };
 const fmtVal = (v: number, u: string) => u === "usd" ? fmtMoney(v) : u === "percent" ? v.toFixed(1) + "%" : u === "ratio" ? v.toFixed(2) + "x" : u === "months" ? v.toFixed(0) + " months" : u === "pp" ? v.toFixed(0) + " pp" : v.toFixed(0);
 const fmtBench = (v: number, u: string) => u === "usd" ? fmtMoney(v) : u === "percent" ? v + "%" : u === "ratio" ? v + "x" : u === "months" ? v + "-month" : "" + v;
-// The DETERMINISTIC lede: the finding STATED plainly — value, benchmark, direction, duration. The
-// model lede INTERPRETS; this one states. They differ in kind so the difference marks the boundary.
+const breachedMV = (m: any) => m && m.basis && (m.basis.good === "above" ? m.value < m.basis.thr : m.value > m.basis.thr);
+const joinList = (a: string[]) => a.length <= 1 ? (a[0] || "") : a.length === 2 ? `${a[0]} and ${a[1]}` : `${a.slice(0, -1).join(", ")}, and ${a[a.length - 1]}`;
+// The DETERMINISTIC lede: the finding STATED and ENUMERATED — value/benchmark/breach/duration in the
+// thesis, then a dense composition of the surrounding engine facts (which tracked metrics sit below
+// target, the finding count and domain spread, the source-row count) as the "why". The model lede
+// INTERPRETS; this one states and enumerates. Neither imitates the other — the difference is the point.
 export function ledeFacts(finding: any) {
   try {
     const primary = (finding.mvs || [])[0];
     if (!primary || !primary.basis) return null;
     const b = primary.basis, u = primary.unit;
     const value = fmtVal(primary.value, u), bench = fmtBench(b.thr, u);
-    const breached = b.good === "above" ? primary.value < b.thr : primary.value > b.thr;
+    const breached = breachedMV(primary);
     // duration: trailing consecutive quarters the metric moved in the UNFAVOURABLE direction
     let streak = 0;
     const sf = LEDE_SERIES[finding.metric];
@@ -67,10 +71,26 @@ export function ledeFacts(finding: any) {
       const vals = E.QUARTERS.map((q: any, i: number) => sf(q, primary, i)).filter((v: any) => v != null);
       for (let k = vals.length - 1; k > 0; k--) { const worse = b.good === "above" ? vals[k] < vals[k - 1] : vals[k] > vals[k - 1]; if (worse) streak++; else break; }
     }
-    const tail = streak >= 2 ? ` and has deteriorated for ${numWord(streak)} consecutive quarters`
-      : breached ? ", which it currently breaches" : ", which it clears";
-    return { label: primary.label, primary, value, bench, breached, streak,
-      sentence: `${primary.label} stands at ${value} against a ${bench} benchmark${tail}.` };
+    const streakClause = streak >= 2 ? ` after ${numWord(streak)} consecutive quarters of deterioration` : "";
+    const sentence = `${primary.label} stands at ${value} against a ${bench} benchmark, ${breached ? "breaching" : "clearing"} it${streakClause}.`;
+    // enumeration: the surrounding tracked metrics, the finding spread, the row count
+    const q = E.QUARTERS, latest = q[q.length - 1], w0 = q[q.length - 5];
+    const safeMV = (fn: () => any) => { try { const m = fn(); return m && m.basis ? m : null; } catch { return null; } };
+    const tracked = [
+      safeMV(() => E.nrr(null, w0, latest)), safeMV(() => E.grr(null, w0, latest)),
+      safeMV(() => E.cacPayback(latest)), safeMV(() => E.magicNumber(latest)),
+      safeMV(() => E.ruleOf40(latest)), safeMV(() => E.grossMargin(latest)),
+    ].filter(Boolean).filter((m: any) => m.label !== primary.label);   // the anchor is stated above, not re-listed
+    const below = tracked.filter((m: any) => breachedMV(m)).map((m: any) => m.label);
+    const holds = tracked.filter((m: any) => !breachedMV(m)).map((m: any) => m.label);
+    const findings = E.computeSalience() || [];
+    const domains = new Set(findings.map((f: any) => { try { return E.findingNeighborhood(f).domain; } catch { return null; } }).filter(Boolean));
+    const rows = BASE_DS ? (BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length) : 0;
+    const metricsClause = below.length
+      ? `Of the ${numWord(tracked.length)} other tracked metrics, ${joinList(below)} ${below.length === 1 ? "sits" : "sit"} below target${holds.length ? ` while ${joinList(holds)} ${holds.length === 1 ? "holds" : "hold"}` : ""}.`
+      : `All ${numWord(tracked.length)} other tracked metrics hold their benchmarks.`;
+    const enumeration = `${metricsClause} The engine surfaced ${findings.length} findings across ${numWord(domains.size)} domains, computed from ${rows.toLocaleString()} source rows.`;
+    return { label: primary.label, primary, value, bench, breached, streak, sentence, enumeration };
   } catch { return null; }
 }
 export function fallbackCuration(fact) {
@@ -79,10 +99,10 @@ export function fallbackCuration(fact) {
   const evidenceIds = [...new Set([...(fact.mvs || []).map((m) => m.id), ...nb.metricIds])].slice(0, 6);
   const facts = ledeFacts(fact);
   return {
-    // deterministic: state the engine facts plainly (value · benchmark · direction · duration); do NOT
-    // imitate the model's interpretive voice — the difference in kind demonstrates the boundary.
+    // deterministic: state the anchor plainly (thesis) and enumerate the surrounding engine facts
+    // (whyRole) — dense, not interpretive. Do NOT imitate the model's voice; the difference is the point.
     thesis: facts ? facts.sentence : `${fact.label} is the top finding the engine surfaced from this quarter's data.`,
-    whyRole: "This is the largest deviation from benchmark the engine measured, so it is the signal that most warrants scrutiny before decisions rest on the headline numbers.",
+    whyRole: facts ? facts.enumeration : "This is the largest deviation from benchmark the engine measured, so it most warrants scrutiny before decisions rest on the headline numbers.",
     evidenceIds, testIds: nb.testIds, widgetIds,
     scorecardKeys: FALLBACK_SCORECARD[nb.domain] || FALLBACK_SCORECARD.efficiency,
     rationaleTags: ["top salient anomaly", nb.domain], source: "fallback",

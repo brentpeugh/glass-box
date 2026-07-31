@@ -800,33 +800,39 @@ function TemplateBoard({ spec, role, catalog, onPick, finding, source, curation 
 // finding (value/benchmark/direction/duration, with each figure dye-scribed to its source); the model
 // lede INTERPRETS (numeral-free — its figures live in the evidence column). They differ in kind.
 const NUMWORD = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+// the deterministic thesis as inline content (dye-scribed figures route to source); goes INSIDE the
+// fixed .lede-sentence block, so the block is identical in both states — only the content differs.
 function LedeDeterministic({ facts, onPick }) {
   const route = () => onPick({ node: facts.primary });
-  return (<p className="lede-sentence">
-    {facts.label} stands at <button className="dye-scribe" onClick={route}>{facts.value}</button> against a <button className="dye-scribe" onClick={route}>{facts.bench}</button> benchmark
-    {facts.streak >= 2 ? <> and has deteriorated for {NUMWORD[facts.streak] || facts.streak} consecutive quarters.</>
-      : facts.breached ? <>, which it currently breaches.</> : <>, which it clears.</>}
-  </p>);
+  return (<>
+    {facts.label} stands at <button className="dye-scribe" onClick={route}>{facts.value}</button> against a <button className="dye-scribe" onClick={route}>{facts.bench}</button> benchmark, {facts.breached ? "breaching" : "clearing"} it{facts.streak >= 2 ? <> after {NUMWORD[facts.streak] || facts.streak} consecutive quarters of deterioration</> : null}.
+  </>);
 }
+// INVARIANT: identical skeleton in both states. Every block below renders in live AND fallback — only
+// the ground class (--plane/field), the authorship label, and the block CONTENTS differ. No block is
+// gated on source; the deterministic path fills the same pair (thesis + why) the model path fills.
 function Lede({ finding, source, curation, role, onPick }) {
   if (!finding) return null;
   const isModel = source === "live" && curation && curation.thesis;
   const facts = ledeFacts(finding);
-  const evIds = (curation && curation.evidenceIds && curation.evidenceIds.length) ? curation.evidenceIds : (finding.mvs || []).map((m) => m.id);
+  const why = (curation && curation.whyRole) || (facts && facts.enumeration) || "";
+  // anchor first, so its evidence card carries the hero figure; then the read's other values
+  const anchorId = finding.mvs && finding.mvs[0] ? finding.mvs[0].id : null;
+  const rawIds = curation && curation.evidenceIds && curation.evidenceIds.length ? curation.evidenceIds : (finding.mvs || []).map((m) => m.id);
+  const evIds = [anchorId, ...rawIds.filter((id) => id !== anchorId)].filter(Boolean);
   const evidence = evIds.map((id) => { try { return E.store.get(id); } catch { return null; } }).filter(Boolean).slice(0, 4);
   return (<div className="lede">
     <div className={`lede-prose ${isModel ? "plane" : "field"}`}>
       <span className="lede-ground">{isModel ? "model-authored" : "deterministic"}</span>
-      {isModel
-        ? <p className="lede-sentence">{curation.thesis}</p>
-        : facts
-        ? <LedeDeterministic facts={facts} onPick={onPick} />
-        : <p className="lede-sentence">{finding.label} is the engine's top finding this quarter.</p>}
+      <p className="lede-sentence">{isModel ? curation.thesis : facts ? <LedeDeterministic facts={facts} onPick={onPick} /> : finding.label}</p>
+      <span className="lede-why-lbl">Why it matters for the {role}</span>
+      <p className="lede-why">{why}</p>
     </div>
     <div className="lede-figures">
       {evidence.map((mv, i) => (
-        <button key={i} className="lfig" onClick={() => onPick({ node: mv })}>
-          <span className="lfig-l">{mv.label}</span><span className="lfig-v">{fmtMV(mv)}</span>
+        <button key={i} className={`ev-card${i === 0 ? " anchor" : ""}`} onClick={() => onPick({ node: mv })}>
+          <div className="ev-top"><span className="ev-val">{fmtMV(mv)}</span><span className="ev-lbl">{mv.label}</span></div>
+          <div className="ev-trace">trace ▸</div>
         </button>
       ))}
     </div>

@@ -19,7 +19,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 
 // ── MOVED SURFACE (post-extraction: imported from the new module boundary) ──
-import { E, initEngine } from "../src/engine";
+import { E, initEngine, setBaseDS } from "../src/engine";
 import { buildCatalog } from "../src/catalog";
 import { fallbackCuration } from "../src/curate";
 import { composeBoard } from "../src/layout";
@@ -82,6 +82,7 @@ function catalogDigest(catalog: any) {
   return out;
 }
 function captureState(label: string, ds: any) {
+  setBaseDS(ds);   // ledeFacts (in fallbackCuration) reads BASE_DS for the source-row count — keep it in sync with E
   initEngine(ds);
   const catalog = buildCatalog();
   const roles: any = {};
