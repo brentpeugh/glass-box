@@ -35,12 +35,13 @@
    stray voice. The class rules below win by specificity where they apply. */
 button,input,select,textarea,pre,code{ font-family:inherit; }
 
-/* §2c — THE TWELVE TEXT CLASSES. Every text-bearing rule resolves to exactly one; the class is
+/* §2c — THE THIRTEEN TEXT CLASSES. Every text-bearing rule resolves to exactly one; the class is
    decided by what the text DOES, not where it lives. Six ladder sizes, two voices. Enforced by
    validate-surface.ts (membership + mono-only-on-note/machine + tabular on figure classes). */
 .t-hero    { font-family:var(--font-sans); font-size:var(--t-5);   font-weight:700; font-variant-numeric:var(--num); }
 .t-lede    { font-family:var(--font-sans); font-size:var(--t-5);   font-weight:600; }
 .t-value   { font-family:var(--font-sans); font-size:var(--t-4);   font-weight:700; font-variant-numeric:var(--num); }
+.t-heading { font-family:var(--font-sans); font-size:var(--t-4);   font-weight:600; }   /* 20, sentence case, no tracking — a surface title (the trace drawer's metric name) */
 .t-prose   { font-family:var(--font-sans); font-size:var(--t-3b);  font-weight:400; }   /* reading text — 16 */
 .t-name    { font-family:var(--font-sans); font-size:var(--t-3);   font-weight:400; }   /* 14, sentence case, no tracking — row/segment/node NAMES; labels rather than reads */
 .t-action  { font-family:var(--font-sans); font-size:var(--t-3b);  font-weight:600; }   /* a clickable proposition reads as a sentence — follows prose to 16 */
@@ -80,7 +81,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .co-note{font-family:var(--font-mono);font-size:var(--t-1);color:var(--ink-2);line-height:1.35;margin-top:3px;}   /* note */
 .node-op{font-family:var(--font-mono);font-size:var(--t-1);color:var(--ink-2);background:var(--field);padding:1px 6px;border-radius:0;}   /* note — machine operator */
 .node-val{margin-left:auto;font-family:var(--font-sans);font-variant-numeric:var(--num);font-weight:700;font-size:var(--t-4);} .mono{font-family:var(--font-mono);font-variant-numeric:var(--num);}   /* value · .mono=machine */
-.node-desc{font-size:14px;color:var(--ink-2);line-height:1.5;margin:0 0 6px 22px;max-width:66ch;}
+.node-desc{font-size:var(--t-3b);color:var(--ink-2);line-height:1.5;margin:0 0 6px 22px;max-width:66ch;}   /* prose — derivation line */
 .rows{margin:6px 0 10px 22px;border:1px solid var(--scribe);background:var(--field);padding:12px;}
 .rows-stat{display:flex;align-items:center;gap:8px;font-size:var(--t-tab);flex-wrap:wrap;margin-bottom:10px;font-family:var(--font-mono);font-variant-numeric:var(--num);}   /* machine */
 /* §4: cohort-state swatches are a categorical legend (churned/contracted/expanded), not variance —
@@ -160,7 +161,6 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 /* ---- trace drawer ---- */
 .drawer{position:sticky;bottom:0;left:0;right:0;background:var(--field);border-top:2px solid var(--ink);box-shadow:none;max-height:52vh;overflow:auto;z-index:20;}
 .drawer-bar{display:flex;justify-content:space-between;align-items:center;padding:9px 24px;border-bottom:1px solid var(--scribe);position:sticky;top:0;background:var(--field);}
-.drawer-t{font-family:var(--font-sans);font-size:var(--t-2);letter-spacing:.1em;}   /* dye removed — the metric name is a title, not a route */
 .drawer-x{font-family:var(--font-sans);font-size:11px;border:1px solid var(--scribe);background:none;cursor:pointer;padding:3px 9px;color:var(--ink-2);} .drawer-x:hover{color:var(--ink);}
 .drawer-body{padding:14px 24px 22px;max-width:1000px;margin:0 auto;}
 .loading{font-family:var(--font-sans);color:var(--ink-2);padding:60px;text-align:center;font-size:var(--t-3b);letter-spacing:.3em;}   /* prose */
@@ -518,7 +518,7 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .workarea > .stage{ flex:1 1 auto; min-width:0; }
 .drawer{ position:static; flex:0 0 26%; min-width:0; max-width:26%; border-left:2px solid var(--ink); background:var(--field); display:flex; flex-direction:column; overflow:hidden; box-shadow:none; }
 .drawer-bar{ flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:11px 14px; border-bottom:1px solid var(--scribe); }
-.drawer-t{ font-family:var(--font-sans); font-weight:600; font-size:var(--t-2); text-transform:uppercase; letter-spacing:.10em; flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }   /* title */
+.drawer-t{ font-family:var(--font-sans); font-weight:600; font-size:var(--t-4); flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }   /* heading — the drawer's metric name, sentence case, no tracking */
 .drawer-x{ background:none; border:none; cursor:pointer; color:var(--ink-2); font-size:14px; flex:0 0 auto; }
 .drawer-body{ flex:1 1 auto; min-height:0; overflow-y:auto; padding:12px 14px; }
 /* epistemic type badge — the headline of the thesis */
