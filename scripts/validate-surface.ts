@@ -368,5 +368,27 @@ const MARKS = new Set(["rail-mark"]);   // the brand glyph (⟡) is not a text c
   ok("identical skeleton across states — no block gated on authorship (§ invariant)", bad.length === 0, bad.join(" · "));
 }
 
+// ── 18 · every trace affordance (--dye route-to-source) resolves to `label` type ──────────────────
+// One trace form everywhere — ▸ TRACE, tracked caps, sans 11/400, --dye. This is what keeps the chart
+// panel's trace and the evidence card's trace from drifting into two treatments; same shape as the
+// dye allowlist (#3), but it pins the TYPE. TEETH: a trace link at title weight (600), or in mono,
+// or not caps, trips it.
+{
+  const AFFORDANCE = ["chart-trace", "ev-trace", "inspect", "fband-inspect"];
+  const [lf, ls, lw] = CLASSES.label;   // sans, 11, 400
+  const bad: string[] = [];
+  for (const cls of AFFORDANCE) {
+    const r = rules.find((x) => classesOf(x.prelude).includes(cls) && declVal(x.body, "font-size"));
+    if (!r) { bad.push(`${cls} (no rule)`); continue; }
+    if (!/var\(--dye\)/.test(r.body)) { bad.push(`${cls} (not --dye)`); continue; }
+    const px = sizePx(declVal(r.body, "font-size")!);
+    const wt = declVal(r.body, "font-weight") ? parseInt(declVal(r.body, "font-weight")!, 10) : 400;
+    const fam = isMono(r.body) ? "mono" : "sans";
+    const caps = /text-transform:\s*uppercase/.test(r.body);
+    if (fam !== lf || px !== ls || wt !== lw || !caps) bad.push(`${cls} → ${fam} ${px}/${wt}${caps ? "" : " not-caps"}`);
+  }
+  ok("every trace affordance (--dye route-to-source) resolves to `label` type", bad.length === 0, bad.join(" · "));
+}
+
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — register surface: ${pass}/${pass + fail} assertions`);
 if (fail > 0) process.exit(1);

@@ -117,7 +117,7 @@ function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
           {evidence.map((mv, i) => (
             <button key={i} className="ev-card" onClick={() => onPick({ node: mv })}>
               <div className="ev-top"><span className="ev-val">{fmtMV(mv)}</span><span className="ev-lbl">{mv.label}</span></div>
-              <div className="ev-trace">trace ▸</div>
+              <div className="ev-trace">▸ trace</div>
             </button>
           ))}
         </div>
@@ -373,7 +373,7 @@ function SalientBand({ finding, role, onPick }) {
       <div className="sf-ctx">Most significant finding for {ROLE_FUNCTION[role] || "Finance"}</div>
     </div>
     {spark && <div className="fband-trend"><SoloSpark vals={spark.vals} labels={spark.labels} benchmark={basis != null ? basis.thr : null} tone="bad" /></div>}
-    <button className="fband-inspect" onClick={() => onPick({ node: primary })}>inspect provenance ›</button>
+    <button className="fband-inspect" onClick={() => onPick({ node: primary })}>▸ inspect provenance</button>
   </div>);
 }
 function FindingCard({ finding, onPick }) {
@@ -397,7 +397,7 @@ function FindingCard({ finding, onPick }) {
       <FindingSide side={sides[1]} onPick={pick} />
     </div>
     {trend && <div className="fband-trend"><MiniTrend a={trend.a} b={trend.b} benchmark={thr} labels={trend.labels} /></div>}
-    <button className="fband-inspect" onClick={pick}>inspect provenance ›</button>
+    <button className="fband-inspect" onClick={pick}>▸ inspect provenance</button>
   </div>);
 }
 
@@ -832,7 +832,7 @@ function Lede({ finding, source, curation, role, onPick }) {
       {evidence.map((mv, i) => (
         <button key={i} className={`ev-card${i === 0 ? " anchor" : ""}`} onClick={() => onPick({ node: mv })}>
           <div className="ev-top"><span className="ev-val">{fmtMV(mv)}</span><span className="ev-lbl">{mv.label}</span></div>
-          <div className="ev-trace">trace ▸</div>
+          <div className="ev-trace">▸ trace</div>
         </button>
       ))}
     </div>

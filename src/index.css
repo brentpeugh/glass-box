@@ -75,7 +75,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .fside-l{font-size:11px;color:var(--ink-2);} .fside-badge{font-family:var(--font-sans);font-size:10px;letter-spacing:.04em;padding:2px 6px;margin-top:3px;align-self:flex-start;}
 .fside-badge.good, .fside-badge.bad{background:var(--field);color:var(--label);}
 .readout{font-size:14px;line-height:1.6;max-width:62ch;color:var(--ink);margin:22px 0 14px;}
-.inspect{background:none;border:none;font-family:var(--font-sans);font-size:11px;color:var(--dye);cursor:pointer;padding:8px 0;letter-spacing:.03em;} .inspect:hover{color:var(--ink);}
+.inspect{background:none;border:none;font-family:var(--font-sans);font-size:var(--t-2);font-weight:400;color:var(--dye);cursor:pointer;padding:8px 0;letter-spacing:.14em;text-transform:uppercase;} .inspect:hover{color:var(--ink);}   /* label — trace affordance */
 .trace{max-height:0;overflow:hidden;transition:max-height .4s ease;} .trace.open{max-height:2400px;}
 .trace-inner{border-top:1px solid var(--scribe);padding:14px 0 18px;}
 .anno{font-family:var(--font-sans);font-size:var(--t-3b);line-height:1.5;color:var(--ink-2);padding:3px 0;margin:12px 0;max-width:74ch;} .anno-top{margin:2px 0 14px;}   /* prose — dye left bar removed (decorative, not a route) */
@@ -239,7 +239,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .chart-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;gap:12px;}
 .chart-title{background:none;border:none;font-family:var(--font-sans);font-size:var(--t-2);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);cursor:pointer;padding:0;text-align:left;}   /* title */
 .chart-title:hover{color:var(--dye);}
-.chart-trace{font-family:var(--font-sans);font-size:var(--t-2);font-weight:600;color:var(--dye);letter-spacing:.14em;text-transform:uppercase;margin-left:6px;}   /* title */
+.chart-trace{font-family:var(--font-sans);font-size:var(--t-2);font-weight:400;color:var(--dye);letter-spacing:.14em;text-transform:uppercase;margin-left:6px;}   /* label — trace affordance (one form everywhere) */
 .chart-tag{font-family:var(--font-sans);font-variant-numeric:var(--num);font-weight:700;font-size:var(--t-tab);white-space:nowrap;color:var(--ink-2);}   /* datum — panel headline value */
 /* §4: the header level (e.g. NRR 98%) is a level, not a variance — neutral ink-2. A breach is
    marked by weight + full ink, not hue; clearing stays unmarked. */
@@ -289,7 +289,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .fband .fside-v{ font-size:26px; }
 .fband .fside{ padding-left:14px; }
 .fband-verb{ font-family:var(--font-sans); font-weight:400; font-size:var(--t-2); letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); }   /* label */
-.fband-inspect{ margin-left:auto; font-family:var(--font-sans); font-size:11px; color:var(--dye); background:none; border:none; cursor:pointer; padding:0; white-space:nowrap; letter-spacing:.5px; text-transform:uppercase; }
+.fband-inspect{ margin-left:auto; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; color:var(--dye); background:none; border:none; cursor:pointer; padding:0; white-space:nowrap; letter-spacing:.14em; text-transform:uppercase; }   /* label — trace affordance */
 .fband-inspect:hover{ color:var(--ink); }
 
 /* featured-band right cluster: position plot fills the width with substance */
@@ -613,7 +613,7 @@ body.modal-open{ overflow:hidden; }
 .ev-val{ font-family:var(--font-sans); font-variant-numeric:var(--num); font-size:var(--t-4); font-weight:700; color:var(--ink); }   /* value */
 .ev-lbl{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-2); }   /* label — orientation, tracked caps */
 .ev-note{ font-size:14px; line-height:1.45; color:var(--ink); }
-.ev-trace{ font-family:var(--font-mono); font-size:var(--t-1); color:var(--dye); margin-top:8px; }   /* note */
+.ev-trace{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.14em; text-transform:uppercase; color:var(--dye); margin-top:8px; }   /* label — trace affordance */
 .brief-tests{ display:flex; flex-direction:column; gap:8px; }
 .test-row{ display:flex; align-items:center; gap:12px; padding:11px 13px; background:var(--field); border:1px solid var(--scribe); }
 .test-row.ran{ border-color:var(--scribe-strong); }
@@ -798,7 +798,7 @@ body.modal-open{ overflow:hidden; }
 /* ===== register fix 1: tracked-caps label role — uniform tracking .10em on every tracked-caps
    label, every surface (the scattered per-site values / the §4 .16em were never derived). One rule. */
 .asked-h,.bl-rowlab,.both-lbl,.brief-lbl,.chart-title,.chart-trace,.cx-axlab,.dbg-cap,
-.dt-head,.fband-inspect,.fband-verb,.frame-tick,.kcell-l,.quad-zone,.recur-lbl,.sf-ctx,
+.dt-head,.ev-trace,.fband-inspect,.fband-verb,.frame-tick,.inspect,.kcell-l,.quad-zone,.recur-lbl,.sf-ctx,
 .tc-h,.tc-kind{ letter-spacing:.10em; }
 /* ===== register fix 2: tabular role runs tight — horizontal cell padding → --in-1. Numeric cells
    are right-aligned (their column gap is the RIGHT pad); the row label hugs within the panel's own
