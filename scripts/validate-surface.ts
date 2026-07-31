@@ -102,7 +102,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
     // interactive source-routes
     "node-glyph", "proxy", "chart-title", "chart-trace",
     "dt-num", "mx-cell", "kcell-v", "ev-trace", "test-run", "trust-link", "bridge-trace", "chip", "recur-rank",
-    "recur", "pb-reset", "dbg-cap", "asked", "asked-h", "disclose", "foot-src", "dye-scribe", "lede-figures", "audit-toggle", "trace-origin-mark",
+    "recur", "pb-reset", "dbg-cap", "asked", "asked-h", "disclose", "foot-src", "foot-trace", "dye-scribe", "lede-figures", "audit-toggle", "trace-origin-mark",
     // structural accent that frames the traceable field
     "hdr", "sec-n", "card", "role", "frame-tick", "brief-head", "dbg-h",
     "rail",
@@ -381,11 +381,12 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
 // ── 18 · every route-to-provenance affordance (--dye) resolves to `label` type ────────────────────
 // CONTRACT (broadened, Stage D): --dye routes the eye/click to PROVENANCE — whether the provenance of
 // a VALUE (`▸ trace` on a chart/evidence value) or the provenance of a PANEL'S PRESENCE (`▸ alternatives`
-// on a slot — the forms it was chosen over, and the engine-derived reasons). All wear ONE form: ▸ …,
-// tracked caps, sans 11/400, --dye. This pins the TYPE (the dye allowlist #3 gates WHERE dye may live).
-// TEETH: a route at title weight (600), or in mono, or not caps, trips it.
+// on a slot — the forms it was chosen over, and the engine-derived reasons), or the provenance of the
+// ARRANGEMENT itself (`▸ the contract` on the footer claim — the contract governing how the board was
+// made). All wear ONE form: ▸ …, tracked caps, sans 11/400, --dye. This pins the TYPE (the dye allowlist
+// #3 gates WHERE dye may live). TEETH: a route at title weight (600), or in mono, or not caps, trips it.
 {
-  const AFFORDANCE = ["chart-trace", "ev-trace", "audit-toggle"];
+  const AFFORDANCE = ["chart-trace", "ev-trace", "audit-toggle", "foot-trace"];
   const [lf, ls, lw, lt] = CLASSES.label;   // sans, 11, 400, .10em
   const bad: string[] = [];
   for (const cls of AFFORDANCE) {

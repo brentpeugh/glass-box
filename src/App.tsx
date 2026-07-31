@@ -167,7 +167,7 @@ function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
     </div>
   );
 }
-function TrustPanel({ audit, onClose }) {
+function TrustPanel({ audit, debug, onClose }) {
   return (<div className="brief">
     <div className="brief-head"><span className="brief-tag">TRUST CONTRACT</span><span className="brief-src fallback">the boundary, made explicit</span><button className="brief-x" onClick={onClose}>✕</button></div>
     <div className="brief-sec">
@@ -198,6 +198,12 @@ function TrustPanel({ audit, onClose }) {
         {audit.length === 0 ? <div className="tc-empty">No actions yet this session.</div>
           : audit.map((e, i) => (<div key={i} className={`tc-row ${e.kind}`}><span className="tc-kind">{e.kind}</span><span className="tc-detail">{e.kind === "curation" && e.finding ? <><b>{e.finding}</b> — </> : ""}{e.detail}{e.kind === "curation" && e.source && e.source !== "live" ? <em> · deterministic fallback, no model</em> : ""}</span></div>))}
       </div>
+    </div>
+    {/* the curation log folds in here: the current arrangement's model-proposal / engine-enforcement,
+        the detailed companion to the audit log above (was the separate MORE ▸ curation log item). */}
+    <div className="brief-sec">
+      <div className="brief-lbl">Curation log — the model's proposal and the engine's enforcement, this arrangement</div>
+      <DebugPanel d={debug} />
     </div>
   </div>);
 }
@@ -1309,18 +1315,24 @@ function AppInner() {
 
       {/* footer band — the curation status string (was top rail) + the proxy footnote (was in the body) */}
       <footer className="rail-foot">
-        <div className={`foot-status ${state.source}`}>
+        {/* the claim about how this board was arranged routes to the contract that governs it — the same
+            dye/label ▸ treatment as a value's trace affordance (dye routes to provenance; here, to the
+            arrangement's governing contract). Opens the Trust panel, which now holds the curation log. */}
+        <button className={`foot-status ${state.source}`} onClick={() => setShowTrust(true)} title="the trust contract — what each layer may and may not do">
+          <span className="foot-claim">
           {state.loading ? <span><span className="live-dot" /> curating the {role} dashboard — the model is arranging the engine's findings…</span>
             : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · overall #1: {state.disclosure.label} → {state.disclosure.owner.role} view</em>}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>}</span>
             : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>}</span>}
-        </div>
+          </span>
+          <span className="foot-trace">▸ the contract</span>
+        </button>
         {footNote && <div className="foot-note"><sup className="proxy">a</sup> {footNote.mv.label} — {footNote.mv.note}</div>}
       </footer>
 
       {/* §4: the read is a WORKSPACE, but when it is the drawer's ORIGIN it must stay open and shift
           aside so the origin (its own evidence cell) stays on screen — it must not collapse. */}
       {showBrief && <div className={`brief-overlay ${picked ? "aside" : ""}`}><AnalystRead role={role} catalog={catalog} curation={state.curation} onPick={(p) => setPicked(p)} onClose={() => setShowBrief(false)} /></div>}
-      {showTrust && <div className="brief-overlay"><TrustPanel audit={audit.current} onClose={() => setShowTrust(false)} /></div>}
+      {showTrust && <div className="brief-overlay"><TrustPanel audit={audit.current} debug={state.debug} onClose={() => setShowTrust(false)} /></div>}
 
       {showQuery && <QueryModal aside={!!picked} queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => setPicked(p)} onRecurate={recurate} onAnswerFully={answerFully} busy={queries.some((q) => q.status === "loading")} />}
     </div>
