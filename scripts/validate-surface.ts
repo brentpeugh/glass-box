@@ -100,7 +100,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
 {
   const ACCENT_OK = new Set([
     // interactive source-routes
-    "node-glyph", "node-kids", "proxy", "chart-title", "chart-trace",
+    "node-glyph", "proxy", "chart-title", "chart-trace",
     "dt-num", "mx-cell", "kcell-v", "ev-trace", "test-run", "trust-link", "bridge-trace", "chip", "recur-rank",
     "recur", "pb-reset", "dbg-cap", "asked", "asked-h", "disclose", "foot-src", "dye-scribe", "lede-figures", "audit-toggle",
     // structural accent that frames the traceable field
