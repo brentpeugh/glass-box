@@ -64,6 +64,11 @@ const fixtures: Fixture[] = [
     build: () => { const f = curFiles(); f["App.tsx"] = f["App.tsx"].replace('<span className="lede-ground">', '{isModel && <span className="teeth-gate" />}<span className="lede-ground">'); return writeTree(f, "skeleton"); },
   },
   {
+    name: "lede-role-swapped",
+    note: "current tree with the falsifier answer/verdict weights swapped (answer→600, verdict→400) — each lands on the OTHER's shared tuple (answer becomes the `action` tuple, verdict the `name` tuple), the exact coincidence-drift the two T4e role assertions exist to catch",
+    build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace(/(\.lede-answer\{[^}]*font-weight:)400/, "$1600").replace(/(\.lede-verdict\{[^}]*font-weight:)600/, "$1400"); return writeTree(f, "ledeswap"); },
+  },
+  {
     name: "raw-thesis",
     note: "current tree with the lede thesis rendered as a raw model string ({curation.thesis}) instead of via <Substitute> — witness for the T4 token-substitution digit closure (no raw model prose reaches the board)",
     build: () => { const f = curFiles(); f["App.tsx"] = f["App.tsx"].replace("<Substitute template={thesisTemplate} tokens={tokens} onPick={onPick} />", "{curation.thesis}"); return writeTree(f, "rawthesis"); },

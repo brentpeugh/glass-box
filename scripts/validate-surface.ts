@@ -264,6 +264,13 @@ const CLASSES: Record<string, [string, number, number, number | null]> = {
   name: ["sans", 14, 400, null], action: ["sans", 14, 600, null], datum: ["sans", 12, 700, null], title: ["sans", 11, 600, 0.10],
   label: ["sans", 11, 400, 0.10], scaffold: ["sans", 10, 400, null], note: ["mono", 10, 400, 0.10], machine: ["mono", 12, 400, null],
 };
+// SHARED TUPLES (the class spec's two sanctioned coincidences). A tuple maps to one class, but two of
+// them are carried by more than one ROLE — kept honest by a #14 role assertion pinning the selector to
+// its class, NOT by any visual difference (the whole point: same treatment, distinguished by role):
+//   • name   (sans 14/400) — names in text layout (table row labels, node names) AND de-emphasised
+//                            statements (the falsifier run answer, .lede-answer).
+//   • action (sans 14/600) — clickable propositions (.test-q, the falsifier question) AND engine
+//                            verdicts (.lede-verdict); the row's single 600 migrates question→finding.
 const TRIPLES = new Set(Object.values(CLASSES).map(([f, s, w]) => `${f}|${s}|${w}`));
 const CLASS_OF: Record<string, string> = Object.fromEntries(Object.entries(CLASSES).map(([n, [f, s, w]]) => [`${f}|${s}|${w}`, n]));   // (fam|px|wt) → class name (each triple is unique)
 const MARKS = new Set(["rail-mark"]);   // the brand glyph (⟡) is not a text class — exempt
@@ -334,6 +341,12 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
   const ct = roleOf("chart-title"), tq = roleOf("test-q");
   ok("chart titles are `title` (not an axis-tick weight)", eq(ct, "title"), `chart-title → ${ct ? ct.join("/") : "?"}`);
   ok("falsifier questions are `action` (not `prose` commentary)", eq(tq, "action"), `test-q → ${tq ? tq.join("/") : "?"}`);
+  // Two roles SHARE a tuple with an existing class (T4e) — pinned here so drift is caught even where the
+  // metrics coincide: the run answer is `name` (a de-emphasised statement, 14/400) and the engine verdict
+  // is `action` (14/600, the 600 that migrated off the question). See the CLASSES note on shared tuples.
+  const la = roleOf("lede-answer"), lv = roleOf("lede-verdict");
+  ok("run answer is `name` (14/400) — not `action`, though the tuple coincides with the question's", eq(la, "name"), `lede-answer → ${la ? la.join("/") : "?"}`);
+  ok("engine verdict is `action` (14/600) — the finding carries the row's 600, not `name`", eq(lv, "action"), `lede-verdict → ${lv ? lv.join("/") : "?"}`);
 }
 
 // ── 15 · authorship is marked by the LABEL alone — no ground channel (§5, Stage C) ────────────────
