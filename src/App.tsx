@@ -22,50 +22,63 @@ function fmtVar(b, unit) { const mag = Math.abs(b.delta); const p = unit === "ra
 // ================= trace =================
 function RowsLeaf({ leaf, parentVal, depth }) {
   const r = useMemo(() => E.resolveLeaf(leaf.selector), [leaf]);
-  let body, stat, note, recon, reconciles = null; const RTOL = (a, b) => Math.abs(a - b) <= Math.max(1, Math.abs(b) * 1e-6);
+  // Source rows sit behind one click (default collapsed) — the count rides the affordance. The table
+  // renders CAPPED: the claim is that the sum reconciles over ALL rows, not that you can scroll every
+  // one. `total` is the full row count (reconciliation spans it); only the render is truncated.
+  const [rowsOpen, setRowsOpen] = useState(false);
+  const CAP = 50;
+  let body, stat, note, recon, reconciles = null, total = 0; const RTOL = (a, b) => Math.abs(a - b) <= Math.max(1, Math.abs(b) * 1e-6);
   if (r.kind === "retention") {
     const movers = [...r.churned.map((x) => ({ ...x, k: "ch" })), ...r.contracted.map((x) => ({ ...x, k: "co" })), ...r.expanded.map((x) => ({ ...x, k: "ex" }))].sort((a, b) => (b[r.sc] - b[r.ec]) - (a[r.sc] - a[r.ec]));
     const begin = r.churned.concat(r.contracted, r.expanded).reduce((s, x) => s + x[r.sc], 0);
+    total = movers.length;
     stat = (<><span><b>{r.n}</b> cohort rows</span><span className="dot ember" /><b>{r.churned.length}</b> churned<span className="dot ember2" /><b>{r.contracted.length}</b> contracted<span className="dot verdant" /><b>{r.expanded.length}</b> expanded</>);
-    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.sc.slice(4)}</th><th>{r.ec.slice(4)}</th><th>Δ</th></tr></thead><tbody>{movers.map((x) => (<tr key={x.customer_id}><td className="mono">{x.customer_id}</td><td className="mono">{fmtK(x[r.sc])}</td><td className="mono">{x[r.ec] === 0 ? "—" : fmtK(x[r.ec])}</td><td className={`mono ${x[r.ec] >= x[r.sc] ? "pos" : "neg"}`}>{x[r.ec] >= x[r.sc] ? "+" : "−"}{fmtK(Math.abs(x[r.sc] - x[r.ec])).slice(1)}</td></tr>))}</tbody></table>);
+    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.sc.slice(4)}</th><th>{r.ec.slice(4)}</th><th>Δ</th></tr></thead><tbody>{movers.slice(0, CAP).map((x) => (<tr key={x.customer_id}><td className="mono">{x.customer_id}</td><td className="mono">{fmtK(x[r.sc])}</td><td className="mono">{x[r.ec] === 0 ? "—" : fmtK(x[r.ec])}</td><td className={`mono ${x[r.ec] >= x[r.sc] ? "pos" : "neg"}`}>{x[r.ec] >= x[r.sc] ? "+" : "−"}{fmtK(Math.abs(x[r.sc] - x[r.ec])).slice(1)}</td></tr>))}</tbody></table>);
     note = `resolved live against all ${r.n} cohort rows — read from the data, not produced by a model`;
     recon = <>{movers.length} accounts moved · the cohort's start and end ARR drive the ratio above</>;
   } else if (r.kind === "col_sum") {
     const sum = r.rows.reduce((s, x) => s + x.v, 0);
+    total = r.rows.length;
     stat = (<span><b>{r.n}</b> rows contribute · full audit trail</span>);
-    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.col.slice(4)} ARR</th></tr></thead><tbody>{r.rows.map((x) => (<tr key={x.id}><td className="mono">{x.id}</td><td className="mono">{fmtK(x.v)}</td></tr>))}</tbody></table>);
+    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.col.slice(4)} ARR</th></tr></thead><tbody>{r.rows.slice(0, CAP).map((x) => (<tr key={x.id}><td className="mono">{x.id}</td><td className="mono">{fmtK(x.v)}</td></tr>))}</tbody></table>);
     note = `summed live over all ${r.n} rows`;
     recon = <>Σ {r.n} rows = <b className="mono">{fmtK(sum)}</b> — reconciles to {parentVal ? fmtMV(parentVal) : "the value above"}</>;
     reconciles = parentVal ? RTOL(sum, parentVal.value) : null;
   } else if (r.kind === "delta") {
     const sum = r.rows.reduce((s, x) => s + (x.b - x.a), 0);
+    total = r.rows.length;
     stat = (<span><b>{r.n}</b> accounts with positive ARR change · full audit trail</span>);
-    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.from}</th><th>{r.to}</th><th>Δ</th></tr></thead><tbody>{r.rows.map((x) => (<tr key={x.id}><td className="mono">{x.id}</td><td className="mono">{x.a === 0 ? "new" : fmtK(x.a)}</td><td className="mono">{fmtK(x.b)}</td><td className="mono pos">+{fmtK(x.b - x.a).slice(1)}</td></tr>))}</tbody></table>);
+    body = (<table className="rows-tbl"><thead><tr><th>account</th><th>{r.from}</th><th>{r.to}</th><th>Δ</th></tr></thead><tbody>{r.rows.slice(0, CAP).map((x) => (<tr key={x.id}><td className="mono">{x.id}</td><td className="mono">{x.a === 0 ? "new" : fmtK(x.a)}</td><td className="mono">{fmtK(x.b)}</td><td className="mono pos">+{fmtK(x.b - x.a).slice(1)}</td></tr>))}</tbody></table>);
     note = `new logos + expansion, summed live`;
     recon = <>Σ {r.n} positive deltas = <b className="mono">{fmtK(sum)}</b> — reconciles to {parentVal ? fmtMV(parentVal) : "the value above"}</>;
     reconciles = parentVal ? RTOL(sum, parentVal.value) : null;
   } else if (r.kind === "opps") {
+    total = r.rows.length;
     stat = (<span><b>{r.won}</b> won / <b>{r.n}</b> closed deals · full audit trail</span>);
-    body = (<table className="rows-tbl"><thead><tr><th>deal</th><th>segment</th><th>stage</th></tr></thead><tbody>{r.rows.map((o, i) => (<tr key={i}><td className="mono">{o.opp_id}</td><td className="mono">{o.segment}</td><td className="mono">{o.stage}</td></tr>))}</tbody></table>);{/* §4: won/lost is a categorical status — the stage word carries it, not a pos/neg cell */}
+    body = (<table className="rows-tbl"><thead><tr><th>deal</th><th>segment</th><th>stage</th></tr></thead><tbody>{r.rows.slice(0, CAP).map((o, i) => (<tr key={i}><td className="mono">{o.opp_id}</td><td className="mono">{o.segment}</td><td className="mono">{o.stage}</td></tr>))}</tbody></table>);{/* §4: won/lost is a categorical status — the stage word carries it, not a pos/neg cell */}
     note = `closed opportunities, resolved live from the pipeline`;
     recon = <>{r.won} won ÷ {r.n} closed = <b className="mono">{r.n ? (r.won / r.n * 100).toFixed(1) : "—"}%</b> — reconciles to the value above</>;
     reconciles = parentVal && r.n ? RTOL(r.won / r.n * 100, parentVal.value) : null;
   } else {
     const sum = r.rows.reduce((s, o) => s + (o[r.field] || 0), 0);
+    total = r.rows.length;
     stat = (<span><b>{r.rows.length}</b> opex rows · {r.field} · full audit trail</span>);
-    body = (<table className="rows-tbl"><thead><tr><th>segment</th><th>quarter</th><th>{r.field}</th></tr></thead><tbody>{r.rows.map((o, i) => (<tr key={i}><td className="mono">{o.segment}</td><td className="mono">{o.quarter}</td><td className="mono">{fmtK(o[r.field])}</td></tr>))}</tbody></table>);
+    body = (<table className="rows-tbl"><thead><tr><th>segment</th><th>quarter</th><th>{r.field}</th></tr></thead><tbody>{r.rows.slice(0, CAP).map((o, i) => (<tr key={i}><td className="mono">{o.segment}</td><td className="mono">{o.quarter}</td><td className="mono">{fmtK(o[r.field])}</td></tr>))}</tbody></table>);
     note = `operating expense at segment×quarter grain — its natural grain`;
     recon = <>Σ {r.rows.length} rows = <b className="mono">{fmtK(sum)}</b> — reconciles to {parentVal ? fmtMV(parentVal) : "the value above"}</>;
     reconciles = parentVal ? RTOL(sum, parentVal.value) : null;
   }
-  return (<div className="rows" style={{ marginLeft: (depth || 0) * 14 }}><div className="rows-stat">{stat}</div><div className="rows-scroll">{body}</div>{recon && <div className={`rows-recon ${reconciles === false ? "bad" : ""}`}><span className="recon-mark">{reconciles === true ? "\u2713" : reconciles === false ? "\u2717" : "\u00b7"}</span> {recon}</div>}<div className="anno">{note}</div></div>);
+  return (<div className="rows" style={{ marginLeft: (depth || 0) * 14 }}><button className="rows-stat" onClick={() => setRowsOpen((o) => !o)} aria-expanded={rowsOpen}><span className="node-glyph">{rowsOpen ? "\u25be" : "\u25b8"}</span>{stat}</button>{rowsOpen && <><div className="rows-scroll">{body}</div>{total > CAP && <div className="rows-cap">showing the first {CAP} of {total.toLocaleString()} rows \u2014 the reconciliation below is computed over all {total.toLocaleString()}</div>}</>}{recon && <div className={`rows-recon ${reconciles === false ? "bad" : ""}`}><span className="recon-mark">{reconciles === true ? "\u2713" : reconciles === false ? "\u2717" : "\u00b7"}</span> {recon}</div>}<div className="anno">{note}</div></div>);
 }
 // A provenance row is a FOUR-COLUMN grid: [badge · fixed left] [name · flex, indent INSIDE] [operator ·
 // fixed left] [value · fixed right]. The indent lives inside the name column only (so badge/op/value
 // columns line up at every depth), and the disclosure triangle sits at the indent, inside the name.
 function TraceNode({ node, depth, isFinding }) {
   const kids = node.provenance?.inputs?.length;
-  const [open, setOpen] = useState(depth < 2);
+  // Default: derivation nodes EXPANDED — the decomposition is the drawer's whole argument, so it is
+  // visible on open. (3e promoted the root into the header and re-based children depth 1→0; the old
+  // `depth < 2` default then left an extra level open — see RowsLeaf for the row-table disclosure.)
+  const [open, setOpen] = useState(true);
   const val = isFinding ? `${node.value.toFixed(0)} pp` : fmtMV(node);
   const ptype = node.epistemic === "proxy" ? "MODELED" : (node.provenance?.inputs || []).some((i) => i.kind === "metric") ? "CALCULATED" : "EXTRACTED";
   const ind = { paddingLeft: depth * 14 };

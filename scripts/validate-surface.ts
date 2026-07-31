@@ -299,7 +299,7 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
 // other selector mono is decorative. TEETH: post-2b put mono on kcell-v, dt-num, chart-title, the KPI
 // labels … → trips.
 {
-  const NOTE_MACHINE = new Set(["src-note", "co-note", "foot-note", "foot-status", "ev-trace", "brief-viol", "node-op", "node-desc", "dbg-meta", "proxy", "rows-recon", "err-msg", "rows-stat", "rows-tbl", "dbg-pre", "mono", "t-note", "t-machine"]);
+  const NOTE_MACHINE = new Set(["src-note", "co-note", "foot-note", "foot-status", "ev-trace", "brief-viol", "node-op", "node-desc", "dbg-meta", "proxy", "rows-recon", "err-msg", "rows-stat", "rows-cap", "rows-tbl", "dbg-pre", "mono", "t-note", "t-machine"]);
   const bad: string[] = [];
   for (const r of rules) {
     if (r === tokenBlock) continue;

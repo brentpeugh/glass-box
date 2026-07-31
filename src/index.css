@@ -86,7 +86,9 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .node-val{font-family:var(--font-sans);font-variant-numeric:var(--num);font-weight:700;font-size:var(--t-tab);color:var(--ink);text-align:right;white-space:nowrap;} .mono{font-family:var(--font-mono);font-variant-numeric:var(--num);}   /* datum — tree value 12/700 · .mono=machine */
 .node-desc{font-family:var(--font-mono);font-size:var(--t-tab);color:var(--ink-2);line-height:1.5;margin:0 0 6px 0;}   /* machine — derivation line (engine template string, not prose) */
 .rows{margin:6px 0 10px 22px;padding:10px 0;}   /* de-carded: no bordered container, no background — hairline-ruled rows on --field, like every table in the product */
-.rows-stat{display:flex;align-items:center;gap:8px;font-size:var(--t-tab);flex-wrap:wrap;margin-bottom:10px;font-family:var(--font-mono);font-variant-numeric:var(--num);}   /* machine */
+.rows-stat{display:flex;align-items:center;gap:8px;font-size:var(--t-tab);flex-wrap:wrap;margin-bottom:10px;font-family:var(--font-mono);font-variant-numeric:var(--num);background:none;border:none;padding:2px 0;width:100%;text-align:left;color:var(--ink);cursor:pointer;}   /* machine — disclosure affordance: source rows sit behind one click */
+.rows-stat:hover .node-glyph{color:var(--dye);}
+.rows-cap{font-family:var(--font-mono);font-variant-numeric:var(--num);font-size:var(--t-tab);color:var(--ink-2);margin:6px 0 2px;}   /* machine — the render cap: sum reconciles over all rows, not just the shown ones */
 /* §4: cohort-state swatches are a categorical legend (churned/contracted/expanded), not variance —
    the label after each carries the category; the squares are uniform ink-2, no pos/neg. */
 .dot{width:8px;height:8px;border-radius:0;display:inline-block;margin-left:6px;} .dot.ember,.dot.ember2,.dot.verdant{background:var(--ink-2);}
