@@ -100,11 +100,11 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
 {
   const ACCENT_OK = new Set([
     // interactive source-routes
-    "inspect", "node-glyph", "node-kids", "proxy", "chart-title", "chart-trace", "fband-inspect",
+    "node-glyph", "node-kids", "proxy", "chart-title", "chart-trace",
     "dt-num", "mx-cell", "kcell-v", "ev-trace", "test-run", "trust-link", "bridge-trace", "chip", "recur-rank",
-    "recur", "pb-reset", "sf-badge", "dbg-cap", "asked", "asked-h", "disclose", "foot-src", "dye-scribe", "lede-figures",
+    "recur", "pb-reset", "dbg-cap", "asked", "asked-h", "disclose", "foot-src", "dye-scribe", "lede-figures", "audit-toggle",
     // structural accent that frames the traceable field
-    "hdr", "sec-n", "card", "role", "frame-tick", "brief-head", "dbg-h", "fband",
+    "hdr", "sec-n", "card", "role", "frame-tick", "brief-head", "dbg-h",
     "rail",
   ]);
   const dyeBad: string[] = [], second: string[] = [];
@@ -184,9 +184,9 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
 // pre-reskin grew the waterfall/hbar value bars (animation:grow) and transitioned value cells → trips.
 {
   const NUMERIC = new Set([
-    "kcell-v", "kcell-b", "co-v", "co-basis", "fside-v", "mx-cell", "dt-num", "sf-val", "node-val",
+    "kcell-v", "kcell-b", "co-v", "co-basis", "mx-cell", "dt-num", "node-val",
     "ev-val", "bl-val", "tm-val", "wf-xval", "cx-dlab", "dlab", "readout", "wf-bar", "co-bar",
-    "cx-dot", "scat-dot", "mt-dot", "hbar-bar",
+    "cx-dot", "scat-dot", "hbar-bar",
   ]);
   const bad: string[] = [];
   for (const r of rules)
@@ -255,14 +255,22 @@ const SIZE: Record<string, number> = { "--t-1": 10, "--t-2": 11, "--t-3": 14, "-
 const sizePx = (v: string) => { const m = v.trim().match(/var\((--t-[\w-]+)\)/); return m ? SIZE[m[1]] : SIZE[v.trim()]; };
 const declVal = (body: string, prop: string) => { const m = body.match(new RegExp("(?:^|[;{\\s])" + prop + ":\\s*([^;}]+)")); return m ? m[1].trim() : null; };
 const isMono = (body: string) => /var\(--font-mono\)|IBM Plex Mono/.test(body);
-// (family, size, weight) triples
-const CLASSES: Record<string, [string, number, number]> = {
-  hero: ["sans", 26, 700], lede: ["sans", 26, 600], value: ["sans", 20, 700], prose: ["sans", 16, 400],
-  name: ["sans", 14, 400], action: ["sans", 16, 600], datum: ["sans", 12, 700], title: ["sans", 11, 600],
-  label: ["sans", 11, 400], scaffold: ["sans", 10, 400], note: ["mono", 10, 400], machine: ["mono", 12, 400],
+// declared letter-spacing in em: undefined = not declared · null = declared but non-em (px etc.) · number = em
+const declTrackEm = (body: string): number | null | undefined => { const v = declVal(body, "letter-spacing"); if (v == null) return undefined; const m = v.match(/^(-?\d*\.?\d+)em$/); return m ? parseFloat(m[1]) : null; };
+// (family, size, weight, tracking-em) — tracking is the tracked-caps letter-spacing (.10em for the
+// three caps roles: title/label/note); null where the role isn't tracked-caps and its letter-spacing
+// is unconstrained. One value per role: adding tracking here is what makes a .14em label a violation.
+const CLASSES: Record<string, [string, number, number, number | null]> = {
+  hero: ["sans", 26, 700, null], lede: ["sans", 26, 600, null], value: ["sans", 20, 700, null], prose: ["sans", 16, 400, null],
+  name: ["sans", 14, 400, null], action: ["sans", 16, 600, null], datum: ["sans", 12, 700, null], title: ["sans", 11, 600, 0.10],
+  label: ["sans", 11, 400, 0.10], scaffold: ["sans", 10, 400, null], note: ["mono", 10, 400, 0.10], machine: ["mono", 12, 400, null],
 };
 const TRIPLES = new Set(Object.values(CLASSES).map(([f, s, w]) => `${f}|${s}|${w}`));
+const CLASS_OF: Record<string, string> = Object.fromEntries(Object.entries(CLASSES).map(([n, [f, s, w]]) => [`${f}|${s}|${w}`, n]));   // (fam|px|wt) → class name (each triple is unique)
 const MARKS = new Set(["rail-mark"]);   // the brand glyph (⟡) is not a text class — exempt
+// tracking is enforced for the caps roles EXCEPT the rail chrome: .railbtn tracks tighter (.08em) so
+// its two-word labels fit the 56px rail — widening to .10em risks clipping the razor-thin fit.
+const TRACK_EXEMPT = new Set(["railbtn"]);
 {
   const bad: string[] = [];
   for (const r of rules) {
@@ -273,9 +281,17 @@ const MARKS = new Set(["rail-mark"]);   // the brand glyph (⟡) is not a text c
     const px = sizePx(size); if (px == null) continue;       // bad sizes are #9's job
     const wt = parseInt(weight, 10); if (isNaN(wt)) continue;
     const fam = isMono(r.body) ? "mono" : "sans";
-    if (!TRIPLES.has(`${fam}|${px}|${wt}`)) bad.push(`${r.prelude} → ${fam} ${px}/${wt}`);
+    const key = `${fam}|${px}|${wt}`;
+    if (!TRIPLES.has(key)) { bad.push(`${r.prelude} → ${fam} ${px}/${wt}`); continue; }
+    // tracking: a caps role (title/label/note) carries ONE tracking value (.10em); a rule that declares
+    // a different one is two values for one role (the .14em-vs-override shadow this now catches).
+    const cls = CLASS_OF[key], spec = CLASSES[cls][3];
+    if (spec != null && !hasClassIn(r.prelude, TRACK_EXEMPT)) {
+      const t = declTrackEm(r.body);
+      if (t !== undefined && (t == null || Math.abs(t - spec) > 1e-9)) bad.push(`${r.prelude} → ${cls} tracking ${t == null ? "non-em" : t + "em"} ≠ ${spec}em`);
+    }
   }
-  ok("every type rule resolves to one of the 12 text classes (no ad-hoc combinations)", bad.length === 0, bad.join(" · "));
+  ok("every type rule resolves to one of the 12 classes — (family, size, weight, tracking)", bad.length === 0, bad.join(" · "));
 }
 
 // ── 12 · mono marks raw machine output only ───────────────────────────────────────────────────────
@@ -368,14 +384,15 @@ const MARKS = new Set(["rail-mark"]);   // the brand glyph (⟡) is not a text c
   ok("identical skeleton across states — no block gated on authorship (§ invariant)", bad.length === 0, bad.join(" · "));
 }
 
-// ── 18 · every trace affordance (--dye route-to-source) resolves to `label` type ──────────────────
-// One trace form everywhere — ▸ TRACE, tracked caps, sans 11/400, --dye. This is what keeps the chart
-// panel's trace and the evidence card's trace from drifting into two treatments; same shape as the
-// dye allowlist (#3), but it pins the TYPE. TEETH: a trace link at title weight (600), or in mono,
-// or not caps, trips it.
+// ── 18 · every route-to-provenance affordance (--dye) resolves to `label` type ────────────────────
+// CONTRACT (broadened, Stage D): --dye routes the eye/click to PROVENANCE — whether the provenance of
+// a VALUE (`▸ trace` on a chart/evidence value) or the provenance of a PANEL'S PRESENCE (`▸ alternatives`
+// on a slot — the forms it was chosen over, and the engine-derived reasons). All wear ONE form: ▸ …,
+// tracked caps, sans 11/400, --dye. This pins the TYPE (the dye allowlist #3 gates WHERE dye may live).
+// TEETH: a route at title weight (600), or in mono, or not caps, trips it.
 {
-  const AFFORDANCE = ["chart-trace", "ev-trace", "inspect", "fband-inspect"];
-  const [lf, ls, lw] = CLASSES.label;   // sans, 11, 400
+  const AFFORDANCE = ["chart-trace", "ev-trace", "audit-toggle"];
+  const [lf, ls, lw, lt] = CLASSES.label;   // sans, 11, 400, .10em
   const bad: string[] = [];
   for (const cls of AFFORDANCE) {
     const r = rules.find((x) => classesOf(x.prelude).includes(cls) && declVal(x.body, "font-size"));
@@ -385,7 +402,9 @@ const MARKS = new Set(["rail-mark"]);   // the brand glyph (⟡) is not a text c
     const wt = declVal(r.body, "font-weight") ? parseInt(declVal(r.body, "font-weight")!, 10) : 400;
     const fam = isMono(r.body) ? "mono" : "sans";
     const caps = /text-transform:\s*uppercase/.test(r.body);
-    if (fam !== lf || px !== ls || wt !== lw || !caps) bad.push(`${cls} → ${fam} ${px}/${wt}${caps ? "" : " not-caps"}`);
+    const track = declTrackEm(r.body);
+    const trackOk = lt == null || track === lt;
+    if (fam !== lf || px !== ls || wt !== lw || !caps || !trackOk) bad.push(`${cls} → ${fam} ${px}/${wt}${caps ? "" : " not-caps"}${trackOk ? "" : ` track ${track == null ? "non-em" : track + "em"}`}`);
   }
   ok("every trace affordance (--dye route-to-source) resolves to `label` type", bad.length === 0, bad.join(" · "));
 }

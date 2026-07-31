@@ -4,7 +4,7 @@ import { WIDGET_DOMAIN, guardFraming, guardDirection, engineHeadline } from "./c
 import { E, initEngine, setBaseDS, BASE_DS } from "./engine";
 import { buildCatalog } from "./catalog";
 import { composeBoard } from "./layout";
-import { curate, callModel, FALLBACK, ledeFacts } from "./curate";
+import { curate, callModel, FALLBACK, ledeFacts, offeredWidgets } from "./curate";
 import { PERTURBATIONS, perturbedDataset } from "./perturbations";
 
 
@@ -275,133 +275,6 @@ function Callout({ mv, onPick }) {
   const thrFmt = mv.unit === "ratio" ? `${b.thr}x` : mv.unit === "months" ? `${b.thr}mo` : mv.unit === "percent" ? `${b.thr}%` : `${b.thr}`;
   return (<button className={`callout ${breached ? "bad" : "good"}`} onClick={() => onPick(mv)}><span className="co-v">{fmtMV(mv)}</span><span className="co-l">{mv.label}{mv.epistemic === "proxy" && <sup className="proxy">a</sup>}</span><span className="co-basis">{fmtVar(b, mv.unit)} vs {thrFmt}</span>{mv.epistemic === "proxy" && mv.note && <span className="co-note"><sup className="proxy">a</sup> {mv.note}</span>}</button>);
 }
-// Presentation registry: each finding TYPE declares how it renders as a card. A generic
-// FindingCard draws any of them — adding a finding type is a registry entry here, not a
-// new component. This is the production shape (typed findings → declared presentation →
-// one renderer) at demo scale. The relationship verb belongs to the finding type because
-// the detector's job *is* to detect that relationship (masking = concealment).
-const FINDING_PRESENTATION = {
-  masking: {
-    verb: "conceals",
-    sides: (f) => [
-      { mv: E.store.get(f.blendedId), badge: "clears benchmark" },
-      { mv: E.store.get(f.worstId), badge: `underwater · ${f.wShare.toFixed(0)}% of ARR` },
-    ],
-  },
-  // future: divergence:{ verb:"diverges from", sides:… }, concentration:{ … } — no new component
-};
-function toneOf(mv) {
-  if (!mv.basis) return "neutral";
-  const clears = mv.basis.good === "above" ? mv.value >= mv.basis.thr : mv.value <= mv.basis.thr;
-  return clears ? "good" : "bad";
-}
-function FindingSide({ side, onPick }) {
-  const tone = toneOf(side.mv);
-  return (<button className={`fside ${tone}`} onClick={onPick}>
-    <span className="fside-v">{fmtMV(side.mv)}</span>
-    <span className="fside-l">{side.mv.label}</span>
-    <span className={`fside-badge ${tone}`}>{side.badge}</span>
-  </button>);
-}
-function MiniTrend({ a, b, benchmark, labels = [], w = 680, h = 66 }) {
-  const W = w, H = h, padT = 8, padB = 13, padL = 4, padR = 36;
-  const plotW = W - padL - padR, plotH = H - padT - padB;
-  const all = [...a, ...b, benchmark]; const lo = Math.min(...all) - 3, hi = Math.max(...all) + 3;
-  const x = (i) => padL + (a.length > 1 ? (plotW * i) / (a.length - 1) : plotW / 2);
-  const y = (v) => padT + plotH * (1 - (v - lo) / (hi - lo));
-  const line = (s) => s.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
-  const area = (s) => `${line(s)} L${x(s.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`;
-  const dot = (s, tone) => (<rect x={x(s.length - 1) - 3} y={y(s[s.length - 1]) - 3} width={6} height={6} className={`mt-dot ${tone}`} />);
-  return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
-    <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" />
-    <text x={W - padR + 4} y={y(benchmark) + 3} className="mt-bench-lab">{benchmark}%</text>
-    <path d={line(a)} className="mt-ln good" /><path d={line(b)} className="mt-ln bad" />
-    {dot(a, "good")}{dot(b, "bad")}
-    <text x={x(a.length - 1) + 5} y={y(a[a.length - 1]) + 3} className="mt-end good">{a[a.length - 1].toFixed(0)}</text>
-    <text x={x(b.length - 1) + 5} y={y(b[b.length - 1]) + 3} className="mt-end bad">{b[b.length - 1].toFixed(0)}</text>
-    {labels.length > 1 && <><text x={x(0)} y={H - 3} className="mt-qlab" textAnchor="start">{labels[0]}</text><text x={x(labels.length - 1)} y={H - 3} className="mt-qlab" textAnchor="end">{labels[labels.length - 1]}</text></>}
-  </svg>);
-}
-const METRIC_SERIES = {
-  cac: (q, i) => { try { return E.cacPayback(q).value; } catch { return null; } },
-  magic: (q, i) => { try { return E.magicNumber(q).value; } catch { return null; } },
-  grossMargin: (q, i) => { try { return E.grossMargin(q).value; } catch { return null; } },
-  qoq: (q, i) => { try { return E.qoqGrowth(q).value; } catch { return null; } },
-  r40: (q, i) => { try { return i >= 4 ? E.ruleOf40(q).value : null; } catch { return null; } },
-  // segment-scoped: read the segment from the primary mv's id (e.g. "arr.SMB.25Q4") so the spark
-  // tracks the exact value the hero displays. Covers concentration (arr) and retention (nrr) leads.
-  arr: (q, i, primary) => { try { const p = String(primary && primary.id || "").split("."); const seg = p.length === 3 ? p[1] : null; return seg ? E.segArr(seg, q).value : E.companyArr(q).value; } catch { return null; } },
-  nrr: (q, i, primary) => { try { const p = String(primary && primary.id || "").split("."); const seg = p.length >= 3 && E.SEGMENTS.includes(p[1]) ? p[1] : null; const qi = E.QUARTERS.indexOf(q); if (qi < 4) return null; return E.nrr(seg, E.QUARTERS[qi - 4], q).value; } catch { return null; } },
-};
-function SoloSpark({ vals, labels, benchmark, tone }) {
-  const W = 320, H = 62, padT = 9, padB = 14, padL = 4, padR = 34;
-  const pw = W - padL - padR, ph = H - padT - padB;
-  const all = [...vals, ...(benchmark != null ? [benchmark] : [])]; const lo = Math.min(...all), hi = Math.max(...all), sp = hi - lo || 1;
-  const x = (i) => padL + (vals.length > 1 ? pw * i / (vals.length - 1) : pw / 2);
-  const y = (v) => padT + ph * (1 - (v - lo) / sp);
-  const line = vals.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join(" ");
-  const area = `${line} L${x(vals.length - 1)},${y(lo)} L${x(0)},${y(lo)} Z`;
-  return (<svg viewBox={`0 0 ${W} ${H}`} className="mtrend">
-    {benchmark != null && <line x1={padL} x2={W - padR} y1={y(benchmark)} y2={y(benchmark)} className="mt-bench" />}
-    {benchmark != null && <text x={W - padR + 4} y={y(benchmark) + 3} className="mt-bench-lab">{benchmark}</text>}
-    <path d={line} className="mt-ln" />
-    <rect x={x(vals.length - 1) - 3} y={y(vals[vals.length - 1]) - 3} width={6} height={6} className={`mt-dot ${tone} last`} />
-    <text x={x(0)} y={H - 3} className="mt-qlab" textAnchor="start">{labels[0]}</text><text x={x(vals.length - 1)} y={H - 3} className="mt-qlab" textAnchor="end">{labels[labels.length - 1]}</text>
-  </svg>);
-}
-// Generic finding band — presents ANY top salient fact the way FindingCard presents masking.
-// Adding a finding type needs no new band: the fact's structure (value, benchmark, trend) drives it.
-function SalientBand({ finding, role, onPick }) {
-  if (!finding || !finding.mvs || !finding.mvs.length) return null;
-  const domain = (() => { try { return E.findingNeighborhood(finding).domain; } catch { return null; } })();
-  // For a concentration finding, the headline is the concentration itself (top-segment share), rising —
-  // not an arbitrary segment's ARR. This makes the value AND its sparkline tell the concentration story.
-  let primary = finding.mvs[0], sf = METRIC_SERIES[finding.metric];
-  if (domain === "concentration") {
-    try { const es = E.entShare(E.QUARTERS[E.QUARTERS.length - 1]); if (es) { primary = es; sf = (q) => { try { return E.entShare(q).value; } catch { return null; } }; } } catch {}
-  }
-  const basis = primary.basis;
-  let spark = null;
-  if (sf) { const vals = E.QUARTERS.map((q, i) => sf(q, i, primary)).filter((v) => v != null); if (vals.length > 2) spark = { vals, labels: E.QUARTERS.slice(E.QUARTERS.length - vals.length) }; }
-  return (<div className="fband">
-    <div className="fband-vals">
-      <div className="sf-primary">
-        <span className="sf-val">{fmtMV(primary)}</span>
-        <span className="sf-lbl">{primary.label}</span>
-        {basis != null && <span className="sf-badge">vs {basis.thr}{primary.unit === "percent" ? "%" : ""} benchmark</span>}
-      </div>
-      <div className="sf-ctx">Most significant finding for {ROLE_FUNCTION[role] || "Finance"}</div>
-    </div>
-    {spark && <div className="fband-trend"><SoloSpark vals={spark.vals} labels={spark.labels} benchmark={basis != null ? basis.thr : null} tone="bad" /></div>}
-    <button className="fband-inspect" onClick={() => onPick({ node: primary })}>▸ inspect provenance</button>
-  </div>);
-}
-function FindingCard({ finding, onPick }) {
-  const schema = FINDING_PRESENTATION[finding.type];
-  if (!schema) return null;
-  const sides = schema.sides(finding);
-  const pick = () => onPick({ node: finding, isFinding: true });
-  const thr = sides[0].mv.basis ? sides[0].mv.basis.thr : 100;
-  let trend = null;
-  if (finding.type === "masking" && finding.worstSeg) {
-    const qs = E.QUARTERS, safe = (fn) => { try { const r = fn(); return r && !isNaN(r.value) ? r.value : null; } catch { return null; } };
-    const idx = qs.map((_, i) => i).filter((i) => i >= 4);
-    const a = idx.map((i) => safe(() => E.nrr(null, qs[i - 4], qs[i]))).filter((v) => v != null);
-    const b = idx.map((i) => safe(() => E.nrr(finding.worstSeg, qs[i - 4], qs[i]))).filter((v) => v != null);
-    const labels = idx.map((i) => qs[i]); if (a.length > 1 && b.length > 1) trend = { a, b, labels };
-  }
-  return (<div className="fband">
-    <div className="fband-vals">
-      <FindingSide side={sides[0]} onPick={pick} />
-      <span className="fband-verb">{schema.verb}</span>
-      <FindingSide side={sides[1]} onPick={pick} />
-    </div>
-    {trend && <div className="fband-trend"><MiniTrend a={trend.a} b={trend.b} benchmark={thr} labels={trend.labels} /></div>}
-    <button className="fband-inspect" onClick={pick}>▸ inspect provenance</button>
-  </div>);
-}
-
-
 // ===== row grammar: widgets declare eligible templates; a deterministic packer fills
 // rows so every row is complete (no dead space). The model chooses widgets; layout is
 // by rule. Variation is generative — different widget mixes pack into different rows —
@@ -710,7 +583,6 @@ function panelTrace(w) {
 }
 function Widget({ id, catalog, onPick, dim }) {
   const w = catalog[id]; if (!w) return null; const d = w.data;
-  if (w.kind === "finding_card") return <FindingCard finding={d.finding} onPick={onPick} />;
   if (w.kind === "callout") return <Callout mv={d.mv} onPick={(mv) => onPick({ node: mv })} />;
   const tn = panelTrace(w);
   const onTrace = tn ? () => onPick({ node: tn }) : undefined;
@@ -751,7 +623,6 @@ const ROLE_SCOPE = {
   CRO: ["growth", "retention", "concentration"],       // pipeline/motion · renewals/expansion · segment go-to-market
 };
 const DOMAIN_LABEL = { efficiency: "capital efficiency", concentration: "revenue concentration", retention: "retention", growth: "growth" };
-const ROLE_FUNCTION = { CFO: "Finance", CRO: "Revenue" };
 const DOMAIN_OWNER = { efficiency: { org: "Finance", role: "CFO" }, growth: { org: "Revenue", role: "CRO" }, retention: { org: "Revenue", role: "CRO" }, concentration: { org: "Finance & Revenue", role: "CFO" } };
 // highest-salience finding within the role's decision-rights scope
 function roleScopedTopFinding(roleKey) {
@@ -777,18 +648,121 @@ function Block({ block, catalog, onPick, dim, source }) {
     <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={dim} />
   </div>);
 }
+// ===== Stage D, §6 — the audit selector. Each slot exposes the OTHER forms the model had available
+// for that slot's finding (domain-scoped: same analytical domain as the slot's chosen form, drawn from
+// the SAME offeredWidgets menu the model chose from — never every unselected form globally). The
+// finding's salience (z · rank) is shown ONCE in the header — it's the finding's score, identical for
+// every form of the slot, so it can't discriminate the rows. Each row carries only what DIFFERS: the
+// reason it wasn't chosen, ENGINE-DERIVED (never model-authored — a post-hoc rationale is confabulation,
+// exactly what the guards catch). The reason NAMES the specific overlap: which metrics an alternative
+// re-renders and which already-chosen panel shows them.
+// The metrics each form actually renders (used to (a) rank the finding via its primary metric, and
+// (b) compute the specific metric overlap that discriminates the reasons).
+const WIDGET_METRICS = {
+  masking_card: ["nrr"], salient_band: ["nrr"],
+  bridge_smb: ["nrr"], bridge_enterprise: ["nrr"], bridge_blended: ["nrr"], hbar_nrr: ["nrr"],
+  dumbbell_ret: ["nrr", "grr"], heatmap_retention: ["nrr", "grr"],
+  efficiency_combo: ["magic"], magic_line: ["magic"], efficiency_bullets: ["magic", "cac", "r40"],
+  scatter_eff_growth: ["magic", "qoq"], heatmap_metrics: ["magic", "cac", "r40", "grossMargin"], quadrant_eff: ["magic", "qoq"],
+  metric_matrix: ["nrr", "grr", "grossMargin", "magic", "cac", "r40", "qoq"],
+  accel_line: ["qoq"],
+  segment_stack: ["arr"], indexed_arr: ["arr"], grouped_growth: ["arr"], small_mult_arr: ["arr"],
+  segment_table: ["arr", "nrr", "grr"], pareto_arr: ["arr"], treemap_arr: ["arr"], lorenz_arr: ["arr"],
+};
+const METRIC_LABEL = { nrr: "NRR", grr: "GRR", grossMargin: "gross margin", magic: "magic number", cac: "CAC payback", r40: "Rule of 40", qoq: "QoQ growth", arr: "ARR", winRate: "win rate" };
+// the matrix/table forms render their title from a fixed ChartHeader string, not catalog.data.title —
+// mirror it so the reasons name the panel the way it reads on the board.
+const WIDGET_TITLE = { metric_matrix: "Metrics by quarter", segment_table: "Segment breakdown" };
+const widgetLabel = (catalog, id) => (catalog[id] && catalog[id].data && catalog[id].data.title) || WIDGET_TITLE[id] || (catalog[id] && catalog[id].title) || id;
+const joinList = (a) => (a.length <= 1 ? (a[0] || "") : a.length === 2 ? `${a[0]} and ${a[1]}` : `${a.slice(0, -1).join(", ")}, and ${a[a.length - 1]}`);
+function buildAudit(finding, catalog, panels) {
+  let ranked = [];
+  try { ranked = E.computeSalience(); } catch { ranked = []; }
+  const primaryMetric = (id) => (WIDGET_METRICS[id] || [])[0] || null;
+  const salOf = (id) => { const m = primaryMetric(id); if (!m) return null; const idx = ranked.findIndex((f) => f.metric === m); return idx >= 0 ? { rank: idx + 1, z: ranked[idx].z } : null; };
+  let offered = [];
+  try { offered = offeredWidgets(E.findingNeighborhood(finding), catalog); } catch { offered = []; }
+  const selected = panels.map((p) => p.widget), selectedSet = new Set(selected);
+  return panels.map((p) => {
+    const chosen = p.widget, dom = WIDGET_DOMAIN[chosen], cSal = salOf(chosen);
+    const others = selected.filter((sid) => sid !== chosen);   // the OTHER panels already on the board
+    const alts = offered
+      .filter((id) => WIDGET_DOMAIN[id] === dom && !selectedSet.has(id) && catalog[id] && catalog[id].kind !== "finding_card")
+      .map((id) => {
+        const aMetrics = WIDGET_METRICS[id] || [], aSal = salOf(id), lbl = (a) => joinList(a.map((m) => METRIC_LABEL[m] || m));
+        // the board panel (incl. this slot's own chosen form) that already shows the MOST of this
+        // form's metrics, and the metrics NO board panel shows. Naming both — the redundant overlap AND
+        // the unique addition — is what discriminates forms that share a redundancy but differ in
+        // content (naming only the overlap collapses same-domain forms to the shared metric).
+        let best = null; const shown = new Set();
+        for (const sid of selected) { const overlap = aMetrics.filter((m) => (WIDGET_METRICS[sid] || []).includes(m)); overlap.forEach((m) => shown.add(m)); if (overlap.length && (!best || overlap.length > best.overlap.length)) best = { panel: sid, overlap }; }
+        const unshown = aMetrics.filter((m) => !shown.has(m));
+        let reason;
+        if (best && unshown.length === 0) reason = best.panel === chosen
+          ? `narrower than the selected form — '${widgetLabel(catalog, chosen)}' renders ${lbl(best.overlap)}`
+          : `re-renders ${lbl(best.overlap)}, already shown by '${widgetLabel(catalog, best.panel)}'`;
+        else if (best) reason = `re-renders ${lbl(best.overlap)} (on '${widgetLabel(catalog, best.panel)}'); adds ${lbl(unshown)}, not otherwise on the board`;
+        else if (aSal && cSal && aSal.rank > cSal.rank) reason = `lower salience rank (#${aSal.rank}) than the selected form (#${cSal.rank})`;
+        else { const sd = others.find((sid) => WIDGET_DOMAIN[sid] === dom); reason = sd ? `same domain as '${widgetLabel(catalog, sd)}', already chosen` : "no structural reason — the model preferred this form"; }
+        return { id, label: widgetLabel(catalog, id), reason };
+      });
+    return { chosen, chosenLabel: widgetLabel(catalog, chosen), chosenSal: cSal, domain: dom, alts };
+  });
+}
+const fmtSal = (s) => (s ? `z ${s.z.toFixed(2)} · rank #${s.rank}` : "unranked");
+// One board slot: the chosen form (or the user's transient swap), its source line (§4), and the
+// register-built audit affordance (NOT a native <select>). The affordance carries --dye in the trace
+// form (▸ ALTERNATIVES) — a deliberate broadening: dye routes to provenance, whether of a VALUE (trace)
+// or of a PANEL'S PRESENCE (the alternatives it was chosen over). The alternatives panel fully covers
+// the slot (permitted); its own header carries the close. A swap only re-renders THIS slot; it never
+// touches the curation stats, so the rail's "the model chose N" stays true regardless of exploration.
+function TbPanel({ slot, swappedId, onSwap, onRevert, catalog, onPick, sourceRows }) {
+  const [open, setOpen] = useState(false);
+  const activeId = (swappedId && swappedId !== slot.chosen) ? swappedId : slot.chosen;
+  const swapped = activeId !== slot.chosen;
+  return (<div className="tb-panel">
+    <div className="tb-panel-body"><Widget id={activeId} catalog={catalog} onPick={onPick} dim={null} /></div>
+    {open && <div className="audit-panel">
+      <div className="audit-head">
+        <div className="audit-head-top">
+          <span className="audit-head-l">this slot's finding · {fmtSal(slot.chosenSal)}</span>
+          <button className="audit-close" onClick={() => setOpen(false)}>▾ close</button>
+        </div>
+        <span className="audit-sub">model chose {slot.chosenLabel} · {slot.alts.length} alternative{slot.alts.length > 1 ? "s" : ""} in {slot.domain} · engine-derived reasons only</span>
+      </div>
+      {slot.alts.map((a) => (
+        <button key={a.id} className={`audit-alt ${activeId === a.id ? "on" : ""}`} onClick={() => { onSwap(a.id); setOpen(false); }}>
+          <span className="audit-alt-label">{a.label}</span>
+          <span className="audit-alt-reason">{a.reason}</span>
+        </button>
+      ))}
+    </div>}
+    {swapped && <div className="audit-swapped"><span className="audit-swapped-lbl">viewing alternative</span><button className="audit-revert" onClick={onRevert}>model chose {slot.chosenLabel} · revert ›</button></div>}
+    <div className="panel-foot">
+      <span className="src-note">{slot.domain} · {sourceRows.toLocaleString()} source rows</span>
+      {slot.alts.length > 0 && <button className="audit-toggle" onClick={() => setOpen(true)}>▸ alternatives · {slot.alts.length}</button>}
+    </div>
+  </div>);
+}
 // Tuning 2, Stage A: fixed composition. The board is a lede row over three equal chart slots.
 // composeBoard (src/layout.ts) returns the lede finding-card + the model's chart/table panels in
 // model order, capped at three, with NO menu top-up — the rendered panel count equals the model's
 // selection. The §1e lattice is preserved: the lede band is a section (a single --scribe-strong rule
 // below it), the three slots are a gap-as-rule grid (--scribe ground shows through the 1px gaps).
+// Swap state is transient exploration, reset by a keyed remount on role toggle / perturb (AppInner).
 function TemplateBoard({ spec, role, catalog, onPick, finding, source, curation }) {
   const { panels } = composeBoard(spec, catalog);   // finding_card excluded from panels; the lede row renders it
+  const [swaps, setSwaps] = useState({});           // slotIndex -> alternative widget id (per-slot, transient)
+  const audit = useMemo(() => (finding ? buildAudit(finding, catalog, panels) : []), [finding, spec, catalog]);   // eslint-disable-line
+  const sourceRows = BASE_DS ? (BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length) : 0;
   return (<div className="board">
     {finding && <div className="board-band"><Lede finding={finding} source={source} curation={curation} role={role} onPick={onPick} /></div>}
     <div className="partition">
       {panels.map((block, i) => (
-        <div key={i} className="tb-panel"><Widget id={block.widget} catalog={catalog} onPick={onPick} dim={null} /></div>
+        <TbPanel key={i}
+          slot={audit[i] || { chosen: block.widget, chosenLabel: widgetLabel(catalog, block.widget), chosenSal: null, domain: WIDGET_DOMAIN[block.widget] || "", alts: [] }}
+          swappedId={swaps[i]} onSwap={(id) => setSwaps((s) => ({ ...s, [i]: id }))} onRevert={() => setSwaps((s) => { const n = { ...s }; delete n[i]; return n; })}
+          catalog={catalog} onPick={onPick} sourceRows={sourceRows} />
       ))}
     </div>
   </div>);
@@ -1247,7 +1221,7 @@ function AppInner() {
 
         <div className={`workarea ${picked ? "drawer-open" : ""}`}>
           <main className="stage">
-            {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} curation={state.curation} /></>}
+            {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard key={`${role}|${perturbation}|${(state.curation && state.curation.finding && state.curation.finding.label) || ""}`} spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} curation={state.curation} /></>}
           </main>
           <TraceDrawer picked={picked} onClose={() => setPicked(null)} />
         </div>

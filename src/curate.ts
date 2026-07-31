@@ -35,8 +35,9 @@ const FALLBACK_SCORECARD = {
 export function offeredWidgets(nb, catalog) {
   return Object.keys(catalog).filter((id) => admissibleLenses(nb).includes(WIDGET_DOMAIN[id]));
 }
-// Per-metric quarter series for the deterministic lede's duration streak (mirrors App's METRIC_SERIES;
-// App imports FROM curate, so it can't be shared the other way — a small, engine-backed replica).
+// Per-metric quarter series for the deterministic lede's duration streak — a small, engine-backed
+// series map used only by ledeFacts (the App-side METRIC_SERIES it once mirrored was retired with the
+// finding-band components in Tuning 2).
 const LEDE_SERIES: Record<string, (q: any, primary: any, i: number) => number | null> = {
   cac: (q) => { try { return E.cacPayback(q).value; } catch { return null; } },
   magic: (q) => { try { return E.magicNumber(q).value; } catch { return null; } },
