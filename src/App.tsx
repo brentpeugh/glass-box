@@ -181,7 +181,7 @@ function TrustPanel({ audit, onClose }) {
     </div>
   </div>);
 }
-function TraceDrawer({ picked, source, onClose }) {
+function TraceDrawer({ picked, source, onClose, floating }) {
   if (!picked) return null;
   const node = picked.node;
   const ptype = picked.isFinding ? "FINDING" : node.epistemic === "proxy" ? "MODELED" : (node.provenance?.inputs || []).some((i) => i.kind === "metric") ? "CALCULATED" : "EXTRACTED";
@@ -197,7 +197,7 @@ function TraceDrawer({ picked, source, onClose }) {
   const rootVal = picked.isFinding ? `${node.value.toFixed(0)} pp` : fmtMV(node);
   const inputs = node.provenance?.inputs || [];
   return (
-    <aside className="drawer">
+    <aside className={`drawer ${floating ? "floating" : ""}`}>
       <div className="drawer-head">
         <div className="drawer-eyebrow"><span className={`ptype ${ptype.toLowerCase()}`}>{ptype}</span><button className="drawer-x" onClick={onClose}>✕</button></div>
         <div className="drawer-title-row"><span className="drawer-t">{node.label}</span><span className="drawer-rootval">{rootVal}</span></div>
@@ -1235,6 +1235,8 @@ function AppInner() {
 
   return (
     <div className={`caliper has-rail ${originIsAnchor ? "origin-anchor" : ""}`} onClickCapture={recordOrigin}>
+      {/* one scrim at the app root — only while a MODAL is open (a board-origin drawer keeps the board lit) */}
+      {(showBrief || showQuery || showTrust || showDebug) && <div className="scrim" />}
       {originBox && <div className="trace-origin-mark" style={{ left: originBox.left, top: originBox.top, width: originBox.width, height: originBox.height }} />}
 
       {/* full-height left rail — Strata grammar: primary at the top, secondary at the bottom, empty between */}
@@ -1267,7 +1269,7 @@ function AppInner() {
           <main className="stage">
             {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard key={`${role}|${perturbation}|${(state.curation && state.curation.finding && state.curation.finding.label) || ""}`} spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} curation={state.curation} /></>}
           </main>
-          <TraceDrawer picked={picked} source={state.source} onClose={() => setPicked(null)} />
+          <TraceDrawer picked={picked} source={state.source} floating={showBrief || showQuery || showTrust || showDebug} onClose={() => setPicked(null)} />
         </div>
       </div>
 
