@@ -1236,7 +1236,7 @@ function AppInner() {
             </div>}
           </div>
           <button className="railbtn brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">Model read</button>
-          <button className={`railbtn ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">Change data</button>
+          <button className={`railbtn ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">Shift data</button>
         </div>
       </nav>
 
