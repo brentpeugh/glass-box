@@ -261,7 +261,7 @@ const declTrackEm = (body: string): number | null | undefined => { const v = dec
 // is unconstrained. One value per role: adding tracking here is what makes a .14em label a violation.
 const CLASSES: Record<string, [string, number, number, number | null]> = {
   hero: ["sans", 26, 700, null], lede: ["sans", 26, 600, null], value: ["sans", 20, 700, null], heading: ["sans", 20, 600, null], prose: ["sans", 16, 400, null],
-  name: ["sans", 14, 400, null], action: ["sans", 16, 600, null], datum: ["sans", 12, 700, null], title: ["sans", 11, 600, 0.10],
+  name: ["sans", 14, 400, null], action: ["sans", 14, 600, null], datum: ["sans", 12, 700, null], title: ["sans", 11, 600, 0.10],
   label: ["sans", 11, 400, 0.10], scaffold: ["sans", 10, 400, null], note: ["mono", 10, 400, 0.10], machine: ["mono", 12, 400, null],
 };
 const TRIPLES = new Set(Object.values(CLASSES).map(([f, s, w]) => `${f}|${s}|${w}`));
@@ -378,7 +378,8 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
   // states (a gate on either would already trip the patterns above). Assert they exist so they can't be
   // silently dropped, and that the aggregate rides the authorship label rather than a state branch.
   if (!/className="lede-tests"/.test(jsx)) bad.push("falsifier block (.lede-tests) absent from the lede");
-  if (!/className="lede-test test-q"/.test(jsx)) bad.push("falsifier question (.lede-test action) absent");
+  if (!/className="lede-test"/.test(jsx)) bad.push("falsifier row (.lede-test button/target) absent");
+  if (!/className="test-q"/.test(jsx)) bad.push("falsifier question (.test-q action) absent");
   if (!/\{aggregate\}/.test(jsx)) bad.push("aggregate result badge absent from the authorship label");
   ok("identical skeleton across states — incl. the falsifier block + aggregate badge (§ invariant)", bad.length === 0, bad.join(" · "));
 }

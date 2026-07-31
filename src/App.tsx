@@ -817,9 +817,14 @@ function Lede({ finding, source, curation, role, onPick }) {
       {tests.length > 0 && <div className="lede-tests">
         {tests.map((t) => {
           const r = verdicts[t.id];
+          // BEFORE: proposition (action) + a right-aligned run affordance; the whole row is the target
+          // (a <button>), the affordance is the discoverability signal. AFTER: statement (prose) + the
+          // verdict (value 20/700) in the affordance's slot. The verdict does NOT route — runTest returns
+          // a computed adjudication, not a traceable node — so it carries no --dye; weight + position mark
+          // it engine-run against the model-proposed question (the lede's authorship split).
           return r
-            ? <div key={t.id} className="lede-test ran"><span className={`test-verdict ${r.verdict === "uniform" ? "weakens" : "confirms"}`}>{r.summary}</span></div>
-            : <button key={t.id} className="lede-test test-q" onClick={() => runFalsifier(t)}>{t.label}</button>;
+            ? <div key={t.id} className="lede-test ran"><span className="lede-answer">{r.summary}</span><span className="lede-verdict">{r.verdict.charAt(0).toUpperCase() + r.verdict.slice(1)}</span></div>
+            : <button key={t.id} className="lede-test" onClick={() => runFalsifier(t)}><span className="test-q">{t.label}</span><span className="test-run">run test ▸</span></button>;
         })}
       </div>}
     </div>

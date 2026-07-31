@@ -44,7 +44,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .t-heading { font-family:var(--font-sans); font-size:var(--t-4);   font-weight:600; }   /* 20, sentence case, no tracking — a surface title (the trace drawer's metric name) */
 .t-prose   { font-family:var(--font-sans); font-size:var(--t-3b);  font-weight:400; }   /* reading text — 16 */
 .t-name    { font-family:var(--font-sans); font-size:var(--t-3);   font-weight:400; }   /* 14, sentence case, no tracking — row/segment/node NAMES; labels rather than reads */
-.t-action  { font-family:var(--font-sans); font-size:var(--t-3b);  font-weight:600; }   /* a clickable proposition reads as a sentence — follows prose to 16 */
+.t-action  { font-family:var(--font-sans); font-size:var(--t-3);   font-weight:600; }   /* a clickable proposition — sans 14/600 (steps below prose's 16 so it reads as an affordance, not body copy) */
 .t-datum   { font-family:var(--font-sans); font-size:var(--t-tab); font-weight:700; font-variant-numeric:var(--num); }
 .t-title   { font-family:var(--font-sans); font-size:var(--t-2);   font-weight:600; text-transform:uppercase; letter-spacing:.10em; }
 .t-label   { font-family:var(--font-sans); font-size:var(--t-2);   font-weight:400; text-transform:uppercase; letter-spacing:.10em; }
@@ -154,7 +154,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .strip{display:flex;flex-wrap:wrap;gap:14px;}
 .strip .block{flex:1;min-width:170px;margin:0;}
 .strip .block>div:not(.frame){padding:0;border:none;background:none;}
-.bridge-trace{background:none;border:none;font-family:var(--font-sans);font-size:var(--t-3b);font-weight:600;color:var(--ink);cursor:pointer;padding:0;}   /* action */
+.bridge-trace{background:none;border:none;font-family:var(--font-sans);font-size:var(--t-3);font-weight:600;color:var(--ink);cursor:pointer;padding:0;}   /* action */
 .bridge-trace:hover{color:var(--dye);}
 /* ---- trace drawer ---- */
 .drawer{position:sticky;bottom:0;left:0;right:0;background:var(--field);border-top:2px solid var(--ink);box-shadow:none;max-height:52vh;overflow:auto;z-index:20;}
@@ -384,9 +384,15 @@ button.dt-num:hover{ color:var(--dye); }
    already carries two tracked-caps eyebrows). Each question is a clickable proposition (action); running
    it replaces the question IN PLACE with its verdict, no reflow of the thesis/why above. */
 .lede-tests{ margin-top:8px; padding-top:10px; border-top:var(--w-hair) solid var(--scribe); display:flex; flex-direction:column; }
-.lede-test{ display:block; width:100%; text-align:left; background:none; border:none; padding:6px 0; cursor:pointer; }
+/* the whole row is the target (a <button>); the run affordance is the discoverability signal, right-
+   aligned to the panel edge. On run the row becomes a statement (answer, prose) + a finding (verdict,
+   value 20/700) in the affordance's slot — proposition+button reads as statement+finding. */
+.lede-test{ display:flex; align-items:baseline; gap:12px; width:100%; text-align:left; background:none; border:none; padding:6px 0; cursor:pointer; }
 .lede-test.ran{ cursor:default; }
-.lede-tests .test-verdict{ text-align:left; max-width:none; font-size:var(--t-3b); color:var(--ink-2); line-height:1.4; }
+.lede-test .test-q{ flex:1; min-width:0; }
+.lede-test .test-run{ flex:0 0 auto; margin-left:auto; }
+.lede-answer{ flex:1; min-width:0; font-family:var(--font-sans); font-size:var(--t-3b); font-weight:400; line-height:1.4; color:var(--ink-2); }   /* prose — the engine's statement */
+.lede-verdict{ flex:0 0 auto; margin-left:auto; font-family:var(--font-sans); font-variant-numeric:var(--num); font-size:var(--t-4); font-weight:700; color:var(--ink); white-space:nowrap; }   /* value — the engine-run finding (no route → no --dye; weight+position carry authorship) */
 /* dye-scribed figure: route-to-source, not emphasis — inherits the lede size/weight (sans, not the
    brief's pre-2c mono), tabular digits, --dye with a 1px dye underline, clickable to its trace. */
 .dye-scribe{ font:inherit; font-variant-numeric:var(--num); background:none; border:none; padding:0; cursor:pointer; color:var(--dye); text-decoration:underline; text-decoration-color:var(--dye); text-decoration-thickness:1px; text-underline-offset:3px; }
@@ -598,12 +604,9 @@ body.modal-open{ overflow:hidden; }
 .ev-lbl{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); }   /* label — orientation, tracked caps */
 .ev-note{ font-size:14px; line-height:1.45; color:var(--ink); }
 .ev-trace{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--dye); margin-top:8px; }   /* label — trace affordance */
-.test-q{ font-family:var(--font-sans); font-weight:600; font-size:var(--t-3b); color:var(--ink); }   /* action — a clickable proposition (lede falsifier) */
+.test-q{ font-family:var(--font-sans); font-weight:600; font-size:var(--t-3); color:var(--ink); }   /* action — a clickable proposition (lede falsifier), sans 14/600 */
 .test-run{ font-family:var(--font-sans); font-size:11px; font-weight:400; color:var(--dye); background:none; border:1px solid var(--dye); padding:5px 11px; cursor:pointer; white-space:nowrap; }
 .test-run:hover{ background:transparent; }
-.test-verdict{ font-family:var(--font-sans); font-size:11px; max-width:56%; text-align:right; }
-/* §4: the verdict summary is prose — the sentence states confirms/weakens; ink-2, no hue. */
-.test-verdict.confirms,.test-verdict.weakens{ color:var(--ink-2); }
 
 /* trust panel source badge — a neutral hairline tag ("the boundary, made explicit") */
 .brief-src{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; padding:3px 8px; }   /* label */
@@ -625,7 +628,7 @@ body.modal-open{ overflow:hidden; }
 .recur-row:last-child{ border-bottom:none; }
 .recur-row.top{ background:transparent; }
 .recur-rank{ font-family:var(--font-sans); font-variant-numeric:var(--num); font-size:var(--t-tab); font-weight:700; color:var(--dye); min-width:26px; }   /* datum — rank figure */
-.recur-flabel{ flex:1; font-family:var(--font-sans); font-weight:600; font-size:var(--t-3b); color:var(--ink); }   /* action — clickable finding */
+.recur-flabel{ flex:1; font-family:var(--font-sans); font-weight:600; font-size:var(--t-3); color:var(--ink); }   /* action — clickable finding */
 
 /* perturbation banner — §4: a MODE indicator, not a variance. No danger-hue; the mode is carried by
    a solid-ink stamp ("DATA PERTURBED"), a 2px ink rule under the banner, and the note prose. */
