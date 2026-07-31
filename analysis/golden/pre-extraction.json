@@ -582,7 +582,7 @@
             "label": "CAC Payback vs benchmark"
           },
           "fallbackCuration": {
-            "thesis": "CAC Payback stands at 21 months against a 12-month benchmark, breaching it.",
+            "thesis": "CAC Payback stands at 21 months against a 12-month benchmark, breaching it",
             "whyRole": "Of the five other tracked metrics, Blended GRR, SaaS Magic Number, and Rule of 40 sit below target while Blended NRR and Gross Margin hold. The engine surfaced 23 findings across four domains, computed from 4,520 source rows.",
             "evidenceIds": [
               "cac.25Q4",
@@ -664,7 +664,7 @@
             "label": "ARR spread across segments"
           },
           "fallbackCuration": {
-            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data.",
+            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data",
             "whyRole": "This is the largest deviation from benchmark the engine measured, so it most warrants scrutiny before decisions rest on the headline numbers.",
             "evidenceIds": [
               "arr.SMB.25Q4",
@@ -1312,7 +1312,7 @@
             "label": "ARR spread across segments"
           },
           "fallbackCuration": {
-            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data.",
+            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data",
             "whyRole": "This is the largest deviation from benchmark the engine measured, so it most warrants scrutiny before decisions rest on the headline numbers.",
             "evidenceIds": [
               "arr.SMB.25Q4",
@@ -1389,7 +1389,7 @@
             "label": "ARR spread across segments"
           },
           "fallbackCuration": {
-            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data.",
+            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data",
             "whyRole": "This is the largest deviation from benchmark the engine measured, so it most warrants scrutiny before decisions rest on the headline numbers.",
             "evidenceIds": [
               "arr.SMB.25Q4",

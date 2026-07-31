@@ -779,7 +779,7 @@ const NUMWORD = ["zero", "one", "two", "three", "four", "five", "six", "seven", 
 function LedeDeterministic({ facts, onPick }) {
   const route = () => onPick({ node: facts.primary });
   return (<>
-    {facts.label} stands at <button className="dye-scribe" onClick={route}>{facts.value}</button> against a <button className="dye-scribe" onClick={route}>{facts.bench}</button> benchmark, {facts.breached ? "breaching" : "clearing"} it{facts.streak >= 2 ? <> after {NUMWORD[facts.streak] || facts.streak} consecutive quarters of deterioration</> : null}.
+    {facts.label} stands at <button className="dye-scribe" onClick={route}>{facts.value}</button> against a <button className="dye-scribe" onClick={route}>{facts.bench}</button> benchmark, {facts.breached ? "breaching" : "clearing"} it{facts.streak >= 2 ? <> after {NUMWORD[facts.streak] || facts.streak} consecutive quarters of deterioration</> : null}
   </>);
 }
 // INVARIANT: identical skeleton in both states. Every block below renders in live AND fallback — only
