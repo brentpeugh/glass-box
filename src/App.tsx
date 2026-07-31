@@ -95,6 +95,18 @@ function TraceNode({ node, depth, isFinding }) {
     </div>
   );
 }
+// One traced value, ONE presentation. The evidence-card form (value / label / ▸ trace) is shared by
+// every surface that shows a traceable value as a card — the read modal, the lede column, and the
+// ask-data answer — so a value is never presented two ways. Clicking opens the trace drawer on it. The
+// base .ev-card form is the read modal's; the lede's lattice overrides live in `.lede-figures .ev-card`.
+function EvidenceCard({ mv, onPick, anchor }) {
+  return (
+    <button className={`ev-card${anchor ? " anchor" : ""}`} onClick={() => onPick({ node: mv })}>
+      <div className="ev-top"><span className="ev-val">{fmtMV(mv)}</span><span className="ev-lbl">{mv.label}</span></div>
+      <div className="ev-trace">▸ trace</div>
+    </button>
+  );
+}
 // ===== Analyst Read: the investigation layer. A thesis (model-authored prose, numeral-free),
 // an evidence chain (engine values, each traceable), and falsification tests (from the engine's
 // bounded menu). The user runs a test; the engine computes a verdict; the thesis holds or weakens.
@@ -130,12 +142,7 @@ function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
       <div className="brief-sec">
         <div className="brief-lbl">Evidence — {read.source === "live" ? "model-selected" : "deterministic selection"}, engine-computed, every value traceable</div>
         <div className="brief-ev">
-          {evidence.map((mv, i) => (
-            <button key={i} className="ev-card" onClick={() => onPick({ node: mv })}>
-              <div className="ev-top"><span className="ev-val">{fmtMV(mv)}</span><span className="ev-lbl">{mv.label}</span></div>
-              <div className="ev-trace">▸ trace</div>
-            </button>
-          ))}
+          {evidence.map((mv, i) => <EvidenceCard key={i} mv={mv} onPick={onPick} />)}
         </div>
       </div>
       <div className="brief-sec">
@@ -839,12 +846,7 @@ function Lede({ finding, source, curation, role, onPick }) {
       <p className="lede-why">{why}</p>
     </div>
     <div className="lede-figures">
-      {evidence.map((mv, i) => (
-        <button key={i} className={`ev-card${i === 0 ? " anchor" : ""}`} onClick={() => onPick({ node: mv })}>
-          <div className="ev-top"><span className="ev-val">{fmtMV(mv)}</span><span className="ev-lbl">{mv.label}</span></div>
-          <div className="ev-trace">▸ trace</div>
-        </button>
-      ))}
+      {evidence.map((mv, i) => <EvidenceCard key={i} mv={mv} onPick={onPick} anchor={i === 0} />)}
     </div>
   </div>);
 }
@@ -988,7 +990,7 @@ function QueryBar({ onAsk, busy }) {
   return (<div className="qbar"><input className="qin" value={v} placeholder="Ask or explore — “how is efficiency?” (re-orient), “what’s SMB’s magic number?” (answer), or an ambiguous one gets both" onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") go(); }} /><button className="qbtn" disabled={busy || !v.trim()} onClick={go}>{busy ? "…" : "Map"}</button></div>);
 }
 function QueryWidget({ desc, onPick }) {
-  if (desc.kind === "callout") return (<div className="strip"><div className="block"><Callout mv={desc.data.mv} onPick={(mv) => onPick({ node: mv })} /></div></div>);
+  if (desc.kind === "callout") return (<div className="brief-ev"><EvidenceCard mv={desc.data.mv} onPick={onPick} /></div>);   // the answer's value card is the read modal's evidence card, exactly — one form for a traced value
   if (desc.kind === "line") return (<div className="cpanel"><ChartHeader title={desc.data.title || "trend"} /><Fill render={(cw, ch) => <LineChart series={desc.data.series} benchmark={desc.data.benchmark} good={desc.data.good} fmt={desc.data.fmt} onPick={(mv) => onPick({ node: mv })} w={cw} h={ch} />} /></div>);
   if (desc.kind === "waterfall") return (<div className="cpanel"><ChartHeader title={desc.data.title} tag={`NRR ${desc.data.bridge.nrr.toFixed(0)}%`} tagTone={desc.data.bridge.nrr >= 100 ? "good" : "bad"} onTrace={() => onPick({ node: desc.data.mv })} /><Fill render={(cw, ch) => <Waterfall c={desc.data.bridge} w={cw} h={ch} />} /></div>);
   return null;
@@ -1100,7 +1102,7 @@ function Scorecard({ role, scorecardKeys, onPick }) {
 function QueryModal({ queries, onAsk, onClose, onPick, onRecurate, onAnswerFully, busy, aside }) {
   return (<div className={`qmodal-bg ${aside ? "aside" : ""}`} onClick={onClose}>
     <div className="qmodal" onClick={(e) => e.stopPropagation()}>
-      <div className="qmodal-h"><span className="qmodal-t">Interrogate the data</span><button className="qmodal-x" onClick={onClose}>✕</button></div>
+      <div className="qmodal-h"><span className="qmodal-t">Ask your data</span><button className="qmodal-x" onClick={onClose}>✕</button></div>
       <QueryBar onAsk={onAsk} busy={busy} />
       <div className="qmodal-note">Type an analytical interest. The model maps it to a discovered finding and echoes back its reading (with a confidence and salience rank) before re-orienting — or refuses if the data contract doesn't support it. You navigate; the engine governs what's real.</div>
       <div className="qmodal-results">{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={onPick} onRecurate={onRecurate} onAnswerFully={onAnswerFully} />)}</div>
