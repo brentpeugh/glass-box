@@ -184,7 +184,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
 // pre-reskin grew the waterfall/hbar value bars (animation:grow) and transitioned value cells → trips.
 {
   const NUMERIC = new Set([
-    "kcell-v", "kcell-b", "co-v", "co-basis", "mx-cell", "dt-num", "node-val",
+    "kcell-v", "kcell-b", "co-v", "co-basis", "mx-cell", "dt-num", "node-val", "drawer-rootval",
     "ev-val", "bl-val", "tm-val", "wf-xval", "cx-dlab", "dlab", "readout", "wf-bar", "co-bar",
     "cx-dot", "scat-dot", "hbar-bar",
   ]);
@@ -299,7 +299,7 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
 // other selector mono is decorative. TEETH: post-2b put mono on kcell-v, dt-num, chart-title, the KPI
 // labels … → trips.
 {
-  const NOTE_MACHINE = new Set(["src-note", "co-note", "foot-note", "foot-status", "ev-trace", "brief-viol", "node-op", "dbg-meta", "proxy", "rows-recon", "err-msg", "rows-stat", "rows-tbl", "dbg-pre", "mono", "t-note", "t-machine"]);
+  const NOTE_MACHINE = new Set(["src-note", "co-note", "foot-note", "foot-status", "ev-trace", "brief-viol", "node-op", "node-desc", "dbg-meta", "proxy", "rows-recon", "err-msg", "rows-stat", "rows-tbl", "dbg-pre", "mono", "t-note", "t-machine"]);
   const bad: string[] = [];
   for (const r of rules) {
     if (r === tokenBlock) continue;

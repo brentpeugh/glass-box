@@ -20,7 +20,7 @@ function fmtMV(mv) { switch (mv.unit) { case "usd": return fmtM(mv.value); case 
 function fmtVar(b, unit) { const mag = Math.abs(b.delta); const p = unit === "ratio" ? mag.toFixed(2) : unit === "percent" ? mag.toFixed(1) : mag.toFixed(0); const favourable = b.good === "above" ? b.delta >= 0 : b.delta <= 0; return favourable ? p : `(${p})`; }
 
 // ================= trace =================
-function RowsLeaf({ leaf, parentVal }) {
+function RowsLeaf({ leaf, parentVal, depth }) {
   const r = useMemo(() => E.resolveLeaf(leaf.selector), [leaf]);
   let body, stat, note, recon, reconciles = null; const RTOL = (a, b) => Math.abs(a - b) <= Math.max(1, Math.abs(b) * 1e-6);
   if (r.kind === "retention") {
@@ -58,24 +58,27 @@ function RowsLeaf({ leaf, parentVal }) {
     recon = <>Σ {r.rows.length} rows = <b className="mono">{fmtK(sum)}</b> — reconciles to {parentVal ? fmtMV(parentVal) : "the value above"}</>;
     reconciles = parentVal ? RTOL(sum, parentVal.value) : null;
   }
-  return (<div className="rows"><div className="rows-stat">{stat}</div><div className="rows-scroll">{body}</div>{recon && <div className={`rows-recon ${reconciles === false ? "bad" : ""}`}><span className="recon-mark">{reconciles === true ? "\u2713" : reconciles === false ? "\u2717" : "\u00b7"}</span> {recon}</div>}<div className="anno">{note}</div></div>);
+  return (<div className="rows" style={{ marginLeft: (depth || 0) * 14 }}><div className="rows-stat">{stat}</div><div className="rows-scroll">{body}</div>{recon && <div className={`rows-recon ${reconciles === false ? "bad" : ""}`}><span className="recon-mark">{reconciles === true ? "\u2713" : reconciles === false ? "\u2717" : "\u00b7"}</span> {recon}</div>}<div className="anno">{note}</div></div>);
 }
+// A provenance row is a FOUR-COLUMN grid: [badge · fixed left] [name · flex, indent INSIDE] [operator ·
+// fixed left] [value · fixed right]. The indent lives inside the name column only (so badge/op/value
+// columns line up at every depth), and the disclosure triangle sits at the indent, inside the name.
 function TraceNode({ node, depth, isFinding }) {
   const kids = node.provenance?.inputs?.length;
   const [open, setOpen] = useState(depth < 2);
   const val = isFinding ? `${node.value.toFixed(0)} pp` : fmtMV(node);
   const ptype = node.epistemic === "proxy" ? "MODELED" : (node.provenance?.inputs || []).some((i) => i.kind === "metric") ? "CALCULATED" : "EXTRACTED";
+  const ind = { paddingLeft: depth * 14 };
   return (
-    <div className="node" style={{ marginLeft: depth ? 12 : 0 }}>
+    <div className="node">
       <div className="node-head" onClick={() => kids && setOpen(!open)} role={kids ? "button" : undefined} tabIndex={kids ? 0 : undefined} onKeyDown={(e) => e.key === "Enter" && setOpen(!open)}>
-        <span className="node-glyph">{kids ? (open ? "▾" : "▸") : "◆"}</span>
         <span className={`ptype ${ptype.toLowerCase()}`}>{ptype}</span>
-        <span className="node-label">{node.label}</span>
-        <span className="node-op">{node.provenance.op}</span>
+        <span className="node-name" style={ind}><span className="node-glyph">{kids ? (open ? "▾" : "▸") : "◆"}</span><span className="node-label">{node.label}</span></span>
+        <span className="node-op">{node.provenance?.op}</span>
         <span className="node-val">{val}</span>
       </div>
-      {open && <div className="node-desc">{node.provenance.description}{node.note ? ` — ${node.note}` : ""}</div>}
-      {open && kids ? <div className="node-kids">{node.provenance.inputs.map((inp, i) => inp.kind === "metric" ? <TraceNode key={i} node={E.store.get(inp.id)} depth={depth + 1} /> : <RowsLeaf key={i} leaf={inp} parentVal={node} />)}</div> : null}
+      {open && <div className="node-desc" style={ind}>{node.provenance?.description}{node.note ? ` — ${node.note}` : ""}</div>}
+      {open && kids ? <div className="node-kids">{node.provenance.inputs.map((inp, i) => inp.kind === "metric" ? <TraceNode key={i} node={E.store.get(inp.id)} depth={depth + 1} /> : <RowsLeaf key={i} leaf={inp} parentVal={node} depth={depth + 1} />)}</div> : null}
     </div>
   );
 }
@@ -188,10 +191,24 @@ function TraceDrawer({ picked, source, onClose }) {
   const arranged = source === "live"
     ? "The model arranged this board — it did not produce these numbers."
     : "No model ran — this is the captured deterministic arrangement, and the engine produced these numbers.";
+  // The header IS the root node: eyebrow (badge) on its own line, heading title beneath with the root
+  // value right-aligned on the title line. The tree then begins at the root's derivation line and its
+  // inputs — no duplicate root row.
+  const rootVal = picked.isFinding ? `${node.value.toFixed(0)} pp` : fmtMV(node);
+  const inputs = node.provenance?.inputs || [];
   return (
     <aside className="drawer">
-      <div className="drawer-bar"><span className={`ptype ${ptype.toLowerCase()}`}>{ptype}</span><span className="drawer-t">{node.label}</span><button className="drawer-x" onClick={onClose}>✕</button></div>
-      <div className="drawer-body"><div className="anno anno-top">Every value decomposes into extracted or calculated values, all the way to the source rows. {arranged}</div><TraceNode node={picked.node} depth={0} isFinding={picked.isFinding} /></div>
+      <div className="drawer-head">
+        <div className="drawer-eyebrow"><span className={`ptype ${ptype.toLowerCase()}`}>{ptype}</span><button className="drawer-x" onClick={onClose}>✕</button></div>
+        <div className="drawer-title-row"><span className="drawer-t">{node.label}</span><span className="drawer-rootval">{rootVal}</span></div>
+      </div>
+      <div className="drawer-body">
+        <div className="anno anno-top">Every value decomposes into extracted or calculated values, all the way to the source rows. {arranged}</div>
+        <div className="ptree">
+          {node.provenance?.description && <div className="node-desc node-desc-root">{node.provenance.description}{node.note ? ` — ${node.note}` : ""}</div>}
+          {inputs.map((inp, i) => inp.kind === "metric" ? <TraceNode key={i} node={E.store.get(inp.id)} depth={0} /> : <RowsLeaf key={i} leaf={inp} parentVal={node} depth={0} />)}
+        </div>
+      </div>
     </aside>
   );
 }
@@ -1193,13 +1210,16 @@ function AppInner() {
   // element that opened the drawer — a board cell/caption/value, or, when opened from a modal, the
   // modal's own element. While the drawer is open a 2px --dye outline is drawn over that element as a
   // fixed overlay box (decoupled from React's className, so it survives re-renders and works on the
-  // board and inside a modal alike). Distinct from the anchor cell's 2px --ink border: if the origin
-  // IS the lede anchor, both mark it — ink border inside, dye outline just outside (they don't clash).
+  // board and inside a modal alike). ONE marker at a time: if the origin IS the lede anchor, its own
+  // 2px --ink border is suppressed (via the .origin-anchor root class) so only the --dye outline shows.
   const originRef = useRef(null);
   const [originBox, setOriginBox] = useState(null);
+  const [originIsAnchor, setOriginIsAnchor] = useState(false);
   const recordOrigin = (e) => { const t = e.target && e.target.closest ? (e.target.closest("button, .ln-pt") || e.target) : null; if (t && t.getBoundingClientRect) originRef.current = t; };
   useLayoutEffect(() => {
-    if (!picked) { setOriginBox(null); return; }
+    if (!picked) { setOriginBox(null); setOriginIsAnchor(false); return; }
+    const el0 = originRef.current;
+    setOriginIsAnchor(!!(el0 && el0.classList && el0.classList.contains("anchor")));
     const measure = () => { const el = originRef.current; if (!el || !el.getBoundingClientRect) return setOriginBox(null); const r = el.getBoundingClientRect(); setOriginBox(r.width && r.height ? { left: r.left, top: r.top, width: r.width, height: r.height } : null); };
     measure();
     window.addEventListener("resize", measure);
@@ -1214,7 +1234,7 @@ function AppInner() {
   const footNote = state.loading ? null : scSet.map((m) => resolveKpi(m)).filter(Boolean).find((r) => r.mv.epistemic === "proxy" && r.mv.note);
 
   return (
-    <div className="caliper has-rail" onClickCapture={recordOrigin}>
+    <div className={`caliper has-rail ${originIsAnchor ? "origin-anchor" : ""}`} onClickCapture={recordOrigin}>
       {originBox && <div className="trace-origin-mark" style={{ left: originBox.left, top: originBox.top, width: originBox.width, height: originBox.height }} />}
 
       {/* full-height left rail — Strata grammar: primary at the top, secondary at the bottom, empty between */}
