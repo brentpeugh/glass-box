@@ -1090,7 +1090,7 @@ function Scorecard({ role, scorecardKeys, onPick }) {
 function QueryModal({ queries, onAsk, onClose, onPick, onRecurate, onAnswerFully, busy }) {
   return (<div className="qmodal-bg" onClick={onClose}>
     <div className="qmodal" onClick={(e) => e.stopPropagation()}>
-      <div className="qmodal-h"><span className="qmodal-t">Interrogate the engine</span><button className="qmodal-x" onClick={onClose}>✕</button></div>
+      <div className="qmodal-h"><span className="qmodal-t">Interrogate the data</span><button className="qmodal-x" onClick={onClose}>✕</button></div>
       <QueryBar onAsk={onAsk} busy={busy} />
       <div className="qmodal-note">Type an analytical interest. The model maps it to a discovered finding and echoes back its reading (with a confidence and salience rank) before re-orienting — or refuses if the data contract doesn't support it. You navigate; the engine governs what's real.</div>
       <div className="qmodal-results">{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={onPick} onRecurate={onRecurate} onAnswerFully={onAnswerFully} />)}</div>
@@ -1224,7 +1224,7 @@ function AppInner() {
         <div className="rail-mark" title="Caliper">⟡</div>
         <div className="rail-grp rail-top">
           {Object.keys(ROLES).map((k) => <button key={k} className={`railbtn lens ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
-          <button className="railbtn" onClick={() => setShowQuery(true)} title="interrogate the engine">Ask engine</button>
+          <button className="railbtn" onClick={() => setShowQuery(true)} title="interrogate the data">Ask data</button>
         </div>
         <div className="rail-grp rail-bottom">
           <div className="rail-menu-wrap">
