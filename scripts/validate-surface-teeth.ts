@@ -64,6 +64,11 @@ const fixtures: Fixture[] = [
     build: () => { const f = curFiles(); f["App.tsx"] = f["App.tsx"].replace('<span className="lede-ground">', '{isModel && <span className="teeth-gate" />}<span className="lede-ground">'); return writeTree(f, "skeleton"); },
   },
   {
+    name: "raw-thesis",
+    note: "current tree with the lede thesis rendered as a raw model string ({curation.thesis}) instead of via <Substitute> — witness for the T4 token-substitution digit closure (no raw model prose reaches the board)",
+    build: () => { const f = curFiles(); f["App.tsx"] = f["App.tsx"].replace("<Substitute template={thesisTemplate} tokens={tokens} onPick={onPick} />", "{curation.thesis}"); return writeTree(f, "rawthesis"); },
+  },
+  {
     name: "plane-ground",
     note: "current tree with the --plane ground channel REVIVED (token re-added + painted on .lede-prose) — witness for the label-only authorship rule, which no other fixture reaches (the pre-register tree had no lede/plane at all, and removing --plane made it unrepresentable except by reviving it)",
     build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace("--field:#edeff0;", "--field:#edeff0; --plane:#e4e7e9;") + "\n.lede-prose.plane{ background:var(--plane); }\n"; return writeTree(f, "planeground"); },

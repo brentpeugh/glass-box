@@ -845,6 +845,10 @@ function Substitute({ template, tokens, onPick }) {
 // the authorship LABEL and the block CONTENTS differ; the ground is --field either way. No block is
 // gated on source; the deterministic path fills the same pair (thesis + why) the model path fills.
 function Lede({ finding, source, curation, role, onPick }) {
+  // falsifiers promoted from the retired read modal: run in place at the foot of the prose column, the
+  // aggregate riding the authorship label. Verdicts are transient — Lede remounts (keyed TemplateBoard)
+  // on role/perturb/finding, resetting them. Hooks run unconditionally; the no-finding guard is below.
+  const [verdicts, setVerdicts] = useState({});
   if (!finding) return null;
   const isModel = source === "live" && curation && curation.thesis;
   const facts = ledeFacts(finding);
@@ -858,12 +862,26 @@ function Lede({ finding, source, curation, role, onPick }) {
   const rawIds = curation && curation.evidenceIds && curation.evidenceIds.length ? curation.evidenceIds : (finding.mvs || []).map((m) => m.id);
   const evIds = [anchorId, ...rawIds.filter((id) => id !== anchorId)].filter(Boolean);
   const evidence = evIds.map((id) => { try { return E.store.get(id); } catch { return null; } }).filter(Boolean).slice(0, 4);
+  // the read's falsifiers (same set the modal showed) — a run replaces the question with its verdict.
+  const tests = ((curation && curation.testIds) || []).map((id) => E.TEST_MENU.find((t) => t.id === id)).filter(Boolean);
+  const runFalsifier = (t) => setVerdicts((v) => ({ ...v, [t.id]: E.runTest({ kind: t.kind, metric: t.metric, dim: t.dims && t.dims[0] }) }));
+  // aggregate = WORST CASE over the tests run: any weakener → WEAKENED; else if any ran → HOLDS; else UNTESTED.
+  const ran = tests.map((t) => verdicts[t.id]).filter(Boolean);
+  const aggregate = ran.length === 0 ? "untested" : ran.some((r) => r.verdict === "uniform") ? "weakened" : "holds";
   return (<div className="lede">
     <div className="lede-prose">
-      <span className="lede-ground">{isModel ? "model-authored" : "deterministic"}</span>
+      <span className="lede-ground">{isModel ? "model-authored" : "deterministic"} · {aggregate}</span>
       <p className="lede-sentence"><Substitute template={thesisTemplate} tokens={tokens} onPick={onPick} /></p>
       <span className="lede-why-lbl">Why it matters for the {role}</span>
       <p className="lede-why"><Substitute template={why} tokens={tokens} onPick={onPick} /></p>
+      {tests.length > 0 && <div className="lede-tests">
+        {tests.map((t) => {
+          const r = verdicts[t.id];
+          return r
+            ? <div key={t.id} className="lede-test ran"><span className={`test-verdict ${r.verdict === "uniform" ? "weakens" : "confirms"}`}>{r.summary}</span></div>
+            : <button key={t.id} className="lede-test test-q" onClick={() => runFalsifier(t)}>{t.label}</button>;
+        })}
+      </div>}
     </div>
     <div className="lede-figures">
       {evidence.map((mv, i) => <EvidenceCard key={i} mv={mv} onPick={onPick} anchor={i === 0} />)}

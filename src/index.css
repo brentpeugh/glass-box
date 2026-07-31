@@ -380,6 +380,13 @@ button.dt-num:hover{ color:var(--dye); }
 .lede-sentence{ font-family:var(--font-sans); font-size:var(--t-5); font-weight:600; line-height:1.24; color:var(--ink); margin:0; }   /* lede — the finding sentence (fills the cell width) */
 .lede-why-lbl{ display:block; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); margin-top:3px; }   /* label — eyebrow */
 .lede-why{ font-family:var(--font-sans); font-size:var(--t-3b); font-weight:400; line-height:1.5; color:var(--ink); margin:0; }   /* prose — why it matters (fills the cell width) */
+/* Stage B (T4): falsifiers at the foot of the prose column — a hairline rule, not an eyebrow (the column
+   already carries two tracked-caps eyebrows). Each question is a clickable proposition (action); running
+   it replaces the question IN PLACE with its verdict, no reflow of the thesis/why above. */
+.lede-tests{ margin-top:8px; padding-top:10px; border-top:var(--w-hair) solid var(--scribe); display:flex; flex-direction:column; }
+.lede-test{ display:block; width:100%; text-align:left; background:none; border:none; padding:6px 0; cursor:pointer; }
+.lede-test.ran{ cursor:default; }
+.lede-tests .test-verdict{ text-align:left; max-width:none; font-size:var(--t-3b); color:var(--ink-2); line-height:1.4; }
 /* dye-scribed figure: route-to-source, not emphasis — inherits the lede size/weight (sans, not the
    brief's pre-2c mono), tabular digits, --dye with a 1px dye underline, clickable to its trace. */
 .dye-scribe{ font:inherit; font-variant-numeric:var(--num); background:none; border:none; padding:0; cursor:pointer; color:var(--dye); text-decoration:underline; text-decoration-color:var(--dye); text-decoration-thickness:1px; text-underline-offset:3px; }

@@ -374,7 +374,13 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
   ];
   const bad: string[] = [];
   for (const rx of patterns) for (const m of jsx.matchAll(rx)) bad.push(m[0].replace(/\s+/g, " ").slice(0, 56));
-  ok("identical skeleton across states — no block gated on authorship (§ invariant)", bad.length === 0, bad.join(" · "));
+  // T4: the falsifier block and its aggregate badge are part of the shared skeleton — present in BOTH
+  // states (a gate on either would already trip the patterns above). Assert they exist so they can't be
+  // silently dropped, and that the aggregate rides the authorship label rather than a state branch.
+  if (!/className="lede-tests"/.test(jsx)) bad.push("falsifier block (.lede-tests) absent from the lede");
+  if (!/className="lede-test test-q"/.test(jsx)) bad.push("falsifier question (.lede-test action) absent");
+  if (!/\{aggregate\}/.test(jsx)) bad.push("aggregate result badge absent from the authorship label");
+  ok("identical skeleton across states — incl. the falsifier block + aggregate badge (§ invariant)", bad.length === 0, bad.join(" · "));
 }
 
 // ── 18 · every route-to-provenance affordance (--dye) resolves to `label` type ────────────────────
@@ -401,6 +407,25 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
     if (fam !== lf || px !== ls || wt !== lw || !caps || !trackOk) bad.push(`${cls} → ${fam} ${px}/${wt}${caps ? "" : " not-caps"}${trackOk ? "" : ` track ${track == null ? "non-em" : track + "em"}`}`);
   }
   ok("every trace affordance (--dye route-to-source) resolves to `label` type", bad.length === 0, bad.join(" · "));
+}
+
+// ── 19 · the lede's model prose reaches the DOM only through <Substitute> (T4 digit closure) ────────
+// The model authors words + {tokens}; the engine owns every figure. If the raw model string were
+// interpolated ({curation.thesis}), a digit could reach the most prominent prose on the board
+// unengineered. The STRUCTURAL guarantee (stronger than the behavioural digit-guard): the lede-sentence
+// and lede-why render via <Substitute> — which emits only engine-owned token values, dye-scribed to
+// their source — and no raw curation.thesis/whyRole is interpolated into the lede. This is what
+// converts "no number reaches the screen unengineered" from behaviour into structure. TEETH (fixture
+// "raw-thesis"): rendering {curation.thesis} raw in .lede-sentence trips it.
+{
+  const jsx = stripAll(appTsx);
+  const bad: string[] = [];
+  const sentence = jsx.match(/<p className="lede-sentence">([\s\S]*?)<\/p>/);
+  const whyP = jsx.match(/<p className="lede-why">([\s\S]*?)<\/p>/);
+  if (!sentence || !/<Substitute\b/.test(sentence[1])) bad.push("lede-sentence not rendered via <Substitute>");
+  if (!whyP || !/<Substitute\b/.test(whyP[1])) bad.push("lede-why not rendered via <Substitute>");
+  if (/\{\s*curation\.(thesis|whyRole)\s*\}/.test(jsx)) bad.push("raw model prose interpolated — curation.thesis/whyRole reaches the DOM unengineered");
+  ok("lede model prose reaches the DOM only through <Substitute> (no raw digit path)", bad.length === 0, bad.join(" · "));
 }
 
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — register surface: ${pass}/${pass + fail} assertions`);
