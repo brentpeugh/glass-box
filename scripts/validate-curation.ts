@@ -144,5 +144,36 @@ await (async () => {
   console.log(`  · report-only: ${chartFormsNotInMenu.length} chart-kind catalog forms absent from CHART_MENU (not a failure): ${chartFormsNotInMenu.join(", ")}`);
 }
 
+// 9 — no deterministic board renders a panel whose domain is ABSENT from the anchor finding's
+//     admissible lenses. fallbackCuration orders admissible widgets finding-domain-first, so the
+//     3-slot cap keeps on-anchor panels (before the fix, WIDGET_DOMAIN declaration order put retention
+//     ahead of a concentration anchor's own lens and the CRO board rendered retention bridges). This is
+//     the semantic floor — the exact order is additionally pinned by the golden match in #4.
+{
+  const buildSpec = (curation: any) => {
+    const isRetention = curation.finding && E.findingNeighborhood(curation.finding).domain === "retention";
+    const lead = isRetention ? ["masking_card"] : ["salient_band"];
+    const ids = [...lead, ...(curation.widgetIds || []).filter((id: string) => !lead.includes(id))];
+    return { sections: [{ heading: "", blocks: ids.map((id: string) => ({ widget: id })) }] };
+  };
+  const offenders: string[] = [];
+  let boards = 0;
+  for (const [label, ds] of [["base", base], ["perturbed", perturbedDataset("improve_cac")]] as [string, any][]) {
+    initEngine(ds);
+    const cat = buildCatalog();
+    for (const role of ["CFO", "CRO"]) {
+      const anchor = roleScopedTopFinding(role);
+      const nb = E.findingNeighborhood(anchor);
+      const lenses = admissibleLenses(nb);
+      const { panels } = composeBoard(buildSpec({ ...fallbackCuration(anchor), finding: anchor }), cat);
+      boards++;
+      for (const p of panels) if (!lenses.includes(WIDGET_DOMAIN[p.widget])) offenders.push(`${label}/${role}(${nb.domain}): ${p.widget}[${WIDGET_DOMAIN[p.widget]}] ∉ [${lenses.join(",")}]`);
+    }
+  }
+  initEngine(base);
+  ok(`no deterministic board panel is off the anchor's admissible lenses (${boards} boards: both states × both roles)`,
+    offenders.length === 0, offenders.join(" | "));
+}
+
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — curation modules: ${pass}/${pass + fail} assertions`);
 if (fail > 0) process.exit(1);

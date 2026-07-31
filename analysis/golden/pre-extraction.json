@@ -602,11 +602,11 @@
               "magic_line",
               "metric_matrix",
               "efficiency_bullets",
-              "accel_line",
-              "segment_stack",
               "scatter_eff_growth",
               "heatmap_metrics",
               "quadrant_eff",
+              "accel_line",
+              "segment_stack",
               "indexed_arr",
               "grouped_growth",
               "small_mult_arr"
@@ -631,11 +631,11 @@
             "magic_line",
             "metric_matrix",
             "efficiency_bullets",
-            "accel_line",
-            "segment_stack",
             "scatter_eff_growth",
             "heatmap_metrics",
             "quadrant_eff",
+            "accel_line",
+            "segment_stack",
             "indexed_arr",
             "grouped_growth",
             "small_mult_arr"
@@ -677,15 +677,15 @@
               "localize_winrate"
             ],
             "widgetIds": [
+              "segment_table",
+              "pareto_arr",
+              "treemap_arr",
+              "lorenz_arr",
               "masking_card",
               "bridge_smb",
               "bridge_enterprise",
               "bridge_blended",
               "hbar_nrr",
-              "segment_table",
-              "pareto_arr",
-              "treemap_arr",
-              "lorenz_arr",
               "dumbbell_ret",
               "heatmap_retention"
             ],
@@ -705,15 +705,15 @@
           },
           "specWidgets": [
             "salient_band",
+            "segment_table",
+            "pareto_arr",
+            "treemap_arr",
+            "lorenz_arr",
             "masking_card",
             "bridge_smb",
             "bridge_enterprise",
             "bridge_blended",
             "hbar_nrr",
-            "segment_table",
-            "pareto_arr",
-            "treemap_arr",
-            "lorenz_arr",
             "dumbbell_ret",
             "heatmap_retention"
           ],
@@ -721,16 +721,16 @@
             "lede": "salient_band",
             "panels": [
               {
-                "widget": "bridge_smb",
-                "kind": "waterfall"
+                "widget": "segment_table",
+                "kind": "table"
               },
               {
-                "widget": "bridge_enterprise",
-                "kind": "waterfall"
+                "widget": "pareto_arr",
+                "kind": "pareto"
               },
               {
-                "widget": "bridge_blended",
-                "kind": "waterfall"
+                "widget": "treemap_arr",
+                "kind": "treemap"
               }
             ]
           }
@@ -1325,15 +1325,15 @@
               "localize_winrate"
             ],
             "widgetIds": [
+              "segment_table",
+              "pareto_arr",
+              "treemap_arr",
+              "lorenz_arr",
               "masking_card",
               "bridge_smb",
               "bridge_enterprise",
               "bridge_blended",
               "hbar_nrr",
-              "segment_table",
-              "pareto_arr",
-              "treemap_arr",
-              "lorenz_arr",
               "dumbbell_ret",
               "heatmap_retention"
             ],
@@ -1353,15 +1353,15 @@
           },
           "specWidgets": [
             "salient_band",
+            "segment_table",
+            "pareto_arr",
+            "treemap_arr",
+            "lorenz_arr",
             "masking_card",
             "bridge_smb",
             "bridge_enterprise",
             "bridge_blended",
             "hbar_nrr",
-            "segment_table",
-            "pareto_arr",
-            "treemap_arr",
-            "lorenz_arr",
             "dumbbell_ret",
             "heatmap_retention"
           ],
@@ -1369,16 +1369,16 @@
             "lede": "salient_band",
             "panels": [
               {
-                "widget": "bridge_smb",
-                "kind": "waterfall"
+                "widget": "segment_table",
+                "kind": "table"
               },
               {
-                "widget": "bridge_enterprise",
-                "kind": "waterfall"
+                "widget": "pareto_arr",
+                "kind": "pareto"
               },
               {
-                "widget": "bridge_blended",
-                "kind": "waterfall"
+                "widget": "treemap_arr",
+                "kind": "treemap"
               }
             ]
           }
@@ -1402,15 +1402,15 @@
               "localize_winrate"
             ],
             "widgetIds": [
+              "segment_table",
+              "pareto_arr",
+              "treemap_arr",
+              "lorenz_arr",
               "masking_card",
               "bridge_smb",
               "bridge_enterprise",
               "bridge_blended",
               "hbar_nrr",
-              "segment_table",
-              "pareto_arr",
-              "treemap_arr",
-              "lorenz_arr",
               "dumbbell_ret",
               "heatmap_retention"
             ],
@@ -1430,15 +1430,15 @@
           },
           "specWidgets": [
             "salient_band",
+            "segment_table",
+            "pareto_arr",
+            "treemap_arr",
+            "lorenz_arr",
             "masking_card",
             "bridge_smb",
             "bridge_enterprise",
             "bridge_blended",
             "hbar_nrr",
-            "segment_table",
-            "pareto_arr",
-            "treemap_arr",
-            "lorenz_arr",
             "dumbbell_ret",
             "heatmap_retention"
           ],
@@ -1446,16 +1446,16 @@
             "lede": "salient_band",
             "panels": [
               {
-                "widget": "bridge_smb",
-                "kind": "waterfall"
+                "widget": "segment_table",
+                "kind": "table"
               },
               {
-                "widget": "bridge_enterprise",
-                "kind": "waterfall"
+                "widget": "pareto_arr",
+                "kind": "pareto"
               },
               {
-                "widget": "bridge_blended",
-                "kind": "waterfall"
+                "widget": "treemap_arr",
+                "kind": "treemap"
               }
             ]
           }

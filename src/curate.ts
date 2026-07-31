@@ -97,7 +97,17 @@ export function ledeFacts(finding: any) {
 }
 export function fallbackCuration(fact) {
   const nb = E.findingNeighborhood(fact);
-  const widgetIds = Object.keys(WIDGET_DOMAIN).filter((id) => admissibleLenses(nb).includes(WIDGET_DOMAIN[id]));
+  // Order admissible widgets by RELEVANCE to the anchor finding's domain: the finding's own domain
+  // first, then the remaining admissible lenses in lens order (stable sort keeps WIDGET_DOMAIN
+  // declaration order within a domain). Without this the widgets sort by WIDGET_DOMAIN declaration
+  // order alone, so a lens declared earlier (retention) precedes the finding's own domain
+  // (concentration) and composeBoard's 3-slot cap renders off-anchor panels — retention bridges under
+  // a concentration finding. Arbitrary declaration order must not decide what a deterministic board shows.
+  const lenses = admissibleLenses(nb);
+  const domainRank = [nb.domain, ...lenses.filter((d) => d !== nb.domain)];
+  const widgetIds = Object.keys(WIDGET_DOMAIN)
+    .filter((id) => lenses.includes(WIDGET_DOMAIN[id]))
+    .sort((a, b) => domainRank.indexOf(WIDGET_DOMAIN[a]) - domainRank.indexOf(WIDGET_DOMAIN[b]));
   const evidenceIds = [...new Set([...(fact.mvs || []).map((m) => m.id), ...nb.metricIds])].slice(0, 6);
   const facts = ledeFacts(fact);
   return {
