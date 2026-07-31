@@ -15,7 +15,6 @@
   --scribe:#ccd0d3; --scribe-strong:#a5abb1;
   --frame-ink:#d8dbdd; --frame-mute:#8b939b;
   --dye:#1f539f; --pos:#2f6b4a; --neg:#9c3a2c;
-  --plane:#e4e7e9;   /* §4: the ground that marks MODEL-AUTHORED prose (a subtle step off --field); never renders on deterministic content */
   --scrim: rgba(21,24,27,.34);                                  /* fallback for engines without color-mix */
   --scrim: color-mix(in srgb, var(--ink) 34%, transparent);    /* both declarations stay in the token block */
   --t-1:10px; --t-2:11px; --t-3:14px; --t-3b:16px; --t-4:20px; --t-5:26px;   /* hero+lede share 26 (differ by weight); --t-6/40 retired — see 2j */
@@ -372,14 +371,15 @@ button.dt-num:hover{ color:var(--dye); }
    (2/3) — the same x as the KPI strip's 4/6 vertical and the partition's right gap-rule, so one
    vertical --scribe rule runs continuously KPI → lede → charts, and the board reads as one plane. */
 .lede{ display:grid; grid-template-columns:2fr 1fr; align-items:stretch; }
-.lede-prose{ padding:10px 16px 12px; display:flex; flex-direction:column; gap:5px; min-width:0; }
-/* the correctness point: --plane iff the prose is model-authored; the ordinary --field iff deterministic */
-.lede-prose.plane{ background:var(--plane); }
-.lede-prose.field{ background:var(--field); }
+/* authorship is marked by the LABEL alone (MODEL-AUTHORED / DETERMINISTIC) — the ground is ALWAYS
+   --field, there is no --plane channel. The prose is the one unbounded cell, so it is the one that
+   scrolls: min-height:0 + overflow-y:auto establish a scroll context (a grid child won't shrink below
+   its content without min-height:0 — that is how a long thesis overflowed the row into the charts). */
+.lede-prose{ padding:10px 16px 12px; display:flex; flex-direction:column; gap:5px; min-width:0; min-height:0; overflow-y:auto; background:var(--field); }
 .lede-ground{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); }   /* label — authorship mark */
-.lede-sentence{ font-family:var(--font-sans); font-size:var(--t-5); font-weight:600; line-height:1.24; color:var(--ink); margin:0; max-width:34ch; }   /* lede — the finding sentence */
+.lede-sentence{ font-family:var(--font-sans); font-size:var(--t-5); font-weight:600; line-height:1.24; color:var(--ink); margin:0; }   /* lede — the finding sentence (fills the cell width) */
 .lede-why-lbl{ display:block; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); margin-top:3px; }   /* label — eyebrow */
-.lede-why{ font-family:var(--font-sans); font-size:var(--t-3b); font-weight:400; line-height:1.5; color:var(--ink); margin:0; max-width:78ch; }   /* prose — why it matters */
+.lede-why{ font-family:var(--font-sans); font-size:var(--t-3b); font-weight:400; line-height:1.5; color:var(--ink); margin:0; }   /* prose — why it matters (fills the cell width) */
 /* dye-scribed figure: route-to-source, not emphasis — inherits the lede size/weight (sans, not the
    brief's pre-2c mono), tabular digits, --dye with a 1px dye underline, clickable to its trace. */
 .dye-scribe{ font:inherit; font-variant-numeric:var(--num); background:none; border:none; padding:0; cursor:pointer; color:var(--dye); text-decoration:underline; text-decoration-color:var(--dye); text-decoration-thickness:1px; text-underline-offset:3px; }

@@ -648,14 +648,15 @@ function Block({ block, catalog, onPick, dim, source }) {
     <Widget id={block.widget} catalog={catalog} onPick={onPick} dim={dim} />
   </div>);
 }
-// ===== Stage D, §6 — the audit selector. Each slot exposes the OTHER forms the model had available
-// for that slot's finding (domain-scoped: same analytical domain as the slot's chosen form, drawn from
-// the SAME offeredWidgets menu the model chose from — never every unselected form globally). The
-// finding's salience (z · rank) is shown ONCE in the header — it's the finding's score, identical for
-// every form of the slot, so it can't discriminate the rows. Each row carries only what DIFFERS: the
-// reason it wasn't chosen, ENGINE-DERIVED (never model-authored — a post-hoc rationale is confabulation,
-// exactly what the guards catch). The reason NAMES the specific overlap: which metrics an alternative
-// re-renders and which already-chosen panel shows them.
+// ===== Stage D, §6 — the audit selector. Each slot exposes the forms the model was OFFERED for this
+// board's finding and did NOT take: offeredWidgets minus what's rendered — the SINGLE SOURCE the
+// offer/admit fix established. It is NOT re-filtered by domain: the model chose across the whole offer,
+// so re-scoping by the chosen form's domain would understate its actual choice (and diverge from the
+// one menu the model saw). The finding's salience (z · rank) is shown ONCE in the header — it's the
+// finding's score, identical for every form, so it can't discriminate the rows. Each row carries only
+// what DIFFERS: the reason it wasn't chosen, ENGINE-DERIVED (never model-authored — a post-hoc
+// rationale is confabulation, exactly what the guards catch). The reason NAMES the specific overlap:
+// which metrics an alternative re-renders and which already-chosen panel shows them.
 // The metrics each form actually renders (used to (a) rank the finding via its primary metric, and
 // (b) compute the specific metric overlap that discriminates the reasons).
 const WIDGET_METRICS = {
@@ -687,7 +688,7 @@ function buildAudit(finding, catalog, panels) {
     const chosen = p.widget, dom = WIDGET_DOMAIN[chosen], cSal = salOf(chosen);
     const others = selected.filter((sid) => sid !== chosen);   // the OTHER panels already on the board
     const alts = offered
-      .filter((id) => WIDGET_DOMAIN[id] === dom && !selectedSet.has(id) && catalog[id] && catalog[id].kind !== "finding_card")
+      .filter((id) => !selectedSet.has(id) && catalog[id] && catalog[id].kind !== "finding_card")
       .map((id) => {
         const aMetrics = WIDGET_METRICS[id] || [], aSal = salOf(id), lbl = (a) => joinList(a.map((m) => METRIC_LABEL[m] || m));
         // the board panel (incl. this slot's own chosen form) that already shows the MOST of this
@@ -703,7 +704,7 @@ function buildAudit(finding, catalog, panels) {
           : `re-renders ${lbl(best.overlap)}, already shown by '${widgetLabel(catalog, best.panel)}'`;
         else if (best) reason = `re-renders ${lbl(best.overlap)} (on '${widgetLabel(catalog, best.panel)}'); adds ${lbl(unshown)}, not otherwise on the board`;
         else if (aSal && cSal && aSal.rank > cSal.rank) reason = `lower salience rank (#${aSal.rank}) than the selected form (#${cSal.rank})`;
-        else { const sd = others.find((sid) => WIDGET_DOMAIN[sid] === dom); reason = sd ? `same domain as '${widgetLabel(catalog, sd)}', already chosen` : "no structural reason — the model preferred this form"; }
+        else { const ad = WIDGET_DOMAIN[id]; const sd = others.find((sid) => WIDGET_DOMAIN[sid] === ad); reason = sd ? `same domain (${ad}) as '${widgetLabel(catalog, sd)}', already chosen` : "no structural reason — the model preferred this form"; }
         return { id, label: widgetLabel(catalog, id), reason };
       });
     return { chosen, chosenLabel: widgetLabel(catalog, chosen), chosenSal: cSal, domain: dom, alts };
@@ -728,7 +729,7 @@ function TbPanel({ slot, swappedId, onSwap, onRevert, catalog, onPick, sourceRow
           <span className="audit-head-l">this slot's finding · {fmtSal(slot.chosenSal)}</span>
           <button className="audit-close" onClick={() => setOpen(false)}>▾ close</button>
         </div>
-        <span className="audit-sub">model chose {slot.chosenLabel} · {slot.alts.length} alternative{slot.alts.length > 1 ? "s" : ""} in {slot.domain} · engine-derived reasons only</span>
+        <span className="audit-sub">model chose {slot.chosenLabel} · {slot.alts.length} form{slot.alts.length > 1 ? "s" : ""} offered and not taken · engine-derived reasons only</span>
       </div>
       {slot.alts.map((a) => (
         <button key={a.id} className={`audit-alt ${activeId === a.id ? "on" : ""}`} onClick={() => { onSwap(a.id); setOpen(false); }}>
@@ -767,10 +768,9 @@ function TemplateBoard({ spec, role, catalog, onPick, finding, source, curation 
     </div>
   </div>);
 }
-// Stage C — the lede. Prose left, evidence figures right. The GROUND is conditional and this is the
-// correctness point: --plane marks model-authored prose; the ordinary --field marks deterministic
-// prose. Inherits the read modal's source→label switch; putting deterministic prose on --plane would
-// be the same class of error as the six surfaces corrected in 2a. The deterministic lede STATES the
+// Stage C — the lede. Prose left, evidence figures right. Authorship is carried by the LABEL ALONE
+// (MODEL-AUTHORED / DETERMINISTIC) — the ground is always --field; the --plane channel was removed so
+// there is no second signal that could disagree with the label. The deterministic lede STATES the
 // finding (value/benchmark/direction/duration, with each figure dye-scribed to its source); the model
 // lede INTERPRETS (numeral-free — its figures live in the evidence column). They differ in kind.
 const NUMWORD = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
@@ -783,7 +783,7 @@ function LedeDeterministic({ facts, onPick }) {
   </>);
 }
 // INVARIANT: identical skeleton in both states. Every block below renders in live AND fallback — only
-// the ground class (--plane/field), the authorship label, and the block CONTENTS differ. No block is
+// the authorship LABEL and the block CONTENTS differ; the ground is --field either way. No block is
 // gated on source; the deterministic path fills the same pair (thesis + why) the model path fills.
 function Lede({ finding, source, curation, role, onPick }) {
   if (!finding) return null;
@@ -796,7 +796,7 @@ function Lede({ finding, source, curation, role, onPick }) {
   const evIds = [anchorId, ...rawIds.filter((id) => id !== anchorId)].filter(Boolean);
   const evidence = evIds.map((id) => { try { return E.store.get(id); } catch { return null; } }).filter(Boolean).slice(0, 4);
   return (<div className="lede">
-    <div className={`lede-prose ${isModel ? "plane" : "field"}`}>
+    <div className="lede-prose">
       <span className="lede-ground">{isModel ? "model-authored" : "deterministic"}</span>
       <p className="lede-sentence">{isModel ? curation.thesis : facts ? <LedeDeterministic facts={facts} onPick={onPick} /> : finding.label}</p>
       <span className="lede-why-lbl">Why it matters for the {role}</span>

@@ -337,37 +337,31 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
   ok("falsifier questions are `action` (not `prose` commentary)", eq(tq, "action"), `test-q → ${tq ? tq.join("/") : "?"}`);
 }
 
-// ── 15 · --plane marks model-authored content, never deterministic (§5, Stage C) ──────────────────
-// The brief's original #5 was "exactly one --plane region" (true when only the read modal used it).
-// The lede is a second region, so relaxing to a count would be the failure this check exists to
-// prevent. Instead: (a) a --plane background lives only on a `.plane` selector, and (b) that class is
-// applied in JSX ONLY by a model-authored predicate, with the deterministic branch getting `field`.
-// Putting deterministic prose on --plane is the same class of error as the six surfaces fixed in 2a.
-// TEETH: an unconditional `className="lede-prose plane"`, or plane in the deterministic branch, trips.
+// ── 15 · authorship is marked by the LABEL alone — no ground channel (§5, Stage C) ────────────────
+// The lede once used a --plane ground to mark model-authored prose; that channel was REMOVED. Authorship
+// is now carried by the MODEL-AUTHORED / DETERMINISTIC label and nothing else. STRONGER than the old
+// "--plane never on deterministic content": with no second ground, the earlier failure mode (a ground
+// that disagrees with the label) is UNREPRESENTABLE. The check: (a) the --plane channel is gone (no
+// token, no reference); (b) no .lede-prose rule paints a ground but --field; (c) no authorship-gated
+// ground class in the JSX. TEETH (fixture "plane-ground"): reviving a --plane ground trips it.
 {
   const bad: string[] = [];
-  // (a) CSS: --plane background only on a `.plane` selector
+  // (a) the --plane channel is removed entirely (block comments are stripped, so a mention there is fine)
+  if (/--plane\b/.test(stripBlock(css))) bad.push("--plane still present (authorship ground channel not removed)");
+  // (b) the lede ground is always --field — no .lede-prose rule paints another ground token
   for (const r of rules) {
     if (r === tokenBlock) continue;
-    if (/background(?:-color)?:\s*var\(--plane\)/.test(r.body) && !/\.plane\b/.test(r.prelude)) bad.push(`css ${r.prelude} paints --plane`);
+    if (/\.lede-prose\b/.test(r.prelude)) { const m = r.body.match(/background(?:-color)?:\s*var\(--([\w-]+)\)/); if (m && m[1] !== "field") bad.push(`${r.prelude} paints --${m[1]} (lede ground must stay --field)`); }
   }
-  // (b) JSX: every className mentioning the `plane` class is a model-gated ternary (plane=true, field=false)
-  const jsx = stripAll(appTsx);
-  const modelPred = /\bisModel\b|\bisLive\b|\bauthored\b|source\s*===?\s*["'`]live["'`]/;
-  const sites = [...jsx.matchAll(/className=(\{`[^`]*`\}|"[^"]*"|'[^']*')/g)].map((m) => m[1]).filter((s) => /\bplane\b/.test(s));
-  if (sites.length === 0) bad.push("no --plane region renders (the lede ground is missing)");
-  for (const s of sites) {
-    const t = s.replace(/\s+/g, " ");
-    const m = t.match(/([^?{}]*)\?([^:]*):([^}]*)/);   // cond ? trueBranch : falseBranch
-    const good = m && modelPred.test(m[1]) && /\bplane\b/.test(m[2]) && /\bfield\b/.test(m[3]);
-    if (!good) bad.push(`jsx unconditional/mis-gated --plane: ${t.slice(0, 70)}`);
-  }
-  ok("--plane marks model-authored content wherever it renders, never deterministic (§5)", bad.length === 0, bad.join(" · "));
+  // (c) JSX: no authorship-gated ground class on the lede (a `plane` ground class is the revived channel)
+  const groundClass = [...stripAll(appTsx).matchAll(/className=(\{`[^`]*`\}|"[^"]*"|'[^']*')/g)].map((m) => m[1]).filter((s) => /\bplane\b/.test(s));
+  if (groundClass.length) bad.push(`jsx authorship ground class: ${groundClass[0].replace(/\s+/g, " ").slice(0, 60)}`);
+  ok("authorship is marked by the label alone — lede ground always --field, no --plane channel (§5)", bad.length === 0, bad.join(" · "));
 }
 
 // ── 17 · identical skeleton across states — no block is gated on authorship (§ invariant) ──────────
 // Live and fallback hold the same blocks, in the same positions, at the same sizes; only the content
-// and the --plane/field authorship marking differ. A block that renders in one state and not the other
+// and the authorship LABEL differ (the ground is --field either way). A block that renders in one state and not the other
 // (a state-gated `&&`, or a `? <block> : null`) is the violation: if a deterministic path can't fill a
 // block the model fills, that's a gap to close, not a reason to hide the block. TEETH: any
 // `{isModel && <…/>}` or `{isModel ? <…/> : null}` trips.
