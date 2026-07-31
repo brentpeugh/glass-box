@@ -101,7 +101,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
   const ACCENT_OK = new Set([
     // interactive source-routes
     "node-glyph", "proxy", "chart-title", "chart-trace",
-    "dt-num", "mx-cell", "kcell-v", "ev-trace", "test-run", "trust-link", "bridge-trace", "chip", "recur-rank",
+    "dt-num", "mx-cell", "kcell-v", "ev-trace", "test-run", "bridge-trace", "chip", "recur-rank",
     "recur", "pb-reset", "dbg-cap", "asked", "asked-h", "disclose", "foot-src", "foot-trace", "dye-scribe", "lede-figures", "audit-toggle", "trace-origin-mark",
     // structural accent that frames the traceable field
     "hdr", "sec-n", "card", "role", "frame-tick", "brief-head", "dbg-h",
@@ -216,7 +216,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
 {
   const INK: Record<string, string[]> = {
     "brief-head": ["brief-tag", "brief-x", "brief-src.live", "brief-src.fallback", "brief-status.untested", "brief-status.holds", "brief-status.weakened"],
-    "hdr": ["hdr-mark", "hdr-sub", "hdr-r", "hdr-status", "lensbtn", "recur", "trust-link", "disclose"],
+    "hdr": ["hdr-mark", "hdr-sub", "hdr-r", "hdr-status", "lensbtn", "disclose"],
     "dbg-h": ["dbg-title", "dbg-meta", "dbg-close"],
     "rail": ["rail-mark", "railbtn"],
   };  // .rail-foot is a --field surface (Tuning 1a), not an ink container — its text is ink/ink-2

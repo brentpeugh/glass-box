@@ -167,7 +167,7 @@ function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
     </div>
   );
 }
-function TrustPanel({ audit, debug, onClose }) {
+function TrustPanel({ audit, debug, proxy, onClose }) {
   return (<div className="brief">
     <div className="brief-head"><span className="brief-tag">TRUST CONTRACT</span><span className="brief-src fallback">the boundary, made explicit</span><button className="brief-x" onClick={onClose}>✕</button></div>
     <div className="brief-sec">
@@ -183,6 +183,7 @@ function TrustPanel({ audit, debug, onClose }) {
       <div className="tc-contract">
         <div className="tc-line"><span className="tc-yes">ANSWERABLE</span><span>retention (NRR/GRR/churn) · unit economics (CAC/magic/Rule of 40/margin) · growth (ARR/net-new) · concentration (segment mix) — broken down by segment, quarter, cohort</span></div>
         <div className="tc-line"><span className="tc-no">REFUSED</span><span>geography/region · product line · individual reps · marketing channel · headcount — not in the data contract, so the system declines rather than fabricates</span></div>
+        {proxy && <div className="tc-line"><span className="tc-proxy">PROXY</span><span><b>{proxy.label}</b> — {proxy.formula}; {proxy.caveat}, so operating margin is approximated, not measured</span></div>}
       </div>
     </div>
     <div className="brief-sec">
@@ -1268,6 +1269,10 @@ function AppInner() {
   // scorecard set the Scorecard renders, and pull the one proxy metric's disclosure note.
   const scSet = (state.curation && state.curation.scorecardKeys && state.curation.scorecardKeys.length) ? state.curation.scorecardKeys : (KPI_SET[role] || KPI_SET.CFO);
   const footNote = state.loading ? null : scSet.map((m) => resolveKpi(m)).filter(Boolean).find((r) => r.mv.epistemic === "proxy" && r.mv.note);
+  // The proxy note splits: the CAVEAT (why it's a proxy) stays in the footer; the FORMULA moves into the
+  // Trust panel's data-contract section, where a proxy's construction belongs. mv.note is "<formula>;
+  // <caveat>" — split on the ";" (engine string is not touched; this is a presentation split).
+  const proxy = footNote ? (() => { const [formula, caveat] = footNote.mv.note.split(";").map((s) => s.trim().replace(/\.$/, "")); return { label: footNote.mv.label, formula, caveat }; })() : null;
 
   return (
     <div className={`caliper has-rail ${originIsAnchor ? "origin-anchor" : ""}`} onClickCapture={recordOrigin}>
@@ -1279,10 +1284,11 @@ function AppInner() {
       <nav className="rail">
         <div className="rail-mark" title="Caliper">⟡</div>
         {/* Top = the view parameter (which role's board). Bottom = ACTIONS on the current board, in an
-            escalating order — read the model's conclusion, interrogate it, change the data underneath and
-            watch it re-derive, then re-run the arrangement; each is a larger claim than the one before.
-            MORE is gone: re-curate is an action, the curation log folded into the Trust panel, and the
-            trust contract is reached from the footer claim. */}
+            escalating order — read the model's conclusion, interrogate it, then change the data underneath
+            and watch it re-derive; each is a larger claim than the one before. (Re-curate was removed: at
+            5 runs/role it showed no panel variation, and the alternatives selector now carries that
+            demonstration. The curation log folded into the Trust panel; the contract is reached from the
+            footer claim.) */}
         <div className="rail-grp rail-top">
           {Object.keys(ROLES).map((k) => <button key={k} className={`railbtn lens ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
         </div>
@@ -1290,7 +1296,6 @@ function AppInner() {
           <button className="railbtn brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">Model read</button>
           <button className="railbtn" onClick={() => setShowQuery(true)} title="ask your data">Ask data</button>
           <button className={`railbtn ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">Shift data</button>
-          <button className="railbtn" onClick={() => { delete cache.current[role]; enter(role); }} title="re-curate — re-run the model's arrangement">Re-curate</button>
         </div>
       </nav>
 
@@ -1320,13 +1325,13 @@ function AppInner() {
           </span>
           <span className="foot-trace">▸ the contract</span>
         </button>
-        {footNote && <div className="foot-note"><sup className="proxy">a</sup> {footNote.mv.label} — {footNote.mv.note}</div>}
+        {proxy && <button className="foot-note" onClick={() => setShowTrust(true)} title="the trust contract — how this proxy is constructed"><sup className="proxy">a</sup> {proxy.label} is a proxy — {proxy.caveat}</button>}
       </footer>
 
       {/* §4: the read is a WORKSPACE, but when it is the drawer's ORIGIN it must stay open and shift
           aside so the origin (its own evidence cell) stays on screen — it must not collapse. */}
       {showBrief && <div className={`brief-overlay ${picked ? "aside" : ""}`}><AnalystRead role={role} catalog={catalog} curation={state.curation} onPick={(p) => setPicked(p)} onClose={() => setShowBrief(false)} /></div>}
-      {showTrust && <div className="brief-overlay"><TrustPanel audit={audit.current} debug={state.debug} onClose={() => setShowTrust(false)} /></div>}
+      {showTrust && <div className="brief-overlay"><TrustPanel audit={audit.current} debug={state.debug} proxy={proxy} onClose={() => setShowTrust(false)} /></div>}
 
       {showQuery && <QueryModal aside={!!picked} queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => setPicked(p)} onRecurate={recurate} onAnswerFully={answerFully} busy={queries.some((q) => q.status === "loading")} />}
     </div>

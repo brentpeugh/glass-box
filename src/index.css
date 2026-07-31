@@ -340,7 +340,8 @@ button.dt-num:hover{ color:var(--dye); }
 .foot-trace{ flex:0 0 auto; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--dye); white-space:nowrap; }   /* label — trace affordance, same form as ▸ trace; routes to the contract */
 .foot-status:hover .foot-trace{ color:var(--ink); }
 .foot-status b{ color:var(--ink); font-weight:700; }
-.foot-note{ flex:0 1 auto; min-width:0; max-width:44%; font-family:var(--font-mono); font-size:var(--t-1); line-height:1.25; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }   /* note */
+.foot-note{ flex:0 1 auto; min-width:0; max-width:44%; background:none; border:none; padding:0; text-align:left; cursor:pointer; font-family:var(--font-mono); font-size:var(--t-1); line-height:1.25; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }   /* note — routes to the contract (the proxy marker is the dye affordance) */
+.foot-note:hover{ color:var(--ink); }
 .stage{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:12px; padding:12px var(--pad) 52px; max-width:none; margin:0; overflow:hidden; }
 .scorecard{ flex:0 0 auto; margin:0; }
 /* board fills remaining height; chart rows flex, table row sizes to content */
@@ -669,9 +670,7 @@ body.modal-open{ overflow:hidden; }
 .both-hd{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
 .both-lbl{ font-family:var(--font-sans); font-weight:600; font-size:var(--t-2); letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); }   /* title */
 
-/* status strip link + trust panel */
-.trust-link{ background:none; border:none; color:var(--dye); font-family:var(--font-sans); font-size:inherit; cursor:pointer; padding:0; border-bottom:1px dotted var(--dye); }
-.trust-link:hover{ color:var(--ink); }
+/* trust panel */
 .tc-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
 .tc-col{ border:1px solid var(--scribe); background:var(--field); padding:12px; }
 .tc-h{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:600; letter-spacing:.10em; text-transform:uppercase; padding-bottom:8px; margin-bottom:8px; border-bottom:1px solid var(--scribe); }   /* title */
@@ -685,6 +684,8 @@ body.modal-open{ overflow:hidden; }
 .tc-yes{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }   /* label */
 /* §4: contract "refused" label is a status, not a variance — neutral hairline tag; the word carries it. */
 .tc-no{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }   /* label */
+/* a modeled proxy is a construction caveat — neutral hairline tag, same treatment as its answerable/refused siblings; the word carries it. */
+.tc-proxy{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }   /* label */
 .tc-audit{ border:1px solid var(--scribe); max-height:220px; overflow-y:auto; }
 .tc-row{ display:flex; gap:12px; align-items:baseline; padding:8px 12px; border-bottom:1px solid var(--scribe); font-size:14px; }
 .tc-row:last-child{ border-bottom:none; }
@@ -731,13 +732,6 @@ body.modal-open{ overflow:hidden; }
 .hdr .lensbtn{ color:var(--frame-mute); border:1px solid var(--frame-mute); background:transparent; font-family:'IBM Plex Sans',sans-serif; font-weight:600; letter-spacing:.10em; font-size:11px; padding:4px 12px; border-radius:0; cursor:pointer; }
 .hdr .lensbtn.on{ color:var(--ink); background:var(--frame-ink); border-color:var(--frame-ink); }
 .hdr .lensbtn:hover:not(.on){ color:var(--frame-ink); border-color:var(--frame-mute); }
-.hdr .recur{ color:var(--frame-ink); border:1px solid var(--frame-mute); background:transparent; border-radius:0; }
-.hdr .recur:hover{ color:var(--frame-ink); border-color:var(--frame-mute); }
-.hdr .recur.on{ background:var(--dye); color:var(--ink); border-color:var(--dye); }
-.hdr .trust-link{ color:var(--dye); background:none; border:none; cursor:pointer; font-family:var(--font-sans); font-size:11px; }
-.hdr .disclose{ color:var(--dye); font-style:normal; }
-.hdr-status b{ color:var(--frame-ink); }
-.hdr .live-dot{ background:var(--frame-mute); }
 
 .cx-axlab{ font-family:var(--font-sans); font-size:10px; font-weight:400; fill:var(--ink-2); letter-spacing:.10em; text-transform:uppercase; }   /* scaffold */
 /* ===== modals ===== */
