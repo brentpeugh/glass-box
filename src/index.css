@@ -587,17 +587,8 @@ body.modal-open{ overflow:hidden; }
 .brief-head{ position:sticky; top:0; z-index:1; }   /* head holds while the body scrolls */
 .brief-head{ display:flex; align-items:center; gap:12px; padding:14px 22px; border-bottom:2px solid var(--ink); }
 .brief-tag{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); border:1px solid var(--scribe); padding:3px 8px; }   /* label */
-.brief-status{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; padding:3px 9px; }   /* label */
-/* §4: the read's status is neither a chart mark nor a variance — no colour. It's a neutral hairline
-   tag; the caps word (UNTESTED/HOLDS/WEAKENED) carries the state. untested = the null state, ink-2. */
-.brief-status.untested{ color:var(--ink-2); border:1px solid var(--scribe); }
-.brief-status.holds{ color:var(--ink); border:1px solid var(--scribe); background:transparent; }
-.brief-status.weakened{ color:var(--ink); border:1px solid var(--scribe); background:transparent; }
 .brief-x{ margin-left:auto; background:none; border:none; cursor:pointer; color:var(--ink-2); font-size:14px; }
-.brief-thesis{ font-family:var(--font-sans); font-weight:600; font-size:var(--t-5); line-height:1.42; color:var(--ink); padding:20px 22px 14px; }   /* lede — the read's headline sentence */
-.brief-why{ padding:0 22px 18px; font-family:var(--font-sans); font-size:var(--t-3b); line-height:1.55; color:var(--ink); }
 .brief-lbl{ display:block; font-family:var(--font-sans); font-size:var(--t-2); font-weight:600; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); margin-bottom:9px; }   /* title — section caption */
-.brief-why .brief-lbl{ margin-bottom:5px; }
 .brief-sec{ padding:16px 22px; border-top:1px solid var(--scribe); }
 .brief-ev{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
 .ev-card{ text-align:left; min-width:0; background:var(--field); border:1px solid var(--scribe); padding:12px; cursor:pointer; transition:border-color .12s; }
@@ -607,29 +598,16 @@ body.modal-open{ overflow:hidden; }
 .ev-lbl{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); }   /* label — orientation, tracked caps */
 .ev-note{ font-size:14px; line-height:1.45; color:var(--ink); }
 .ev-trace{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--dye); margin-top:8px; }   /* label — trace affordance */
-.brief-tests{ display:flex; flex-direction:column; gap:8px; }
-.test-row{ display:flex; align-items:center; gap:12px; padding:11px 13px; background:var(--field); border:1px solid var(--scribe); }
-.test-row.ran{ border-color:var(--scribe-strong); }
-.test-q{ flex:1; font-family:var(--font-sans); font-weight:600; font-size:var(--t-3b); color:var(--ink); }   /* action — a clickable proposition */
+.test-q{ font-family:var(--font-sans); font-weight:600; font-size:var(--t-3b); color:var(--ink); }   /* action — a clickable proposition (lede falsifier) */
 .test-run{ font-family:var(--font-sans); font-size:11px; font-weight:400; color:var(--dye); background:none; border:1px solid var(--dye); padding:5px 11px; cursor:pointer; white-space:nowrap; }
 .test-run:hover{ background:transparent; }
 .test-verdict{ font-family:var(--font-sans); font-size:11px; max-width:56%; text-align:right; }
 /* §4: the verdict summary is prose — the sentence states confirms/weakens; ink-2, no hue. */
 .test-verdict.confirms,.test-verdict.weakens{ color:var(--ink-2); }
-.brief-foot{ padding:14px 22px; font-size:14px; line-height:1.5; border-top:2px solid var(--ink); }
-/* §4: the footer is a full prose sentence stating the outcome — ink, no hue; the 2px ink rule frames it. */
-.brief-foot.holds,.brief-foot.weakened{ color:var(--ink); background:transparent; }
-.brief-empty{ padding:40px; text-align:center; color:var(--ink-2); }
-.brief-btn{ font-weight:400; }
 
-/* curation contract: source badge, loading, violations */
+/* trust panel source badge — a neutral hairline tag ("the boundary, made explicit") */
 .brief-src{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; padding:3px 8px; }   /* label */
-/* §4: live vs fallback read is a status — the ◈/○ glyph + "model-authored"/"deterministic" wording
-   carries it, not a green tag. Neutral hairline tags; live in full ink, fallback muted. */
-.brief-src.live{ color:var(--ink); border:1px solid var(--scribe); background:transparent; }
 .brief-src.fallback{ color:var(--ink-2); border:1px solid var(--scribe); }
-.brief-load{ padding:44px 30px; text-align:center; color:var(--ink); font-size:14px; line-height:1.5; }
-.brief-viol{ padding:9px 22px; font-family:var(--font-mono); font-size:var(--t-1); color:var(--ink-2); border-top:1px solid var(--scribe); background:var(--field); }   /* note */
 .ev-top{ flex-wrap:wrap; }
 .ev-lbl{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
 
@@ -725,18 +703,13 @@ body.modal-open{ overflow:hidden; }
 /* ===== modals ===== */
 .brief{ border:1px solid var(--scribe); border-radius:0; }
 .brief-head{ background:var(--ink); border-bottom:2px solid var(--dye); padding:12px 22px; color:var(--frame-ink); }
+/* §4 fix: type on the ink head is frame-ink (prominent) / frame-mute (recessive) — never --ink/--ink-2,
+   which is invisible on the ink ground. */
 .brief-head .brief-tag{ color:var(--frame-mute); border-color:var(--frame-mute); }
-.brief-head .brief-status.untested{ color:var(--frame-mute); border-color:var(--frame-mute); }
-/* §4 fix: type on the ink head is frame-ink (prominent) / frame-mute (recessive) — the Stage-4
-   valence sweep set these foregrounds to --ink/--ink-2, invisible on the ink ground. */
-.brief-head .brief-status.holds, .brief-head .brief-status.weakened{ color:var(--frame-ink); border-color:var(--frame-mute); }
-.brief-head .brief-src.live{ color:var(--frame-ink); border-color:var(--frame-mute); }
 .brief-head .brief-src.fallback{ color:var(--frame-mute); border-color:var(--frame-mute); }
 .brief-x{ color:var(--frame-mute); }
 .brief-x:hover{ color:var(--frame-ink); }
-/* §2b: serif retired — .brief-thesis is sans 600 (its base rule); .brief-why inherits sans (prose). */
 .tc-col{ background:var(--field); border:1px solid var(--scribe); border-radius:0; }
-.brief-viol{ background:var(--field); }
 /* curation log as a centered modal card */
 .brief-overlay .dbg{ max-width:920px; width:100%; max-height:90vh; overflow-y:auto; background:var(--field); border:1px solid var(--scribe); border-radius:0; box-shadow:none; font-family:var(--font-sans); }
 .dbg-h{ background:var(--ink); color:var(--frame-ink); border-bottom:2px solid var(--dye); padding:12px 22px; letter-spacing:.08em; }

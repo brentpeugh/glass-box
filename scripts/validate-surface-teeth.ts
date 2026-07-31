@@ -55,8 +55,8 @@ const fixtures: Fixture[] = [
   },
   {
     name: "plane-fix-stripped",
-    note: "current tree with the brief-head ink-ground fix removed — witness for the ink-ground rule, which the pre-register tree can't trip (it never put --ink/--ink-2 on an ink ground)",
-    build: () => { const f = curFiles(); f["index.css"] = f["index.css"].split("\n").filter((l) => !/\.brief-head \.brief-(status\.(holds|weakened)|src\.(live|fallback))/.test(l)).join("\n"); return writeTree(f, "planefix"); },
+    note: "current tree with the brief-head ink-ground fix removed (the .brief-head .brief-src.fallback override the Trust panel relies on) — witness for the ink-ground rule, which the pre-register tree can't trip (it never put --ink/--ink-2 on an ink ground)",
+    build: () => { const f = curFiles(); f["index.css"] = f["index.css"].split("\n").filter((l) => !/\.brief-head \.brief-src\.fallback/.test(l)).join("\n"); return writeTree(f, "planefix"); },
   },
   {
     name: "skeleton-gated",

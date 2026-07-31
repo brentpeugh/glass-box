@@ -215,7 +215,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
 // .brief-status.holds/.weakened on the ink .brief-head before their dark-head overrides are added.
 {
   const INK: Record<string, string[]> = {
-    "brief-head": ["brief-tag", "brief-x", "brief-src.live", "brief-src.fallback", "brief-status.untested", "brief-status.holds", "brief-status.weakened"],
+    "brief-head": ["brief-tag", "brief-x", "brief-src.fallback"],
     "dbg-h": ["dbg-title", "dbg-meta", "dbg-close"],
     "rail": ["rail-mark", "railbtn"],
   };  // .rail-foot is a --field surface (Tuning 1a), not an ink container — its text is ink/ink-2

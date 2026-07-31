@@ -107,66 +107,6 @@ function EvidenceCard({ mv, onPick, anchor }) {
     </button>
   );
 }
-// ===== Analyst Read: the investigation layer. A thesis (model-authored prose, numeral-free),
-// an evidence chain (engine values, each traceable), and falsification tests (from the engine's
-// bounded menu). The user runs a test; the engine computes a verdict; the thesis holds or weakens.
-// Model proposes the investigation — engine proves, weakens, or redirects it. =====
-function AnalystRead({ role, catalog, curation: shared, onPick, onClose }) {
-  const [read, setRead] = useState(shared || null);
-  const [loading, setLoading] = useState(!shared);
-  const [verdicts, setVerdicts] = useState({});
-  useEffect(() => {
-    if (shared) { setRead(shared); setLoading(false); setVerdicts({}); return; }
-    let live = true; setLoading(true); setVerdicts({});
-    curate({ role }, catalog).then((r) => { if (live) { setRead(r); setLoading(false); } });
-    return () => { live = false; };
-  }, [role, catalog, shared]);
-  if (loading) return <div className="brief"><div className="brief-load">Forming the read for the {role} — the model is selecting evidence and tests from the engine's menu…</div></div>;
-  if (!read) return <div className="brief"><div className="brief-empty">No masking finding in the current data — nothing to investigate.</div></div>;
-  const evidence = read.evidenceIds.map((id) => E.store.get(id)).filter(Boolean);
-  const tests = read.testIds.map((id) => E.TEST_MENU.find((t) => t.id === id)).filter(Boolean);
-  const run = (t) => { const r = E.runTest({ kind: t.kind, metric: t.metric, dim: t.dims && t.dims[0] }); setVerdicts((v) => ({ ...v, [t.id]: r })); };
-  const ran = Object.values(verdicts);
-  const status = ran.length === 0 ? "untested" : ran.some((r) => r.verdict === "uniform") ? "weakened" : "holds";
-  const statusLabel = { untested: "UNTESTED", holds: "HOLDS", weakened: "WEAKENED" }[status];
-  return (
-    <div className="brief">
-      <div className="brief-head">
-        <span className="brief-tag">ANALYST READ</span>
-        <span className={`brief-src ${read.source}`}>{read.source === "live" ? "◈ model-authored" : "○ deterministic read"}</span>
-        <span className={`brief-status ${status}`}>{statusLabel}</span>
-        <button className="brief-x" onClick={onClose}>✕</button>
-      </div>
-      <div className="brief-thesis">{read.thesis}</div>
-      <div className="brief-why"><span className="brief-lbl">Why it matters for the {role}</span>{read.whyRole}</div>
-      <div className="brief-sec">
-        <div className="brief-lbl">Evidence — {read.source === "live" ? "model-selected" : "deterministic selection"}, engine-computed, every value traceable</div>
-        <div className="brief-ev">
-          {evidence.map((mv, i) => <EvidenceCard key={i} mv={mv} onPick={onPick} />)}
-        </div>
-      </div>
-      <div className="brief-sec">
-        <div className="brief-lbl">What would change this read — {read.source === "live" ? "model-proposed" : "deterministic"}, engine-run</div>
-        <div className="brief-tests">
-          {tests.map((t) => {
-            const r = verdicts[t.id];
-            return (
-              <div key={t.id} className={`test-row ${r ? "ran" : ""}`}>
-                <div className="test-q">{t.label}</div>
-                {r ? <div className={`test-verdict ${r.verdict === "uniform" ? "weakens" : "confirms"}`}>{r.summary}</div>
-                  : <button className="test-run" onClick={() => run(t)}>run test ▸</button>}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      {ran.length > 0 && <div className={`brief-foot ${status}`}>
-        {status === "holds" ? "The tests run so far confirm the read — the weakness is real and localized, not a uniform artifact." : "A test came back uniform — the localized-risk read weakens. The engine redirected the thesis."}
-      </div>}
-      {read.violations && read.violations.length > 0 && <div className="brief-viol">Contract: {read.violations.join(" · ")}</div>}
-    </div>
-  );
-}
 function TrustPanel({ audit, debug, proxy, onClose }) {
   return (<div className="brief">
     <div className="brief-head"><span className="brief-tag">TRUST CONTRACT</span><span className="brief-src fallback">the boundary, made explicit</span><button className="brief-x" onClick={onClose}>✕</button></div>
@@ -1158,7 +1098,6 @@ function AppInner() {
   const [queries, setQueries] = useState([]);
   const cache = React.useRef({});
   const [showQuery, setShowQuery] = useState(false);
-  const [showBrief, setShowBrief] = useState(false);
   const [showTrust, setShowTrust] = useState(false);
   const audit = React.useRef([]);
   const [auditN, setAuditN] = useState(0);
@@ -1252,7 +1191,7 @@ function AppInner() {
 
   // §1d: lock body scroll while any modal is open (read/query/trust/debug/trace); each modal scrolls
   // in its own body. Restores on close.
-  const modalOpen = showBrief || showQuery || showTrust || showDebug || !!picked;
+  const modalOpen = showQuery || showTrust || showDebug || !!picked;
   useEffect(() => {
     document.body.classList.toggle("modal-open", modalOpen);
     return () => document.body.classList.remove("modal-open");
@@ -1267,7 +1206,7 @@ function AppInner() {
   // own appearance (the modal is already open — no transition — when that drawer's `picked` is set), and
   // only closes when the modal itself later goes away. Given the opens-case, any drawer alive alongside a
   // modal necessarily has its origin inside that modal, so the closes-case has nothing else to catch.
-  const anyModal = showBrief || showQuery || showTrust || showDebug;
+  const anyModal = showQuery || showTrust || showDebug;
   const prevAnyModal = React.useRef(false);
   useEffect(() => {
     if (anyModal !== prevAnyModal.current && picked) setPicked(null);
@@ -1292,7 +1231,7 @@ function AppInner() {
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [picked, showBrief, showQuery]);
+  }, [picked, showQuery]);
 
   if (!role) return (<div className="caliper"><EntryScreen onEnter={enter} /></div>);
 
@@ -1308,7 +1247,7 @@ function AppInner() {
   return (
     <div className={`caliper has-rail ${originIsAnchor ? "origin-anchor" : ""}`} onClickCapture={recordOrigin}>
       {/* one scrim at the app root — only while a MODAL is open (a board-origin drawer keeps the board lit) */}
-      {(showBrief || showQuery || showTrust || showDebug) && <div className="scrim" />}
+      {(showQuery || showTrust || showDebug) && <div className="scrim" />}
       {originBox && <div className="trace-origin-mark" style={{ left: originBox.left, top: originBox.top, width: originBox.width, height: originBox.height }} />}
 
       {/* full-height left rail — Strata grammar: primary at the top, secondary at the bottom, empty between */}
@@ -1324,7 +1263,6 @@ function AppInner() {
           {Object.keys(ROLES).map((k) => <button key={k} className={`railbtn lens ${k === role ? "on" : ""}`} onClick={() => enter(k)}>{k}</button>)}
         </div>
         <div className="rail-grp rail-bottom">
-          <button className="railbtn brief-btn" onClick={() => setShowBrief(true)} title="analyst read — the investigation">Model read</button>
           <button className="railbtn" onClick={() => setShowQuery(true)} title="ask your data">Ask data</button>
           <button className={`railbtn ${perturbation ? "on" : ""}`} onClick={() => perturbation ? resetPerturbation() : applyPerturbation("improve_cac")} title="perturb the data — watch the finding re-derive">Shift data</button>
         </div>
@@ -1339,7 +1277,7 @@ function AppInner() {
           <main className="stage">
             {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard key={`${role}|${perturbation}|${(state.curation && state.curation.finding && state.curation.finding.label) || ""}`} spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} curation={state.curation} /></>}
           </main>
-          <TraceDrawer picked={picked} source={state.source} floating={showBrief || showQuery || showTrust || showDebug} onClose={() => setPicked(null)} />
+          <TraceDrawer picked={picked} source={state.source} floating={showQuery || showTrust || showDebug} onClose={() => setPicked(null)} />
         </div>
       </div>
 
@@ -1359,9 +1297,6 @@ function AppInner() {
         {proxy && <button className="foot-note" onClick={() => setShowTrust(true)} title="the trust contract — how this proxy is constructed"><sup className="proxy">a</sup> {proxy.label} is a proxy — {proxy.caveat}</button>}
       </footer>
 
-      {/* §4: the read is a WORKSPACE, but when it is the drawer's ORIGIN it must stay open and shift
-          aside so the origin (its own evidence cell) stays on screen — it must not collapse. */}
-      {showBrief && <div className={`brief-overlay ${picked ? "aside" : ""}`}><AnalystRead role={role} catalog={catalog} curation={state.curation} onPick={(p) => setPicked(p)} onClose={() => setShowBrief(false)} /></div>}
       {showTrust && <div className="brief-overlay"><TrustPanel audit={audit.current} debug={state.debug} proxy={proxy} onClose={() => setShowTrust(false)} /></div>}
 
       {showQuery && <QueryModal aside={!!picked} queries={queries} onAsk={handleQuery} onClose={() => setShowQuery(false)} onPick={(p) => setPicked(p)} onRecurate={recurate} onAnswerFully={answerFully} busy={queries.some((q) => q.status === "loading")} />}
