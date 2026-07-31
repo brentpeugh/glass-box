@@ -1219,14 +1219,19 @@ function AppInner() {
     return () => document.body.classList.remove("modal-open");
   }, [modalOpen]);
 
-  // §4 inspection rule: a modal is a deliberate change of WORKSPACE. When one OPENS over an existing
-  // drawer, the drawer's origin would be obscured by the scrim — so the inspection tied to the previous
-  // workspace goes with it: the drawer closes. This fires only on the open TRANSITION, so a drawer
-  // opened FROM a modal is unaffected (the modal is already open when that drawer appears).
+  // §4 inspection rule: a modal is a deliberate change of WORKSPACE, and an open modal and a drawer
+  // cannot coexist without the drawer's origin being obscured (modal-opens case) or destroyed
+  // (modal-closes case). So the drawer closes on EITHER modal transition while it is open:
+  //   • modal OPENS over a board-origin drawer → the origin would go under the scrim → close.
+  //   • modal CLOSES under a drawer opened FROM it → the origin (a modal element) is destroyed → close.
+  // The rule fires on the transition, not on every render, so a drawer opened FROM a modal survives its
+  // own appearance (the modal is already open — no transition — when that drawer's `picked` is set), and
+  // only closes when the modal itself later goes away. Given the opens-case, any drawer alive alongside a
+  // modal necessarily has its origin inside that modal, so the closes-case has nothing else to catch.
   const anyModal = showBrief || showQuery || showTrust || showDebug;
   const prevAnyModal = React.useRef(false);
   useEffect(() => {
-    if (anyModal && !prevAnyModal.current && picked) setPicked(null);
+    if (anyModal !== prevAnyModal.current && picked) setPicked(null);
     prevAnyModal.current = anyModal;
   }, [anyModal, picked]);
 
