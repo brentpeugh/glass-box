@@ -96,24 +96,35 @@ export function ledeTokens(finding: any) {
 // INTERPRETS; this one states and enumerates. Neither imitates the other — the difference is the point.
 export function ledeFacts(finding: any) {
   try {
-    const primary = (finding.mvs || [])[0];
-    if (!primary || !primary.basis) return null;
-    const b = primary.basis, u = primary.unit;
-    const value = fmtVal(primary.value, u), bench = fmtBench(b.thr, u);
-    const breached = breachedMV(primary);
-    // duration: trailing consecutive quarters the metric moved in the UNFAVOURABLE direction
-    let streak = 0;
-    const sf = LEDE_SERIES[finding.metric];
-    if (sf) {
-      const vals = E.QUARTERS.map((q: any, i: number) => sf(q, primary, i)).filter((v: any) => v != null);
-      for (let k = vals.length - 1; k > 0; k--) { const worse = b.good === "above" ? vals[k] < vals[k - 1] : vals[k] > vals[k - 1]; if (worse) streak++; else break; }
-    }
-    const streakClause = streak >= 2 ? ` after ${numWord(streak)} consecutive quarters of deterioration` : "";
-    // the thesis is a HEADLINE — no terminal punctuation (the enumeration paragraph below keeps its full
-    // stop). It is a TOKEN TEMPLATE, not a composed string: {slug} / {slug}_benchmark are substituted +
-    // dye-scribed by the same render layer the model path uses — one substitution layer, both paths.
+    // the thesis subject is the finding's SEMANTIC anchor (findingAnchorId), NOT the positional
+    // finding.mvs[0]. For a concentration finding mvs[0] is the first segment (SMB ARR) — unbenchmarked,
+    // so the old gate `!primary.basis → return null` fell back to the generic thesis. The anchor is the
+    // share metric, which composes a concrete thesis WITHOUT a benchmark (it states the value directly).
+    const anchorId = findingAnchorId(finding);
+    const primary = (() => { try { return anchorId ? E.store.get(anchorId) : null; } catch { return null; } })() || (finding.mvs || [])[0];
+    if (!primary) return null;
+    const u = primary.unit, b = primary.basis;
+    const value = fmtVal(primary.value, u);
     const pslug = slugToken(primary.label);
-    const template = `${primary.label} stands at {${pslug}} against a {${pslug}_benchmark} benchmark, ${breached ? "breaching" : "clearing"} it${streakClause}`;
+    // the thesis is a HEADLINE — no terminal punctuation. It is a TOKEN TEMPLATE: {slug} / {slug}_benchmark
+    // are substituted + dye-scribed by the same render layer the model path uses (one layer, both paths).
+    let bench: any = null, breached: any = null, streak = 0, template: string;
+    if (b) {
+      bench = fmtBench(b.thr, u);
+      breached = breachedMV(primary);
+      // duration: trailing consecutive quarters the metric moved in the UNFAVOURABLE direction
+      const sf = LEDE_SERIES[finding.metric];
+      if (sf) {
+        const vals = E.QUARTERS.map((q: any, i: number) => sf(q, primary, i)).filter((v: any) => v != null);
+        for (let k = vals.length - 1; k > 0; k--) { const worse = b.good === "above" ? vals[k] < vals[k - 1] : vals[k] > vals[k - 1]; if (worse) streak++; else break; }
+      }
+      const streakClause = streak >= 2 ? ` after ${numWord(streak)} consecutive quarters of deterioration` : "";
+      template = `${primary.label} stands at {${pslug}} against a {${pslug}_benchmark} benchmark, ${breached ? "breaching" : "clearing"} it${streakClause}`;
+    } else {
+      // an unbenchmarked anchor (a share/concentration metric) states its value plainly — a concrete
+      // headline with NO benchmark clause (there is no threshold to breach or clear).
+      template = `${primary.label} stands at {${pslug}}`;
+    }
     // enumeration: the surrounding tracked metrics, the finding spread, the row count
     const q = E.QUARTERS, latest = q[q.length - 1], w0 = q[q.length - 5];
     const safeMV = (fn: () => any) => { try { const m = fn(); return m && m.basis ? m : null; } catch { return null; } };

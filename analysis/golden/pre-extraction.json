@@ -662,8 +662,8 @@
             "label": "ARR spread across segments"
           },
           "fallbackCuration": {
-            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data",
-            "whyRole": "This is the largest deviation from benchmark the engine measured, so it most warrants scrutiny before decisions rest on the headline numbers.",
+            "thesis": "Enterprise ARR Share stands at {enterprise_arr_share}",
+            "whyRole": "Of the six other tracked metrics, Blended GRR, CAC Payback, SaaS Magic Number, and Rule of 40 sit below target while Blended NRR and Gross Margin hold. The engine surfaced 23 findings across four domains, computed from 4,520 source rows.",
             "evidenceIds": [
               "arr.SMB.25Q4",
               "arr.Mid-Market.25Q4",
@@ -1310,8 +1310,8 @@
             "label": "ARR spread across segments"
           },
           "fallbackCuration": {
-            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data",
-            "whyRole": "This is the largest deviation from benchmark the engine measured, so it most warrants scrutiny before decisions rest on the headline numbers.",
+            "thesis": "Enterprise ARR Share stands at {enterprise_arr_share}",
+            "whyRole": "Of the six other tracked metrics, Blended GRR, CAC Payback, and SaaS Magic Number sit below target while Blended NRR, Rule of 40, and Gross Margin hold. The engine surfaced 23 findings across four domains, computed from 4,520 source rows.",
             "evidenceIds": [
               "arr.SMB.25Q4",
               "arr.Mid-Market.25Q4",
@@ -1387,8 +1387,8 @@
             "label": "ARR spread across segments"
           },
           "fallbackCuration": {
-            "thesis": "ARR spread across segments is the top finding the engine surfaced from this quarter's data",
-            "whyRole": "This is the largest deviation from benchmark the engine measured, so it most warrants scrutiny before decisions rest on the headline numbers.",
+            "thesis": "Enterprise ARR Share stands at {enterprise_arr_share}",
+            "whyRole": "Of the six other tracked metrics, Blended GRR, CAC Payback, and SaaS Magic Number sit below target while Blended NRR, Rule of 40, and Gross Margin hold. The engine surfaced 23 findings across four domains, computed from 4,520 source rows.",
             "evidenceIds": [
               "arr.SMB.25Q4",
               "arr.Mid-Market.25Q4",
