@@ -398,6 +398,7 @@ button.dt-num:hover{ color:var(--dye); }
    only place carrying both). Each question is a clickable proposition (action); running it replaces the
    question IN PLACE with its verdict, no reflow of the thesis/why above. */
 .lede-tests{ display:flex; flex-direction:column; flex:1 1 0; min-height:0; overflow-y:auto; }   /* T4m: takes the remaining column height and scrolls inside itself — the fixed blocks above stay visible */
+.lede-tests .lede-test:last-child{ padding-bottom:0; }   /* T4p: a scroll container must not count the last row's trailing padding as scrollable content — drops the phantom scrollbar in the borderline case (delta was 0 when content fits; padding was the only overflow when it just barely didn't) */
 /* the whole row is the target (a <button>); the run affordance is the discoverability signal, right-
    aligned to the panel edge. On run the row becomes a statement (answer, prose) + a finding (verdict,
    value 20/700) in the affordance's slot — proposition+button reads as statement+finding. */
