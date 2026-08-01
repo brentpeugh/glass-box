@@ -83,6 +83,11 @@ const fixtures: Fixture[] = [
     note: "current tree with a `{curation}` reference injected into the curation window — witness for the Tuning-5 rule that the waiting/failure states render ONLY engine-known facts, never a model output (a value reaching the screen before the model has run)",
     build: () => { const f = curFiles(); f["App.tsx"] = f["App.tsx"].replace('<p className="lede-window-prose">', '<p className="lede-window-prose">{curation}'); return writeTree(f, "windowval"); },
   },
+  {
+    name: "origin-outline",
+    note: "current tree with an .is-origin rule that draws an OUTLINE (the universal-boundary pattern the per-type rule replaces) instead of intensifying the element's own affordance — witness for the origin-marking assertion",
+    build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace(".dye-scribe.is-origin{ text-decoration-thickness:2px; }", ".dye-scribe.is-origin{ outline:2px solid var(--dye); }"); return writeTree(f, "originoutline"); },
+  },
 ];
 
 console.log("TEETH PROOF — validate-surface (structural: assertions enumerated from the validator)\n");

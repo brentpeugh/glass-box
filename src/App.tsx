@@ -858,12 +858,13 @@ function engineWindowFacts() {
   try { rows = BASE_DS ? (BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length) : 0; } catch {}
   return { findings, domains, rows };
 }
-// The window BLOCK: its top edge is the rule beneath the chosen row, which carries the sweep. The label +
-// prose ARRIVE in the sweep's wake — rendered only once the first pass completes (~400ms) — then the sweep
-// slows to a looping duration indicator until this component unmounts on resolve (no leak). No role name.
+// The window BLOCK: its top edge is the rule beneath the chosen row, which carries the sweep (the ink
+// draws over ~400ms, then loops). The label + prose are ALWAYS in the DOM (never conditionally rendered —
+// that cannot animate) inside .lede-window-body, which crossfades UP (height 0→full + opacity) as the row
+// exits. `drawn` only flips the sweep first-pass → loop; it does not gate the content. No role name.
 function CurationWindow({ mode }) {
-  const [revealed, setRevealed] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setRevealed(true), SWEEP_FIRST_MS); return () => clearTimeout(t); }, []);
+  const [drawn, setDrawn] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setDrawn(true), SWEEP_FIRST_MS); return () => clearTimeout(t); }, []);
   const failed = mode === "failed";
   const { findings, domains, rows } = engineWindowFacts();
   const label = failed ? "engine complete · model unavailable" : "engine complete · model composing";
@@ -871,17 +872,21 @@ function CurationWindow({ mode }) {
     ? "The numbers are unaffected — the engine computed them. This is a captured deterministic arrangement, and every value still traces to its source rows."
     : `${findings} findings across ${domains} domains, computed from ${rows.toLocaleString()} rows. The model is choosing which of them this role should see.`;
   return (<div className="lede-window">
-    <span className="sweep" aria-hidden="true"><span className={`sweep-seg ${revealed ? "sweep-loop" : "sweep-first"}`} /></span>
-    {revealed && <><span className="lede-ground">{label}</span><p className="lede-window-prose">{prose}</p></>}
+    <span className="sweep" aria-hidden="true"><span className={`sweep-seg ${drawn ? "" : "first"}`} /></span>
+    <div className="lede-window-body">
+      <span className="lede-ground">{label}</span>
+      <p className="lede-window-prose">{prose}</p>
+    </div>
   </div>);
 }
 // The shared composition (wordmark · statement · role rows). Idle: two role buttons. During a curation
-// (windowMode set): the chosen row stays, the window arrives beneath its rule, and — in the entry placement
-// — the unchosen row recedes then collapses (in the board placement there is no unchosen row; the stale
-// board fades instead). Iterating roles in order places the window directly after the chosen row, so the
-// chosen row's rule is the window's top edge in both cases (CFO: unchosen collapses below; CRO: above,
-// lifting the rule up — the §6.2 "sweeps and travels" bonus).
+// (windowMode set): the chosen row stays; the window crossfades in beneath its rule; and — in the entry
+// placement — the unchosen row EXITS (height→0 + opacity→0) and UNMOUNTS only after its animation ends
+// (nothing unmounts mid-transition). In the board placement there is no unchosen row (the stale board fades
+// instead). Iterating roles in order places the window directly after the chosen row, so the chosen row's
+// rule is the window's top edge in both cases (CFO: unchosen exits below; CRO: above, lifting the rule up).
 function RoleComposition({ role, windowMode, onEnter, placement }) {
+  const [rowGone, setRowGone] = useState(false);
   return (<div className="entry">
     <div className="entry-mark">⟡ CALIPER</div>
     <div className="entry-sub">
@@ -896,8 +901,10 @@ function RoleComposition({ role, windowMode, onEnter, placement }) {
                 <div className="role role-chosen"><span className="role-k">{k}</span><span className="role-f">{ROLES[k].focus}</span></div>
                 <CurationWindow mode={windowMode} />
               </React.Fragment>
-            : (placement === "entry"
-                ? <div key={k} className="role role-collapsing" aria-hidden="true"><span className="role-k">{k}</span><span className="role-f">{ROLES[k].focus}</span></div>
+            : (placement === "entry" && !rowGone
+                ? <div key={k} className="role role-exiting" aria-hidden="true" onAnimationEnd={() => setRowGone(true)}>
+                    <div className="role-inner"><span className="role-k">{k}</span><span className="role-f">{ROLES[k].focus}</span></div>
+                  </div>
                 : null))}
     </div>
   </div>);
@@ -1315,18 +1322,34 @@ function AppInner() {
   // fixed overlay box (decoupled from React's className, so it survives re-renders and works on the
   // board and inside a modal alike). ONE marker at a time: if the origin IS the lede anchor, its own
   // 2px --ink border is suppressed (via the .origin-anchor root class) so only the --dye outline shows.
+  // Origin marking INTENSIFIES the origin element's own traceable affordance — it never draws a boundary
+  // the element does not already have. LATTICE cells (evidence/KPI/table/callout) already read as ruled
+  // cells, so their mark IS an enclosing-rule box (the .trace-origin-mark overlay, 2px --dye) — the one
+  // sanctioned box. Every other type intensifies IN PLACE via an .is-origin class (per-type CSS): a dye-
+  // scribed figure thickens its underline, a ▸ TRACE label goes 600, an in-chart mark takes --dye. The
+  // element cannot carry a legible mark at its size → its smallest enclosing ruled region marks (the box).
   const originRef = useRef(null);
   const [originBox, setOriginBox] = useState(null);
   const [originIsAnchor, setOriginIsAnchor] = useState(false);
+  const LATTICE_ORIGIN = ["ev-card", "kcell", "mx-cell", "dt-num", "callout"];
   const recordOrigin = (e) => { const t = e.target && e.target.closest ? (e.target.closest("button, .ln-pt") || e.target) : null; if (t && t.getBoundingClientRect) originRef.current = t; };
   useLayoutEffect(() => {
     if (!picked) { setOriginBox(null); setOriginIsAnchor(false); return; }
-    const el0 = originRef.current;
-    setOriginIsAnchor(!!(el0 && el0.classList && el0.classList.contains("anchor")));
-    const measure = () => { const el = originRef.current; if (!el || !el.getBoundingClientRect) return setOriginBox(null); const r = el.getBoundingClientRect(); setOriginBox(r.width && r.height ? { left: r.left, top: r.top, width: r.width, height: r.height } : null); };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    const el = originRef.current;
+    if (!el || !el.classList) { setOriginBox(null); setOriginIsAnchor(false); return; }
+    const isLattice = LATTICE_ORIGIN.some((c) => el.classList.contains(c));
+    if (isLattice) {
+      // enclosing-rule box (the sanctioned overlay). Anchor ev-card: suppress its --ink border so only --dye shows.
+      setOriginIsAnchor(el.classList.contains("anchor"));
+      const measure = () => { if (!el.getBoundingClientRect) return setOriginBox(null); const r = el.getBoundingClientRect(); setOriginBox(r.width && r.height ? { left: r.left, top: r.top, width: r.width, height: r.height } : null); };
+      measure();
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+    // per-type intensification of the element's own affordance — no box
+    setOriginBox(null); setOriginIsAnchor(false);
+    el.classList.add("is-origin");
+    return () => el.classList.remove("is-origin");
   }, [picked, showQuery]);
 
   // 5a — the window's placement. The FIRST curation (no board shown yet) takes over the entry
