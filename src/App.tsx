@@ -1331,17 +1331,20 @@ function AppInner() {
   // not a timer. Only on the closed→open transition (a re-trace while open causes no compression). Under
   // reduced motion there is no animation (and no storm), so we skip. The cleanup resumes on close/interrupt
   // (the board expands in a single reflow — one re-measure, not a per-frame storm; see the §close report).
+  // …and dim the chart panels (.compressing) for the same window, so the one true-size re-render pops UNDER
+  // a fade: dim as the compression starts, resume + un-dim (opacity returns over --dur-fast) on animationend.
   const measureWasOpen = useRef(false);
+  const [compressing, setCompressing] = useState(false);
   useEffect(() => {
     const wasOpen = measureWasOpen.current;
     measureWasOpen.current = !!picked;
     if (!picked || wasOpen) return;
     if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    suspendMeasure();
+    suspendMeasure(); setCompressing(true);
     const wa = document.querySelector(".workarea");
-    const onEnd = (e) => { if (e.animationName === "board-compress") resumeMeasure(); };
+    const onEnd = (e) => { if (e.animationName === "board-compress") { resumeMeasure(); setCompressing(false); } };
     if (wa) wa.addEventListener("animationend", onEnd);
-    return () => { if (wa) wa.removeEventListener("animationend", onEnd); resumeMeasure(); };
+    return () => { if (wa) wa.removeEventListener("animationend", onEnd); resumeMeasure(); setCompressing(false); };
   }, [picked]);
 
   // §4 — the drawer (the sole INSPECTION surface) marks its ORIGIN by INTENSIFYING that element's own
@@ -1446,7 +1449,7 @@ function AppInner() {
             <TemplateBoard spec={lastResolved.current.spec} role={lastResolved.current._role} catalog={catalog} onPick={() => {}} finding={lastResolved.current.curation && lastResolved.current.curation.finding} source={lastResolved.current.source} curation={lastResolved.current.curation} />
           </main>}
           <RoleComposition role={role} windowMode={windowMode} placement="board" />
-        </div> : <div className={`workarea ${picked ? "drawer-open" : ""}`}>
+        </div> : <div className={`workarea ${picked ? "drawer-open" : ""} ${compressing ? "compressing" : ""}`}>
           <main className="stage">
             <Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} />
             <TemplateBoard key={`${role}|${perturbation}|${(state.curation && state.curation.finding && state.curation.finding.label) || ""}`} spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} curation={state.curation} />

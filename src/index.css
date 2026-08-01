@@ -16,6 +16,7 @@
   --frame-ink:#d8dbdd; --frame-mute:#8b939b;
   --dye:#1f539f; --pos:#2f6b4a; --neg:#9c3a2c;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);   /* Strata EASING.mechanical — fast start, precise stop; the one house curve (linear stays for the sweep's steady duration-loop). Durations stay register-derived. */
+  --dur-fast: 200ms;                        /* Strata fast — the settle fade's return (the chart pop happens under it) */
   --scrim: rgba(21,24,27,.34);                                  /* fallback for engines without color-mix */
   --scrim: color-mix(in srgb, var(--ink) 34%, transparent);    /* both declarations stay in the token block */
   --t-1:10px; --t-2:11px; --t-3:14px; --t-3b:16px; --t-4:20px; --t-5:26px;   /* hero+lede share 26 (differ by weight); --t-6/40 retired — see 2j */
@@ -417,6 +418,13 @@ button.dt-num:hover{ color:var(--dye); }
    register-derived (coincides with Strata normal). The floating drawer (over a modal) does not compress. */
 .drawer:not(.floating){ animation: board-compress 300ms var(--ease) both; }
 @keyframes board-compress{ from{ flex-basis:0; } to{ flex-basis:26%; } }
+/* The settle fade — the six charts are pixel-drawn, so throttling their re-render would read as 4–5
+   discrete jumps; instead measurement is SUSPENDED and one re-render lands at true size after the
+   compression, and the CHART panels dim while it runs so that pop happens under a fade. Only .cpanel
+   (chart panels) dims — tables (.tpanel) reflow via CSS and never dim, and the origin box-shadow lives
+   in the .tb-panel padding (outside .cpanel) so the mark holds full strength while its chart dims. */
+.cpanel{ transition: opacity var(--dur-fast) var(--ease); }
+.compressing .cpanel{ opacity: 0.4; }
 /* §6.5 guards — every @keyframes disabled under reduced motion, resolving to the end state (no motion). */
 @media (prefers-reduced-motion: reduce){
   .sweep-seg{ animation:none; }
@@ -670,6 +678,13 @@ body.modal-open{ overflow:hidden; }
    ruled region (lattice cell, or the fallback panel) intensifies its enclosing rule with a 2px --dye box
    (inset box-shadow, so the partition's overflow:hidden never clips it). See App.tsx for the enumeration. */
 .ev-card.is-origin, .kcell.is-origin, .mx-cell.is-origin, .dt-num.is-origin, .callout.is-origin, .tb-panel.is-origin, .cpanel.is-origin, .tpanel.is-origin{ box-shadow: inset 0 0 0 2px var(--dye); }
+/* Collapse the doubled edge: a marked cell's inset 2px --dye band otherwise sits flush against the shared
+   1px --scribe divider (each cell's border-left). Suppress the marked cell's own left divider AND the next
+   cell's left divider (the marked cell's right divider) so the --dye reads as ONE edge, not a band beside a
+   rule — the same pattern the anchor cell already uses. Transient (only while .is-origin); nothing else
+   loses a divider. (border-*-color:transparent removes a rule; it never draws one — see #23.) */
+.is-origin{ border-left-color: transparent; }
+.is-origin + *{ border-left-color: transparent; }
 .dye-scribe.is-origin{ text-decoration-thickness:2px; }              /* inline figure: its underline 1px → 2px */
 .chart-title.is-origin .chart-trace{ font-weight:600; }              /* ▸ TRACE label: weight 400 → 600 */
 .ln-pt.is-origin .cx-dot, .ln-pt.is-origin .scat-dot, .ln-pt.is-origin .par-cum-dot{ fill:var(--dye); }   /* in-chart terminal value: marker → --dye */
