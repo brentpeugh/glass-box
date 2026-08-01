@@ -470,17 +470,6 @@
             "fmt"
           ]
         },
-        "heatmap_metrics": {
-          "kind": "heatmap",
-          "polarity": "bad",
-          "title": null,
-          "desc": "Every efficiency metric across every quarter, tone-coded against benchmark — the fastest scan of where and when the book breaches.",
-          "dataKeys": [
-            "title",
-            "cols",
-            "rows"
-          ]
-        },
         "indexed_arr": {
           "kind": "indexed",
           "polarity": "neutral",
@@ -600,7 +589,6 @@
               "metric_matrix",
               "efficiency_bullets",
               "scatter_eff_growth",
-              "heatmap_metrics",
               "quadrant_eff",
               "segment_stack",
               "indexed_arr",
@@ -627,7 +615,6 @@
             "metric_matrix",
             "efficiency_bullets",
             "scatter_eff_growth",
-            "heatmap_metrics",
             "quadrant_eff",
             "segment_stack",
             "indexed_arr",
@@ -1186,17 +1173,6 @@
             "title",
             "items",
             "fmt"
-          ]
-        },
-        "heatmap_metrics": {
-          "kind": "heatmap",
-          "polarity": "bad",
-          "title": null,
-          "desc": "Every efficiency metric across every quarter, tone-coded against benchmark — the fastest scan of where and when the book breaches.",
-          "dataKeys": [
-            "title",
-            "cols",
-            "rows"
           ]
         },
         "indexed_arr": {

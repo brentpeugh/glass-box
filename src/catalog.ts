@@ -14,16 +14,9 @@ export function buildCatalog() {
   const smBars = Q1.map((q) => ({ q, value: E.smTotal(q).value, mv: E.smTotal(q) }));
   const magicLine = Q1.map((q) => ({ q, value: E.magicNumber(q).value, mv: E.magicNumber(q) }));
   const accelLine = Q1.map((q) => ({ q, value: E.qoqGrowth(q).value * 100, mv: E.qoqGrowth(q) }));
-  // ---- batch-1 general charts (relationship / cumulative / heatmap / indexed / start-vs-end) ----
+  // ---- batch-1 general charts (relationship / cumulative / indexed / start-vs-end) ----
   const scatterEG = Q1.map((q) => ({ x: E.magicNumber(q).value, y: E.qoqGrowth(q).value * 100, label: q, mv: E.magicNumber(q) }));
   const paretoArr = E.SEGMENTS.map((sg) => ({ label: sg, value: E.segArr(sg, "25Q4").value, mv: E.segArr(sg, "25Q4") }));
-  const hmRows = [
-    { label: "Magic #", f: (q) => E.magicNumber(q), thr: E.BENCH.magic_number.threshold, good: "above" },
-    { label: "CAC (mo)", f: (q) => E.cacPayback(q), thr: E.BENCH.cac_payback_mo.threshold, good: "below" },
-    { label: "Rule of 40", f: (q) => E.ruleOf40(q), thr: E.BENCH.rule_of_40.threshold, good: "above" },
-    { label: "Gross Mgn", f: (q) => E.grossMargin(q), thr: E.BENCH.gross_margin.threshold, good: "above" },
-  ];
-  const heatmapMetrics = { cols: Q1, rows: hmRows.map((m) => ({ label: m.label, cells: Q1.map((q) => { const mv = m.f(q); if (!mv) return { tone: "none", mv: null, text: "" }; const ok = m.good === "above" ? mv.value >= m.thr : mv.value <= m.thr; return { tone: ok ? "good" : "bad", mv, text: "" }; }) })) };
   const indexedArr = { series: segSeries.map((s) => ({ seg: s.seg, color: s.color, points: s.points })), quarters: E.QUARTERS };
   const dumbbellRet = E.SEGMENTS.map((sg) => { const g = E.grr(sg, "24Q4", "25Q4"), n = E.nrr(sg, "24Q4", "25Q4"); return { label: sg, a: g.value, b: n.value, mv: n }; });
   // ---- batch-2 general charts (share-of-total / comparison / positioning / small-multiples) ----
@@ -55,7 +48,6 @@ export function buildCatalog() {
     efficiency_bullets: { kind: "bullet", polarity: "bad", desc: "Capital-efficiency metrics (magic number, CAC payback, Rule of 40) against their benchmarks as bullet gauges.", data: { title: "Efficiency vs targets", items: (() => { const mag = E.magicNumber("25Q4"), cac = E.cacPayback("25Q4"), r40 = E.ruleOf40("25Q4"); return [{ label: "Magic #", mv: mag, value: mag.value, target: mag.basis.thr, good: mag.basis.good, max: 1.0, fmt: (v) => `${v.toFixed(2)}x` }, { label: "CAC (mo)", mv: cac, value: cac.value, target: cac.basis.thr, good: cac.basis.good, max: 30, fmt: (v) => `${v.toFixed(0)}mo` }, { label: "Rule of 40", mv: r40, value: r40.value, target: r40.basis.thr, good: r40.basis.good, max: 60, fmt: (v) => `${v.toFixed(0)}` }]; })() } },
     scatter_eff_growth: { kind: "scatter", polarity: "bad", desc: "Sales efficiency (magic number) plotted against ARR growth, quarter by quarter — shows whether growth is being bought with declining efficiency.", data: { title: "Efficiency vs growth", points: scatterEG, xlab: "Magic #", ylab: "QoQ growth %" } },
     pareto_arr: { kind: "pareto", polarity: "bad", desc: "ARR by segment, ranked, with the cumulative share curve — how concentrated revenue is in the top segment.", data: { title: "ARR concentration (Pareto)", items: paretoArr, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
-    heatmap_metrics: { kind: "heatmap", polarity: "bad", desc: "Every efficiency metric across every quarter, tone-coded against benchmark — the fastest scan of where and when the book breaches.", data: { title: "Efficiency heatmap", ...heatmapMetrics } },
     indexed_arr: { kind: "indexed", polarity: "neutral", desc: "Segment ARR rebased to 100 at the first quarter — compares growth rates across segments regardless of size.", data: { title: "Indexed ARR growth by segment", ...indexedArr } },
     dumbbell_ret: { kind: "dumbbell", polarity: "bad", desc: "Gross vs net retention per segment — the gap is the expansion contribution; where the dot moves left, contraction outweighs expansion.", data: { title: "GRR → NRR by segment", items: dumbbellRet, fmt: (v) => `${v.toFixed(0)}%` } },
     treemap_arr: { kind: "treemap", polarity: "bad", desc: "ARR share by segment as proportional area — the concentration of the book at a glance.", data: { title: "ARR share by segment", items: treemapArr, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },

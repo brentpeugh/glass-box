@@ -658,7 +658,7 @@ const WIDGET_METRICS = {
   bridge_smb: ["nrr"], bridge_enterprise: ["nrr"], bridge_blended: ["nrr"], hbar_nrr: ["nrr"],
   dumbbell_ret: ["nrr", "grr"], heatmap_retention: ["nrr", "grr"],
   efficiency_combo: ["magic"], magic_line: ["magic"], efficiency_bullets: ["magic", "cac", "r40"],
-  scatter_eff_growth: ["magic", "qoq"], heatmap_metrics: ["magic", "cac", "r40", "grossMargin"], quadrant_eff: ["magic", "qoq"],
+  scatter_eff_growth: ["magic", "qoq"], quadrant_eff: ["magic", "qoq"],
   metric_matrix: ["nrr", "grr", "grossMargin", "magic", "cac", "r40", "qoq"],
   accel_line: ["qoq"],
   segment_stack: ["arr"], indexed_arr: ["arr"], grouped_growth: ["arr"], small_mult_arr: ["arr"],

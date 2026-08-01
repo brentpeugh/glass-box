@@ -16,7 +16,7 @@ export const WIDGET_DOMAIN: Record<string, string> = {
   accel_line: "growth", segment_stack: "growth",
   segment_table: "concentration", pareto_arr: "concentration", treemap_arr: "concentration",
   lorenz_arr: "concentration",
-  scatter_eff_growth: "efficiency", heatmap_metrics: "efficiency", quadrant_eff: "efficiency",
+  scatter_eff_growth: "efficiency", quadrant_eff: "efficiency",
   indexed_arr: "growth", grouped_growth: "growth", small_mult_arr: "growth",
   dumbbell_ret: "retention", heatmap_retention: "retention",
 };
@@ -46,7 +46,6 @@ export const FORM_METRICS: Record<string, FormMetric> = {
   efficiency_bullets: { kind: "bullet",       renders: ["magic_number", "cac_payback", "rule_of_40"], series: ["magic_number", "cac_payback", "rule_of_40"], subject: null },
   scatter_eff_growth: { kind: "scatter",      renders: ["magic_number", "qoq_growth"], series: ["magic_number", "qoq_growth"], subject: null },
   quadrant_eff:       { kind: "quadrant",     renders: ["magic_number", "qoq_growth"], series: ["magic_number", "qoq_growth"], subject: null },
-  heatmap_metrics:    { kind: "heatmap",      renders: ["magic_number", "cac_payback", "rule_of_40", "gross_margin"], series: [], subject: null },
   segment_stack:      { kind: "stacked_area", renders: ["seg_arr"], series: ["seg_arr"], subject: null },
   segment_table:      { kind: "table",        renders: ["seg_arr", "ent_share", "nrr", "grr"], series: [], subject: null },
   pareto_arr:         { kind: "pareto",       renders: ["seg_arr", "arr_cumshare"], series: ["seg_arr", "arr_cumshare"], subject: null },
