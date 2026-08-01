@@ -103,8 +103,12 @@ export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDoma
   const evidenceIds = (cur.evidenceIds || []).filter((id: string) => mSet.has(id)).slice(0, 4);
   if (evidenceIds.length < (cur.evidenceIds || []).filter((id: string) => mSet.has(id)).length) violations.push("evidence beyond the four the lede shows — dropped");
   else if (evidenceIds.length < (cur.evidenceIds || []).length) violations.push("evidence outside the finding neighborhood — dropped");
-  const testIds = (cur.testIds || []).filter((id: string) => tSet.has(id));
-  if (testIds.length < (cur.testIds || []).length) violations.push("unsupported test id(s) — dropped");
+  // at most 3 tests — the lede foot shows three (same cap as the 3-panel / 4-evidence targets). Off-
+  // neighborhood dropped first, then capped to 3 (the falsifier check below runs on the capped set).
+  const inNbTests = (cur.testIds || []).filter((id: string) => tSet.has(id));
+  const testIds = inNbTests.slice(0, 3);
+  if (testIds.length < inNbTests.length) violations.push("tests beyond the three the lede shows — dropped");
+  else if (testIds.length < (cur.testIds || []).length) violations.push("unsupported test id(s) — dropped");
   const widgetIds = (cur.widgetIds || []).filter((id: string) => catalog[id] && rel.includes(widgetDomain[id]));
   if (widgetIds.length < (cur.widgetIds || []).length) violations.push("off-domain widget(s) — dropped");
   const hasFalsifier = testIds.some((id: string) => fSet.has(id));

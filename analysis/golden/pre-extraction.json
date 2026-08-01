@@ -593,8 +593,7 @@
             "testIds": [
               "decompose_cac_payback",
               "persist_cac_payback",
-              "persist_magic_number",
-              "localize_efficiency"
+              "persist_magic_number"
             ],
             "widgetIds": [
               "efficiency_combo",

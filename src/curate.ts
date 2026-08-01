@@ -140,7 +140,7 @@ export function fallbackCuration(fact) {
     // (whyRole) — dense, not interpretive. Do NOT imitate the model's voice; the difference is the point.
     thesis: facts ? facts.template : `${fact.label} is the top finding the engine surfaced from this quarter's data`,
     whyRole: facts ? facts.enumeration : "This is the largest deviation from benchmark the engine measured, so it most warrants scrutiny before decisions rest on the headline numbers.",
-    evidenceIds, testIds: nb.testIds, widgetIds,
+    evidenceIds, testIds: nb.testIds.slice(0, 3), widgetIds,   // at most 3 — matches the lede foot; nb.testIds keeps a falsifier within the first 3
     scorecardKeys: FALLBACK_SCORECARD[nb.domain] || FALLBACK_SCORECARD.efficiency,
     rationaleTags: ["top salient anomaly", nb.domain], source: "fallback",
   };
@@ -183,7 +183,7 @@ WIDGETS (charts you may select, prioritized): ${JSON.stringify(widgetMenu)}
 HEADLINE (metric keys for the vital-signs strip — pick 6 that matter to the ${focus.role} for THIS finding): ${JSON.stringify(headlineMenu)}
 
 Return ONLY this JSON, nothing around it:
-{"thesis":"ONE sentence, NO terminal punctuation — a HEADLINE; figures ONLY as {tokens}, no digits, no units; do not open with the role name","whyRole":"at most TWO sentences ending with a full stop — why this finding bears on the role's decisions; NO {tokens} and NO figures (the values are already in the evidence column), name a metric by name if needed; do not open with the role name","evidenceIds":["EXACTLY 4 ids from EVIDENCE — the lede shows four"],"testIds":["ids from TESTS, including >=1 falsifier"],"widgetIds":["exactly 3 ids from WIDGETS composing the board — complementary views, most important first"],"scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
+{"thesis":"ONE sentence, NO terminal punctuation — a HEADLINE; figures ONLY as {tokens}, no digits, no units; do not open with the role name","whyRole":"at most 280 CHARACTERS, ending with a full stop — why this finding bears on the role's decisions; NO {tokens} and NO figures (the values are already in the evidence column), name a metric by name if needed; do not open with the role name","evidenceIds":["EXACTLY 4 ids from EVIDENCE — the lede shows four"],"testIds":["EXACTLY 3 ids from TESTS, including >=1 falsifier — the lede shows three"],"widgetIds":["exactly 3 ids from WIDGETS composing the board — complementary views, most important first"],"scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
 }
 // callModel is an INJECTED dependency (docs/briefs/extraction.md §4): the default is byte-identical
 // to the shipped seam, so the app is unchanged; a Node harness can inject a direct API call or a
