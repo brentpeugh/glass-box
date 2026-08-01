@@ -487,8 +487,10 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
   const isOriginRules = rules.filter((r) => /\.is-origin\b/.test(r.prelude));
   if (isOriginRules.length === 0) bad.push("no .is-origin rules — per-type origin marking absent");
   for (const r of isOriginRules) {
-    // a pure divider-suppression rule removes a border (transparent), never draws one — not a mark, exempt.
-    if (/^border-[a-z-]+-color\s*:\s*transparent\s*;?$/.test(r.body.trim())) continue;
+    // a pure divider-suppression rule removes borders (transparent), never draws one — not a mark, exempt.
+    // One or more border-*-color:transparent declarations and nothing else (a marked cell may suppress its
+    // own left AND right hairlines to collapse a doubled --dye edge).
+    if (/^(?:border-[a-z-]+-color\s*:\s*transparent\s*;?\s*)+$/.test(r.body.trim())) continue;
     if (/(?:^|[;{\s])outline\s*:/.test(r.body) || /(?:^|[;{\s])border(?:-[a-z]+)?\s*:/.test(r.body)) { bad.push(`${r.prelude} draws outline/border — origin marking must intensify the existing affordance, not add a box`); continue; }
     const onRuled = classesOf(r.prelude).some((c) => RULED.has(c));
     const hasBox = /box-shadow\s*:/.test(r.body);

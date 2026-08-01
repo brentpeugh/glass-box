@@ -316,7 +316,7 @@ function HBar({ items, benchmark, fmt, onPick, w = 420, h = 200 }) {
     {items.map((it, i) => { const cy = padT + gap * i + gap / 2; return (<g key={i} className="ln-pt" onClick={() => onPick(it.mv)}>
       <text x={padL - 8} y={cy + 4} className="wf-xlab" textAnchor="end">{it.label}</text>
       <rect x={padL} y={cy - bh / 2} width={Math.max(x(it.value) - padL, 1)} height={bh} className={`hbar ${it.tone || ""}`} />
-      <text x={x(it.value) + 6} y={cy + 4} className="dlab" textAnchor="start">{fmt(it.value)}</text>
+      <text x={x(it.value) + 6} y={cy + 4} className="hbar-dval" textAnchor="start">{fmt(it.value)}</text>
     </g>); })}
   </svg>);
 }
@@ -330,7 +330,7 @@ function LorenzCurve({ curve, onPick, w = 420, h = 200 }) {
   const ticks = [0, 25, 50, 75, 100];
   const path = curve.map((p, i) => `${i ? "L" : "M"}${x(p.acc)},${y(p.arr)}`).join(" ");
   const area = `${path} L${x(100)},${y(0)} Z`;
-  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln" onClick={onPick}>
+  return (<svg viewBox={`0 0 ${W} ${H}`} className="ln whole-panel" onClick={onPick}>
     {ticks.map((t, i) => (<g key={i}><line x1={padL} x2={padL + plotW} y1={y(t)} y2={y(t)} className="cx-grid" /><text x={padL - 8} y={y(t) + 3.5} className="cx-ytick" textAnchor="end">{t}</text><text x={x(t)} y={padT + plotH + 14} className="cx-xtick" textAnchor="middle">{t}</text></g>))}
     <line x1={x(0)} y1={y(0)} x2={x(100)} y2={y(100)} className="cx-bench" /><text x={x(100)} y={y(100) + 12} className="cx-bench-lab" textAnchor="end">EQUALITY</text>
     <path d={path} className="cx-line" />
@@ -1399,7 +1399,7 @@ function AppInner() {
   const originRef = useRef(null);
   const [originIsAnchor, setOriginIsAnchor] = useState(false);
   const SELF_MARK = ["ev-card", "kcell", "mx-cell", "dt-num", "callout", "dye-scribe", "chart-title"];   // HTML elements that mark themselves (CSS decides box vs underline vs weight)
-  const STROKE_SHAPE = ".co-bar,.area,.par-bar,.hm-cell,.tm-tile,.bullet-bar";   // area shapes (self, or inside the .ln-pt group) → 2px --dye stroke
+  const STROKE_SHAPE = ".co-bar,.area,.par-bar,.hm-cell,.tm-tile,.bullet-bar,.hbar";   // area shapes (self, or inside the .ln-pt group) → 2px --dye stroke; a bar strokes the same way in every chart
   const POINT_MARK = ".cx-dot,.scat-dot,.par-cum-dot,.cx-dlab,.dlab";            // point markers/value labels → --dye recolor
   const recordOrigin = (e) => { const t = e.target && e.target.closest ? (e.target.closest("button, .ln-pt") || e.target) : null; if (t && t.getBoundingClientRect) originRef.current = t; };
   useLayoutEffect(() => {
@@ -1407,14 +1407,17 @@ function AppInner() {
     const el = originRef.current;
     if (!el || !el.classList) { setOriginIsAnchor(false); return; }
     // an HTML element marks itself; a chart origin marks its OWN geometry (a shape to stroke, a point to
-    // recolor, or a filled terminal marker rect) — only an origin with NO visible geometry falls back to the
-    // enclosing panel box.
+    // recolor, or a filled terminal marker rect). A WHOLE-<svg> click (lorenz) selects the whole distribution,
+    // so the PANEL box is its correct mark — recorded as a whole-panel origin, not a fallback. Only an origin
+    // with NO visible geometry (an invisible hit-target) falls back to the panel box.
     let target = el, anchor = false;
     if (SELF_MARK.some((c) => el.classList.contains(c))) { anchor = el.classList.contains("anchor"); }
-    else {
+    else if (el.closest && el.closest(".whole-panel")) {
+      target = (el.closest(".tb-panel") || el.closest(".cpanel, .tpanel")) || null;   // whole distribution → the panel box IS the mark (by design)
+    } else {
       const hasGeometry = (el.matches && (el.matches(STROKE_SHAPE) || el.matches(POINT_MARK) || el.matches("rect.ln-pt")))
         || (el.querySelector && (el.querySelector(STROKE_SHAPE) || el.querySelector(POINT_MARK)));
-      if (!hasGeometry) target = (el.closest && (el.closest(".tb-panel") || el.closest(".cpanel, .tpanel"))) || null;
+      if (!hasGeometry) target = (el.closest && (el.closest(".tb-panel") || el.closest(".cpanel, .tpanel"))) || null;   // invisible hit-target — the only fallback
     }
     setOriginIsAnchor(anchor);
     if (!target || !target.classList) return;
