@@ -780,20 +780,27 @@ body.modal-open{ overflow:hidden; }
 .tc-h.ok,.tc-h.no,.tc-h.eng{ color:var(--ink); }
 .tc-col ul{ margin:0; padding-left:16px; } .tc-col li{ font-size:14px; color:var(--ink); margin-bottom:6px; line-height:1.4; }
 .tc-contract{ display:flex; flex-direction:column; gap:8px; }
-.tc-line{ display:flex; gap:12px; align-items:baseline; font-size:14px; color:var(--ink); line-height:1.45; }
+/* Trust rows share ONE grid (like the provenance tree): a fixed MARK column (left), one flex column for
+   the claim + its description, and a fixed KIND column (right). Marks left-align down the page, kinds
+   right-align, and every description starts at the same offset (the flex column) instead of after its own
+   variable-width tag. --tc-mark / --tc-kind are shared so §2/§3 (mark-led) and §4 (kind-led, below) line up. */
+:root{ --tc-mark:104px; --tc-kind:100px; }
+.tc-line{ display:grid; grid-template-columns:var(--tc-mark) minmax(0,1fr) var(--tc-kind); column-gap:12px; align-items:baseline; font-size:14px; color:var(--ink); line-height:1.45; }
+.tc-line > *:not(.tc-yes):not(.tc-no):not(.tc-proxy){ grid-column:2; }   /* the claim+description flex column */
 /* §4: "answerable" is a status, not a route-to-source — neutral hairline tag like its .tc-no pair; the word carries it. */
 .tc-yes{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }   /* label */
 /* §4: contract "refused" label is a status, not a variance — neutral hairline tag; the word carries it. */
 .tc-no{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }   /* label */
 /* a modeled proxy is a construction caveat — neutral hairline tag, same treatment as its answerable/refused siblings; the word carries it. */
 .tc-proxy{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }   /* label */
+.tc-yes, .tc-no, .tc-proxy{ grid-column:1; justify-self:start; }   /* marks: fixed col 1, natural width, left */
 .tc-audit{ border:1px solid var(--scribe); max-height:220px; overflow-y:auto; }
-.tc-row{ display:flex; gap:12px; align-items:baseline; padding:8px 12px; border-bottom:1px solid var(--scribe); font-size:14px; }
+.tc-row{ display:grid; grid-template-columns:var(--tc-mark) minmax(0,1fr) var(--tc-kind); column-gap:12px; align-items:baseline; padding:8px 12px 8px 0; border-bottom:1px solid var(--scribe); font-size:14px; }   /* left pad 0: the empty mark column supplies the left inset, so the detail (col 2) aligns with §2/§3's text */
 .tc-row:last-child{ border-bottom:none; }
-.tc-kind{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; padding:2px 6px; min-width:78px; text-align:center; }   /* label */
+.tc-kind{ grid-column:3; justify-self:end; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; padding:2px 6px; white-space:nowrap; }   /* label — kind: fixed col 3, right */
 /* §4: audit-row kind is a label already spelled out in the row — ink, no dye/neg repeating it. */
 .tc-row.curation .tc-kind,.tc-row.query .tc-kind,.tc-row.perturbation .tc-kind{ background:transparent; color:var(--ink); }
-.tc-detail{ flex:1; color:var(--ink); line-height:1.4; }
+.tc-detail{ grid-column:2; color:var(--ink); line-height:1.4; }
 .tc-empty{ padding:16px; text-align:center; color:var(--ink-2); font-size:14px; }
 
 /* batch-1 general charts */
