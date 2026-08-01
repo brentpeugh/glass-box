@@ -1,7 +1,7 @@
 // Extracted from App.tsx (docs/briefs/extraction.md). Behaviour-preserving move — no logic change.
 // The curation path — the one I/O boundary (callModel). fallbackCuration is deterministic.
 import { E, BASE_DS } from "./engine";
-import { WIDGET_DOMAIN, HEADLINE_KEYS, validateCurationCore, admissibleLenses } from "./curation";
+import { WIDGET_DOMAIN, HEADLINE_KEYS, validateCurationCore, admissibleLenses, FORM_METRICS, distinctPanels } from "./curation";
 
 // All model calls go through one seam. In production this hits the Netlify function
 // holding the key server-side; running plain `vite` (no function) it throws and the
@@ -155,9 +155,9 @@ export function fallbackCuration(fact) {
   // a concentration finding. Arbitrary declaration order must not decide what a deterministic board shows.
   const lenses = admissibleLenses(nb);
   const domainRank = [nb.domain, ...lenses.filter((d) => d !== nb.domain)];
-  const widgetIds = Object.keys(WIDGET_DOMAIN)
+  const widgetIds = distinctPanels(Object.keys(WIDGET_DOMAIN)
     .filter((id) => lenses.includes(WIDGET_DOMAIN[id]))
-    .sort((a, b) => domainRank.indexOf(WIDGET_DOMAIN[a]) - domainRank.indexOf(WIDGET_DOMAIN[b]));
+    .sort((a, b) => domainRank.indexOf(WIDGET_DOMAIN[a]) - domainRank.indexOf(WIDGET_DOMAIN[b])));   // enforce panel distinctness — the top 3 the board shows must be complementary, not redundant
   const evidenceIds = [...new Set([...(fact.mvs || []).map((m) => m.id), ...nb.metricIds])].slice(0, 4);   // exactly 4 — matches what the lede renders + what the footer reports
   const facts = ledeFacts(fact);
   return {
@@ -193,7 +193,7 @@ function buildCurationPrompt(focus, finding, nb, catalog) {
   const anchorSlug = anchorMv ? slugToken(anchorMv.label) : null;
   const anchorTokens = anchorSlug ? [`{${anchorSlug}}`].concat(toks[`${anchorSlug}_benchmark`] ? [`{${anchorSlug}_benchmark}`] : []) : [];
   const testMenu = nb.testIds.map((id) => { const t = E.TEST_MENU.find((x) => x.id === id); return { id, question: t.label, falsifier: nb.falsifierIds.includes(id) }; });
-  const widgetMenu = offeredWidgets(nb, catalog).map((id) => ({ id, label: catalog[id].title || id }));
+  const widgetMenu = offeredWidgets(nb, catalog).map((id) => { const fm = FORM_METRICS[id]; return { id, label: catalog[id].title || id, draws: fm ? fm.renders : [], dedicated: fm ? fm.subject : null }; });
   const headlineMenu = HEADLINE_KEYS;
   // Domain-conditional composition guidance. Some findings (concentration especially) are served
   // by segment-based widgets the model may not recognize as "the board" — naming the complementary
@@ -207,7 +207,7 @@ function buildCurationPrompt(focus, finding, nb, catalog) {
   const domainHint = DOMAIN_HINT[nb.domain] ? "\n" + DOMAIN_HINT[nb.domain] : "";
   return `You are the analytical-judgment layer of a governed analytics system, briefing the ${focus.role}.
 An engine has DETECTED this finding (you did not compute it; you may foreground and FRAME it): "${finding.label}".
-Form the decision-relevant READ for the ${focus.role}. The engine surfaced this top statistical fact from a neutral scan; its finding neighborhood (the menus below) defines what is legible. Do NOT assume the issue is retention, growth, efficiency, or concentration — let the neighborhood and the evidence decide. Choose the framing and widgets most decision-relevant FOR THE ${focus.role}: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Compose a COMPLETE board: select the set of widgets that give a full analytical view of this finding from complementary angles (e.g. the trend over time, the segment/component breakdown, the composition or share, a comparison against benchmark) — exactly 3 panels, ordered most important first. Choose the three most decision-relevant complementary angles; select fewer only if the finding genuinely cannot support three.${domainHint} Select ONLY from the menus below — you may not invent metrics, tests, or widgets.
+Form the decision-relevant READ for the ${focus.role}. The engine surfaced this top statistical fact from a neutral scan; its finding neighborhood (the menus below) defines what is legible. Do NOT assume the issue is retention, growth, efficiency, or concentration — let the neighborhood and the evidence decide. Choose the framing and widgets most decision-relevant FOR THE ${focus.role}: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Compose a COMPLETE board: select the set of widgets that give a full analytical view of this finding from complementary angles (e.g. the trend over time, the segment/component breakdown, the composition or share, a comparison against benchmark) — exactly 3 panels, ordered most important first. Choose the three most decision-relevant complementary angles; select fewer only if the finding genuinely cannot support three.${domainHint} DISTINCTNESS: the panels must be complementary, not redundant — each WIDGET lists what it "draws" and whether it is "dedicated" to one metric. Each selected panel must contribute at least one metric ('draws') no other selected panel shows, AND a metric that has its own dedicated panel must NOT also be drawn as a series in another selected panel (e.g. do not pick both the magic-number line and a combo that overlays the magic number — one panel per metric-as-a-series). Select ONLY from the menus below — you may not invent metrics, tests, or widgets.
 
 Your prose must contain NO DIGITS and NO UNITS. Every figure is a TOKEN from the TOKENS list, written in curly braces exactly as listed (e.g. {cac_payback}). Each token in the list shows what it renders as (its "rendersAs") so you can build grammar around it — but you write the TOKEN, never the rendered text: "{cac_payback}", NOT "{cac_payback} months" (double unit) and NEVER a bare number. You may use ONLY tokens from the list; an unknown token rejects the whole read.
 The THESIS states ONE metric — the ANCHOR — and only it: use ONLY the anchor token(s) ${JSON.stringify(anchorTokens)} and NO other {tokens}. A headline states one thing; several metrics against their benchmarks is the paragraph's job. The WHY-IT-MATTERS is that argument, but carries NO figures: use NO tokens in whyRole; name a metric by its name if the argument needs it, but do not quote a value against its benchmark (the values are already on screen in the evidence column). Do NOT open the thesis or whyRole with the role name — the board's eyebrow already states the role.

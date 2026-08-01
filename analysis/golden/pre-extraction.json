@@ -597,13 +597,11 @@
             ],
             "widgetIds": [
               "efficiency_combo",
-              "magic_line",
               "metric_matrix",
               "efficiency_bullets",
               "scatter_eff_growth",
               "heatmap_metrics",
               "quadrant_eff",
-              "accel_line",
               "segment_stack",
               "indexed_arr",
               "grouped_growth",
@@ -626,13 +624,11 @@
           "specWidgets": [
             "salient_band",
             "efficiency_combo",
-            "magic_line",
             "metric_matrix",
             "efficiency_bullets",
             "scatter_eff_growth",
             "heatmap_metrics",
             "quadrant_eff",
-            "accel_line",
             "segment_stack",
             "indexed_arr",
             "grouped_growth",
@@ -646,12 +642,12 @@
                 "kind": "combo"
               },
               {
-                "widget": "magic_line",
-                "kind": "line"
-              },
-              {
                 "widget": "metric_matrix",
                 "kind": "matrix"
+              },
+              {
+                "widget": "efficiency_bullets",
+                "kind": "bullet"
               }
             ]
           }
@@ -681,10 +677,7 @@
               "lorenz_arr",
               "masking_card",
               "bridge_smb",
-              "bridge_enterprise",
-              "bridge_blended",
               "hbar_nrr",
-              "dumbbell_ret",
               "heatmap_retention"
             ],
             "scorecardKeys": [
@@ -709,10 +702,7 @@
             "lorenz_arr",
             "masking_card",
             "bridge_smb",
-            "bridge_enterprise",
-            "bridge_blended",
             "hbar_nrr",
-            "dumbbell_ret",
             "heatmap_retention"
           ],
           "board": {
@@ -1329,10 +1319,7 @@
               "lorenz_arr",
               "masking_card",
               "bridge_smb",
-              "bridge_enterprise",
-              "bridge_blended",
               "hbar_nrr",
-              "dumbbell_ret",
               "heatmap_retention"
             ],
             "scorecardKeys": [
@@ -1357,10 +1344,7 @@
             "lorenz_arr",
             "masking_card",
             "bridge_smb",
-            "bridge_enterprise",
-            "bridge_blended",
             "hbar_nrr",
-            "dumbbell_ret",
             "heatmap_retention"
           ],
           "board": {
@@ -1406,10 +1390,7 @@
               "lorenz_arr",
               "masking_card",
               "bridge_smb",
-              "bridge_enterprise",
-              "bridge_blended",
               "hbar_nrr",
-              "dumbbell_ret",
               "heatmap_retention"
             ],
             "scorecardKeys": [
@@ -1434,10 +1415,7 @@
             "lorenz_arr",
             "masking_card",
             "bridge_smb",
-            "bridge_enterprise",
-            "bridge_blended",
             "hbar_nrr",
-            "dumbbell_ret",
             "heatmap_retention"
           ],
           "board": {

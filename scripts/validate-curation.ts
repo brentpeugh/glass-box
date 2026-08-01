@@ -116,12 +116,17 @@ await (async () => {
     for (const f of E.computeSalience()) {
       const nb = E.findingNeighborhood(f);
       const offered = offeredWidgets(nb, cat);
-      // admit the same offered set through the REAL validator; anything dropped is off-domain
-      const { curation } = validateCurationCore(
-        { thesis: "x", whyRole: "y", evidenceIds: nb.metricIds.slice(0, 1), testIds: [nb.falsifierIds[0]], widgetIds: offered, scorecardKeys: [], rationaleTags: [] },
-        nb, cat, WIDGET_DOMAIN);
-      const admitted = curation ? curation.widgetIds : [];
-      const inadmissible = offered.filter((id: string) => !admitted.includes(id));
+      // Admit each offered widget ALONE through the REAL validator. This isolates the DOMAIN invariant:
+      // a lone widget can never be dropped for redundancy (panel distinctness is a SET constraint over
+      // the selected trio), so anything dropped here is off-DOMAIN — which is what "offer ⊆ admit" guards
+      // (offer and admit both derive from admissibleLenses). Feeding the full offered list would instead
+      // measure distinctness, which legitimately drops the redundant tail.
+      const inadmissible = offered.filter((id: string) => {
+        const { curation } = validateCurationCore(
+          { thesis: "x", whyRole: "y", evidenceIds: nb.metricIds.slice(0, 1), testIds: [nb.falsifierIds[0]], widgetIds: [id], scorecardKeys: [], rationaleTags: [] },
+          nb, cat, WIDGET_DOMAIN);
+        return !(curation && curation.widgetIds.includes(id));
+      });
       checked++;
       if (inadmissible.length) offenders.push(`${label}/${f.id}(${nb.domain}): ${inadmissible.join(",")}`);
     }

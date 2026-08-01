@@ -954,6 +954,16 @@ Return ONLY JSON, no fences: {"mode":"recurate|answer|both|unsupported","domain"
 
 THE USER'S INTEREST: "${text}"`;
 }
+// The engine traces metrics by CUSTOMER SEGMENT (SMB/Mid-Market/Enterprise), quarter, and cohort. A
+// breakdown by a dimension the contract does not define cannot be traced to a governed metric — so it is
+// DECLINED deterministically, before the model, stating what data would be needed. A reasonable-looking
+// question gets an honest refusal, never an approximate answer. (These dimensions are genuinely absent from
+// the contract — region is a raw field but exposes no governed metric, so it is left out of this list.)
+const UNSUPPORTED_DIM = [
+  { re: /\b(industry|industries|vertical|verticals)\b/i, dim: "industry", need: "an industry attribute on each account" },
+  { re: /\bproducts?\b|\bproduct[-\s]?lines?\b|\bskus?\b/i, dim: "product line", need: "a product dimension on the revenue records" },
+  { re: /\b(channel|channels|partner|partners|reseller|resellers)\b/i, dim: "sales channel", need: "a channel attribute on each opportunity" },
+];
 async function classifyQuery(text) {
   const data = await callModel("intent", [{ role: "user", content: buildRouterPrompt(text) }], 260);
   const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -1151,12 +1161,21 @@ function Scorecard({ role, scorecardKeys, onPick }) {
   </div>);
 }
 
+// Starter queries. The FIRST is a reasonable-looking breakdown the contract can't hold (no industry
+// dimension) — it returns an honest, immediate refusal, not an approximate answer. It is NOT flagged as
+// the failing one; the point is that a plausible question is governed like any other.
+const QUERY_SUGGESTIONS = [
+  "How does ARR break down by industry?",
+  "How is sales efficiency trending?",
+  "What's Enterprise net retention?",
+];
 function QueryModal({ queries, onAsk, onClose, onPick, onRecurate, onAnswerFully, busy, aside }) {
   return (<div className={`qmodal-bg ${aside ? "aside" : ""}`} onClick={onClose}>
     <div className="qmodal" onClick={(e) => e.stopPropagation()}>
       <div className="qmodal-h"><span className="qmodal-t">Ask your data</span><button className="qmodal-x" onClick={onClose}>✕</button></div>
       <QueryBar onAsk={onAsk} busy={busy} />
-      <div className="qmodal-note">Type an analytical interest. The model maps it to a discovered finding and echoes back its reading (with a confidence and salience rank) before re-orienting — or refuses if the data contract doesn't support it. You navigate; the engine governs what's real.</div>
+      <div className="qmodal-suggest">{QUERY_SUGGESTIONS.map((s) => <button key={s} className="qsug" disabled={busy} onClick={() => onAsk(s)}>{s}</button>)}</div>
+      <div className="qmodal-note">Type an analytical interest, or try one above. The model maps it to a discovered finding and echoes back its reading (with a confidence and salience rank) before re-orienting — or refuses if the data contract doesn't support it. You navigate; the engine governs what's real.</div>
       <div className="qmodal-results">{queries.map((it) => <AnswerCard key={it.id} item={it} onPick={onPick} onRecurate={onRecurate} onAnswerFully={onAnswerFully} />)}</div>
     </div>
   </div>);
@@ -1183,6 +1202,15 @@ function AppInner() {
     const id = Date.now();
     setQueries((qs) => [{ id, q: text, status: "loading" }, ...qs]);
     const upd = (patch) => setQueries((qs) => qs.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    // deterministic contract guard: a breakdown by a dimension the contract doesn't hold is declined
+    // IMMEDIATELY, before the model — so a reasonable-looking question gets an honest refusal (what data
+    // would be needed), never an approximate model answer.
+    const unsupported = UNSUPPORTED_DIM.find((u) => u.re.test(text));
+    if (unsupported) {
+      pushAudit({ kind: "query", role, detail: `"${text}" → declined (no ${unsupported.dim} dimension in the contract)` });
+      upd({ status: "declined", echo: `${unsupported.dim} breakdown`, reason: `it would need ${unsupported.need}, which the contract doesn't define` });
+      return;
+    }
     try {
       const c = await classifyQuery(text);
       if (!c) { upd({ status: "failed", reason: "couldn't read that — try rephrasing the interest" }); return; }

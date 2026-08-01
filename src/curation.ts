@@ -23,6 +23,74 @@ export const WIDGET_DOMAIN: Record<string, string> = {
 // (RELATED_DOMAINS retired in Tuning 2, Stage A — its only remaining consumer was the board top-up,
 // now removed with the fixed three-slot composition. See analysis/retired-layout.md.)
 
+// Per-form metric metadata — the catalog held no per-form metric list (each form's metrics were only
+// implicit in its `data` payload), so panel DISTINCTNESS could not be checked. This declares, per form:
+//   • kind    — the analytical form (line, combo, treemap, …); a form is a contribution in its own right
+//   • renders — every metric the form shows (drives uniqueness: each panel adds a metric OR a form)
+//   • series  — the metrics the form draws as a prominent DATA SERIES (line/bar/area/point/gauge); a dense
+//               grid or table has none. Drives the FORM CLAUSE below.
+//   • subject — the single metric a form is DEDICATED to (a one-metric line, callout, ranked bar, or
+//               distribution), else null.
+// The FORM CLAUSE (the part that matters): a metric with a dedicated panel among the selected set must
+// not also be drawn as a series on another selected panel — this is what catches the magic number being
+// both its own line (magic_line) AND the combo's overlay; a naive uniqueness rule passes the combo (it
+// contributes S&M spend). UNIQUENESS is metric-OR-form: strict metric-only uniqueness cannot fill three
+// slots once a dense grid (metric_matrix renders every efficiency metric) is chosen, so a panel also
+// counts if it is an analytical form no other selected panel provides.
+type FormMetric = { kind: string; renders: string[]; series: string[]; subject: string | null };
+export const FORM_METRICS: Record<string, FormMetric> = {
+  efficiency_combo:   { kind: "combo",        renders: ["sm_spend", "magic_number"], series: ["sm_spend", "magic_number"], subject: null },
+  magic_line:         { kind: "line",         renders: ["magic_number"], series: ["magic_number"], subject: "magic_number" },
+  accel_line:         { kind: "line",         renders: ["qoq_growth"], series: ["qoq_growth"], subject: "qoq_growth" },
+  metric_matrix:      { kind: "matrix",       renders: ["nrr", "grr", "gross_margin", "magic_number", "cac_payback", "rule_of_40", "net_new_arr", "qoq_growth"], series: [], subject: null },
+  efficiency_bullets: { kind: "bullet",       renders: ["magic_number", "cac_payback", "rule_of_40"], series: ["magic_number", "cac_payback", "rule_of_40"], subject: null },
+  scatter_eff_growth: { kind: "scatter",      renders: ["magic_number", "qoq_growth"], series: ["magic_number", "qoq_growth"], subject: null },
+  quadrant_eff:       { kind: "quadrant",     renders: ["magic_number", "qoq_growth"], series: ["magic_number", "qoq_growth"], subject: null },
+  heatmap_metrics:    { kind: "heatmap",      renders: ["magic_number", "cac_payback", "rule_of_40", "gross_margin"], series: [], subject: null },
+  segment_stack:      { kind: "stacked_area", renders: ["seg_arr"], series: ["seg_arr"], subject: null },
+  segment_table:      { kind: "table",        renders: ["seg_arr", "ent_share", "nrr", "grr"], series: [], subject: null },
+  pareto_arr:         { kind: "pareto",       renders: ["seg_arr", "arr_cumshare"], series: ["seg_arr", "arr_cumshare"], subject: null },
+  treemap_arr:        { kind: "treemap",      renders: ["seg_arr", "ent_share"], series: ["seg_arr"], subject: null },
+  lorenz_arr:         { kind: "lorenz",       renders: ["arr_dist"], series: ["arr_dist"], subject: "arr_dist" },
+  indexed_arr:        { kind: "indexed",      renders: ["seg_arr"], series: ["seg_arr"], subject: null },
+  grouped_growth:     { kind: "grouped",      renders: ["seg_arr"], series: ["seg_arr"], subject: null },
+  small_mult_arr:     { kind: "small_multiples", renders: ["seg_arr"], series: ["seg_arr"], subject: null },
+  hbar_nrr:           { kind: "hbar",         renders: ["nrr"], series: ["nrr"], subject: "nrr" },
+  dumbbell_ret:       { kind: "dumbbell",     renders: ["grr", "nrr"], series: ["grr", "nrr"], subject: null },
+  heatmap_retention:  { kind: "heatmap",      renders: ["nrr", "grr"], series: [], subject: null },
+  bridge_smb:         { kind: "waterfall",    renders: ["nrr"], series: [], subject: null },
+  bridge_enterprise:  { kind: "waterfall",    renders: ["nrr"], series: [], subject: null },
+  bridge_blended:     { kind: "waterfall",    renders: ["nrr"], series: [], subject: null },
+  masking_card:       { kind: "finding_card", renders: ["nrr"], series: [], subject: null },
+  callout_magic:      { kind: "callout",      renders: ["magic_number"], series: ["magic_number"], subject: "magic_number" },
+  callout_cac:        { kind: "callout",      renders: ["cac_payback"], series: ["cac_payback"], subject: "cac_payback" },
+  callout_r40:        { kind: "callout",      renders: ["rule_of_40"], series: ["rule_of_40"], subject: "rule_of_40" },
+  callout_grr:        { kind: "callout",      renders: ["grr"], series: ["grr"], subject: "grr" },
+  salient_band:       { kind: "finding_card", renders: [], series: [], subject: null },
+};
+// Compose a DISTINCT panel set from an ordered (salience-ranked) id list — greedy, keeping priority order.
+// A form is dropped if it violates the FORM CLAUSE against an already-kept form, or adds neither a new
+// metric nor a new analytical form. Composed, not truncated: callers fill from the remaining ranked menu.
+export function distinctPanels(ids: string[]): string[] {
+  const kept: string[] = [];
+  const subjects = new Set<string>(), series = new Set<string>(), renders = new Set<string>(), kinds = new Set<string>();
+  for (const id of ids) {
+    const fm = FORM_METRICS[id];
+    if (!fm) { kept.push(id); continue; }   // unknown form: fail open, never block
+    // form clause: a dedicated metric must not be drawn as a series on another selected panel (both ways)
+    const formClash = fm.series.some((m) => subjects.has(m)) || (fm.subject != null && series.has(fm.subject));
+    if (formClash) continue;
+    // uniqueness: contributes a metric no kept panel renders, OR an analytical form not yet present
+    if (!fm.renders.some((m) => !renders.has(m)) && kinds.has(fm.kind)) continue;
+    kept.push(id);
+    if (fm.subject) subjects.add(fm.subject);
+    fm.series.forEach((m) => series.add(m));
+    fm.renders.forEach((m) => renders.add(m));
+    kinds.add(fm.kind);
+  }
+  return kept;
+}
+
 // The finding's admissible analytical lenses — the SINGLE source of truth for both what the prompt
 // OFFERS (buildCurationPrompt) and what the validator ADMITS (validateCurationCore). Engine-computed
 // via findingNeighborhood → nb.lenses; falls back to the finding's own domain only if a caller hands
@@ -115,8 +183,13 @@ export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDoma
   const testIds = inNbTests.slice(0, 3);
   if (testIds.length < inNbTests.length) violations.push("tests beyond the three the lede shows — dropped");
   else if (testIds.length < (cur.testIds || []).length) violations.push("unsupported test id(s) — dropped");
-  const widgetIds = (cur.widgetIds || []).filter((id: string) => catalog[id] && rel.includes(widgetDomain[id]));
-  if (widgetIds.length < (cur.widgetIds || []).length) violations.push("off-domain widget(s) — dropped");
+  const inDomainWidgets = (cur.widgetIds || []).filter((id: string) => catalog[id] && rel.includes(widgetDomain[id]));
+  if (inDomainWidgets.length < (cur.widgetIds || []).length) violations.push("off-domain widget(s) — dropped");
+  // panel distinctness: each panel must add a metric or a form no other shows, and a metric with a
+  // dedicated panel must not be a series on another (the form clause). Redundant panels are dropped —
+  // composed to the constraint, not truncated (the deterministic fallback fills; same as the caps).
+  const widgetIds = distinctPanels(inDomainWidgets);
+  if (widgetIds.length < inDomainWidgets.length) violations.push("redundant panel(s) — a metric with a dedicated panel drawn as a series on another; dropped");
   const hasFalsifier = testIds.some((id: string) => fSet.has(id));
   if (!hasFalsifier) violations.push("no falsifying test selected — a read must be able to fail");
   const tG = guardFraming(cur.thesis || "", allowedLabels), wG = guardFraming(cur.whyRole || "", allowedLabels);

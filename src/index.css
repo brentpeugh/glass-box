@@ -367,6 +367,10 @@ button.dt-num:hover{ color:var(--dye); }
 .qmodal-h{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .qmodal-t{ font-family:var(--font-sans); font-weight:600; font-size:var(--t-2); text-transform:uppercase; letter-spacing:.10em; }   /* title */
 .qmodal-x{ background:none; border:none; font-size:14px; cursor:pointer; color:var(--ink-2); }
+.qmodal-suggest{ display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 2px; }
+.qsug{ font-family:var(--font-sans); font-size:var(--t-2); color:var(--ink-2); background:var(--field); border:1px solid var(--scribe); padding:5px 10px; cursor:pointer; text-align:left; transition:border-color var(--dur-micro) var(--ease); }
+.qsug:hover{ border-color:var(--ink-2); color:var(--ink); }
+.qsug:disabled{ opacity:.4; cursor:default; }
 .qmodal-note{ font-size:11px; color:var(--ink-2); margin:8px 0 4px; }
 .qmodal-results{ overflow-y:auto; min-height:0; margin-top:8px; }
 
