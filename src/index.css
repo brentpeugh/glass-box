@@ -427,11 +427,14 @@ button.dt-num:hover{ color:var(--dye); }
    the right. The floating drawer (over a modal) does not slide. */
 .drawer:not(.floating){ animation: drawer-in var(--dur-normal) var(--ease); }
 @keyframes drawer-in{ from{ transform: translateX(100%); } to{ transform: translateX(0); } }
-/* Close mirrors the open as a TRANSITION (unmounts on transitionend): the drawer slides back out on the same
-   curve while KEEPING its width — a transform, so the board never reflows during the slide and the provenance
-   tree never rewraps (no --close-w pin needed). It unmounts at transitionend; the board then reclaims the
-   space in one reflow. animation:none cancels an in-flight open so a fast close hands off to the transition. */
-.drawer:not(.floating).closing{ animation: none; transform: translateX(100%); transition: transform var(--dur-normal) var(--ease); }
+/* Close mirrors the open as a TRANSITION (unmounts on transitionend) — but the asymmetry is deliberate: the
+   board reclaims the space BEFORE the drawer vacates it, so the region is never empty. The moment .closing
+   applies, the drawer leaves the flex flow (position:absolute, right-anchored, at its current width) so the
+   stage expands to full width in ONE reflow from the first frame; the drawer then translates OUT over the
+   now-full-width board, keeping its width (so no rewrap, no --close-w pin), and unmounts at transitionend
+   (no further reflow — the board is already full). animation:none cancels an in-flight open. (Open is the
+   converse: the board compresses first as the drawer mounts in-flow, then the drawer slides into the space.) */
+.drawer:not(.floating).closing{ position: absolute; left: auto; right: 0; top: 0; bottom: 0; width: var(--drawer-w); z-index: 5; animation: none; transform: translateX(100%); transition: transform var(--dur-normal) var(--ease); }   /* left:auto overrides the base .drawer{left:0} so right+width anchors it to the right edge (matching its in-flow position) */
 /* §6.5 guards — every @keyframes disabled under reduced motion, resolving to the end state (no motion). */
 @media (prefers-reduced-motion: reduce){
   .sweep-seg{ animation:none; }
@@ -614,7 +617,7 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .asp-twothird .cfill{ min-height:0; }
 
 /* ===== provenance drawer: compresses the board (not overlay) ===== */
-.workarea{ flex:1 1 auto; min-height:0; display:flex; }
+.workarea{ flex:1 1 auto; min-height:0; display:flex; position:relative; }   /* position:relative = the containing block for the closing drawer, which goes position:absolute so the board can reflow to full width while it slides out */
 .workarea > .stage{ flex:1 1 auto; min-width:0; }
 .drawer{ position:static; flex:0 0 var(--drawer-w); min-width:0; max-width:var(--drawer-w); border-left:2px solid var(--ink); background:var(--field); display:flex; flex-direction:column; overflow:hidden; box-shadow:none; }
 /* T3: the header IS the root node — eyebrow (badge) on its own line, heading title beneath with the
