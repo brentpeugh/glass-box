@@ -61,10 +61,6 @@ export const FORM_METRICS: Record<string, FormMetric> = {
   bridge_enterprise:  { kind: "waterfall",    renders: ["nrr"], series: [], subject: null },
   bridge_blended:     { kind: "waterfall",    renders: ["nrr"], series: [], subject: null },
   masking_card:       { kind: "finding_card", renders: ["nrr"], series: [], subject: null },
-  callout_magic:      { kind: "callout",      renders: ["magic_number"], series: ["magic_number"], subject: "magic_number" },
-  callout_cac:        { kind: "callout",      renders: ["cac_payback"], series: ["cac_payback"], subject: "cac_payback" },
-  callout_r40:        { kind: "callout",      renders: ["rule_of_40"], series: ["rule_of_40"], subject: "rule_of_40" },
-  callout_grr:        { kind: "callout",      renders: ["grr"], series: ["grr"], subject: "grr" },
   salient_band:       { kind: "finding_card", renders: [], series: [], subject: null },
 };
 // Compose a DISTINCT panel set from an ordered (salience-ranked) id list — greedy, keeping priority order.

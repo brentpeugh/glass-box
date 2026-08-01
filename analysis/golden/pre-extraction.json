@@ -365,42 +365,6 @@
             "fmt"
           ]
         },
-        "callout_magic": {
-          "kind": "callout",
-          "polarity": "bad",
-          "title": null,
-          "desc": "SaaS magic number vs benchmark.",
-          "dataKeys": [
-            "mv"
-          ]
-        },
-        "callout_cac": {
-          "kind": "callout",
-          "polarity": "bad",
-          "title": null,
-          "desc": "CAC payback (months) vs benchmark.",
-          "dataKeys": [
-            "mv"
-          ]
-        },
-        "callout_r40": {
-          "kind": "callout",
-          "polarity": "bad",
-          "title": null,
-          "desc": "Rule of 40 vs benchmark.",
-          "dataKeys": [
-            "mv"
-          ]
-        },
-        "callout_grr": {
-          "kind": "callout",
-          "polarity": "bad",
-          "title": null,
-          "desc": "Gross revenue retention vs benchmark.",
-          "dataKeys": [
-            "mv"
-          ]
-        },
         "segment_stack": {
           "kind": "stacked_area",
           "polarity": "neutral",
@@ -1068,42 +1032,6 @@
             "benchmark",
             "good",
             "fmt"
-          ]
-        },
-        "callout_magic": {
-          "kind": "callout",
-          "polarity": "bad",
-          "title": null,
-          "desc": "SaaS magic number vs benchmark.",
-          "dataKeys": [
-            "mv"
-          ]
-        },
-        "callout_cac": {
-          "kind": "callout",
-          "polarity": "bad",
-          "title": null,
-          "desc": "CAC payback (months) vs benchmark.",
-          "dataKeys": [
-            "mv"
-          ]
-        },
-        "callout_r40": {
-          "kind": "callout",
-          "polarity": "bad",
-          "title": null,
-          "desc": "Rule of 40 vs benchmark.",
-          "dataKeys": [
-            "mv"
-          ]
-        },
-        "callout_grr": {
-          "kind": "callout",
-          "polarity": "bad",
-          "title": null,
-          "desc": "Gross revenue retention vs benchmark.",
-          "dataKeys": [
-            "mv"
           ]
         },
         "segment_stack": {

@@ -37,10 +37,10 @@ export function buildCatalog() {
     efficiency_combo: { kind: "combo", polarity: "bad", desc: "Sales & marketing spend climbing while sales efficiency (magic number) falls through its benchmark.", data: { title: "S&M spend vs magic number", bars: smBars, line: magicLine, benchmark: E.BENCH.magic_number.threshold, good: E.BENCH.magic_number.good } },
     magic_line: { kind: "line", polarity: "bad", desc: "Magic number trend crossing its 0.75 benchmark.", data: { title: "SaaS magic number", series: magicLine, benchmark: E.BENCH.magic_number.threshold, good: "above", fmt: (v) => `${v.toFixed(2)}x` } },
     accel_line: { kind: "line", polarity: "good", desc: "Quarter-over-quarter ARR growth accelerating.", data: { title: "Quarter-over-quarter ARR growth", series: accelLine, benchmark: null, good: "above", fmt: (v) => `${v.toFixed(1)}%` } },
-    callout_magic: { kind: "callout", polarity: "bad", desc: "SaaS magic number vs benchmark.", data: { mv: E.magicNumber("25Q4") } },
-    callout_cac: { kind: "callout", polarity: "bad", desc: "CAC payback (months) vs benchmark.", data: { mv: E.cacPayback("25Q4") } },
-    callout_r40: { kind: "callout", polarity: "bad", desc: "Rule of 40 vs benchmark.", data: { mv: E.ruleOf40("25Q4") } },
-    callout_grr: { kind: "callout", polarity: "bad", desc: "Gross revenue retention vs benchmark.", data: { mv: E.grr(null, "24Q4", "25Q4") } },
+    // (callout_magic / callout_cac / callout_r40 / callout_grr removed — dead catalog entries: not in
+    //  WIDGET_DOMAIN, not in CHART_MENU, never offered to a role and never rendered by any board. The
+    //  `callout` KIND is still built dynamically elsewhere (the vital-signs band); these fixed entries
+    //  were vestigial. Confirmed unseen across both roles in both data states before removal.)
     segment_stack: { kind: "stacked_area", polarity: "neutral", desc: "ARR by segment over time — topline growth and rising Enterprise concentration.", data: { title: "ARR by segment", series: segSeries } },
     segment_table: { kind: "table", polarity: "neutral", desc: "Per-segment ARR, share of ARR, NRR and GRR — the concentration and durability breakdown in one grid.", data: {} },
     hbar_nrr: { kind: "hbar", polarity: "bad", desc: "Net revenue retention ranked by segment against the 100% benchmark — shows the retention spread at a glance.", data: { title: "NRR by segment", benchmark: 100, fmt: (v) => `${v.toFixed(0)}%`, items: E.SEGMENTS.map((sg) => { const mv = E.nrr(sg, "24Q4", "25Q4"); return { label: sg, value: mv.value, mv, tone: mv.value >= 100 ? "good" : "bad" }; }) } },
@@ -48,6 +48,11 @@ export function buildCatalog() {
     efficiency_bullets: { kind: "bullet", polarity: "bad", desc: "Capital-efficiency metrics (magic number, CAC payback, Rule of 40) against their benchmarks as bullet gauges.", data: { title: "Efficiency vs targets", items: (() => { const mag = E.magicNumber("25Q4"), cac = E.cacPayback("25Q4"), r40 = E.ruleOf40("25Q4"); return [{ label: "Magic #", mv: mag, value: mag.value, target: mag.basis.thr, good: mag.basis.good, max: 1.0, fmt: (v) => `${v.toFixed(2)}x` }, { label: "CAC (mo)", mv: cac, value: cac.value, target: cac.basis.thr, good: cac.basis.good, max: 30, fmt: (v) => `${v.toFixed(0)}mo` }, { label: "Rule of 40", mv: r40, value: r40.value, target: r40.basis.thr, good: r40.basis.good, max: 60, fmt: (v) => `${v.toFixed(0)}` }]; })() } },
     scatter_eff_growth: { kind: "scatter", polarity: "bad", desc: "Sales efficiency (magic number) plotted against ARR growth, quarter by quarter — shows whether growth is being bought with declining efficiency.", data: { title: "Efficiency vs growth", points: scatterEG, xlab: "Magic #", ylab: "QoQ growth %" } },
     pareto_arr: { kind: "pareto", polarity: "bad", desc: "ARR by segment, ranked, with the cumulative share curve — how concentrated revenue is in the top segment.", data: { title: "ARR concentration (Pareto)", items: paretoArr, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
+    // (efficiency_heatmap / heatmap_metrics removed — do NOT re-add. This was NOT a redundancy trim: it
+    //  was a tone-only heatmap (cells carried no in-cell text and no `intensity`), and .hm-cell.good/.bad
+    //  both paint --ink — so every good/bad tile rendered as one shade and the only visible variation was
+    //  missing-data cells. A heatmap here is legible ONLY if it renders numbers in-cell (see
+    //  heatmap_retention below) or supplies a per-cell `intensity` for the opacity-magnitude channel.)
     indexed_arr: { kind: "indexed", polarity: "neutral", desc: "Segment ARR rebased to 100 at the first quarter — compares growth rates across segments regardless of size.", data: { title: "Indexed ARR growth by segment", ...indexedArr } },
     dumbbell_ret: { kind: "dumbbell", polarity: "bad", desc: "Gross vs net retention per segment — the gap is the expansion contribution; where the dot moves left, contraction outweighs expansion.", data: { title: "GRR → NRR by segment", items: dumbbellRet, fmt: (v) => `${v.toFixed(0)}%` } },
     treemap_arr: { kind: "treemap", polarity: "bad", desc: "ARR share by segment as proportional area — the concentration of the book at a glance.", data: { title: "ARR share by segment", items: treemapArr, fmt: (v) => `$${(v / 1e6).toFixed(1)}M` } },
@@ -55,6 +60,10 @@ export function buildCatalog() {
     quadrant_eff: { kind: "quadrant", polarity: "bad", desc: "Each quarter positioned by sales efficiency and growth against their benchmarks — the four zones separate efficient growth from bought growth.", data: { title: "Efficiency × growth positioning", points: quadEff, xlab: "Magic #", ylab: "QoQ growth %", xbench: E.BENCH.magic_number.threshold, ybench: 5, quad: { tr: "Efficient growth", tl: "Bought growth", br: "Efficient · slowing", bl: "Inefficient" } } },
     small_mult_arr: { kind: "small_multiples", polarity: "neutral", desc: "One ARR trend per segment on a shared scale — compare the growth shapes side by side.", data: { title: "ARR trend by segment", series: smArr } },
     lorenz_arr: { kind: "lorenz", polarity: "bad", desc: "Cumulative ARR share by account (accounts ranked largest first) — the distribution shape; the steeper the early rise, the more the book concentrates in a few accounts.", data: { title: "ARR distribution (Lorenz)", curve: lorenzCurve.curve, mv: lorenzCurve } },
+    // LEGIBILITY DEPENDS ON THE IN-CELL NUMBERS: heatmapRet writes each NRR/GRR value into `text`. Since
+    // .hm-cell.good and .hm-cell.bad both paint --ink (see index.css), the good/bad tone alone does NOT
+    // distinguish cells — the numbers do. Keep the per-cell text; a tone-only variant renders as one shade
+    // (that is exactly why efficiency_heatmap was removed above).
     heatmap_retention: { kind: "heatmap", polarity: "bad", desc: "NRR and GRR per segment, tone-coded against benchmark — where retention holds and where it breaches.", data: { title: "Retention by segment", ...heatmapRet } },
   };
 }
