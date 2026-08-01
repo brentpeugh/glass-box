@@ -837,24 +837,79 @@ function Lede({ finding, source, curation, role, onPick }) {
   </div>);
 }
 
-function EntryScreen({ onEnter }) {
+// ================= Tuning 5/5a/6 — the curation window =================
+// Between picking a role and seeing a board, the engine has ALREADY finished: the findings, the salience
+// ranking and the row count all exist before the model call goes out. What is pending is only the model
+// CHOOSING which of them this role should see — so this window makes THAT the message, through three
+// terminal states (waiting · failure · success). The RULE (5a): a pending state fills the region whose
+// content it is waiting for — never a shell with reserved gaps. It renders in the SAME composition in both
+// placements (Tuning 6 + revision): the entry composition (wordmark · statement · role rows · window),
+// so the entry (FIRST curation) and the board region (RE-curation) differ only by the rail's presence and
+// the footer's contents. §6 motion: on click a hairline --ink segment sweeps the rule beneath the chosen
+// row (the window's top edge) — fast first pass (~400ms), then a slow ~2s loop until resolve; the window
+// arrives in the sweep's wake (keyed to the first pass completing); the unchosen row recedes then collapses
+// (entry) / the stale board fades (board). The chosen row STAYS and confirms the choice (§6.1 supersedes
+// the old role-name line — the window carries only label + prose). Every figure is engine-known; NOTHING
+// here reads the model's curation (assertion #22 proves it).
+const SWEEP_FIRST_MS = 400;   // the connective first pass — its completion delivers the window
+function engineWindowFacts() {
+  let findings = 0, domains = 0, rows = 0;
+  try { const fs = E.computeSalience() || []; findings = fs.length; domains = new Set(fs.map((f) => { try { return E.findingNeighborhood(f).domain; } catch { return null; } }).filter(Boolean)).size; } catch {}
+  try { rows = BASE_DS ? (BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length) : 0; } catch {}
+  return { findings, domains, rows };
+}
+// The window BLOCK: its top edge is the rule beneath the chosen row, which carries the sweep. The label +
+// prose ARRIVE in the sweep's wake — rendered only once the first pass completes (~400ms) — then the sweep
+// slows to a looping duration indicator until this component unmounts on resolve (no leak). No role name.
+function CurationWindow({ mode }) {
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setRevealed(true), SWEEP_FIRST_MS); return () => clearTimeout(t); }, []);
+  const failed = mode === "failed";
+  const { findings, domains, rows } = engineWindowFacts();
+  const label = failed ? "engine complete · model unavailable" : "engine complete · model composing";
+  const prose = failed
+    ? "The numbers are unaffected — the engine computed them. This is a captured deterministic arrangement, and every value still traces to its source rows."
+    : `${findings} findings across ${domains} domains, computed from ${rows.toLocaleString()} rows. The model is choosing which of them this role should see.`;
+  return (<div className="lede-window">
+    <span className="sweep" aria-hidden="true"><span className={`sweep-seg ${revealed ? "sweep-loop" : "sweep-first"}`} /></span>
+    {revealed && <><span className="lede-ground">{label}</span><p className="lede-window-prose">{prose}</p></>}
+  </div>);
+}
+// The shared composition (wordmark · statement · role rows). Idle: two role buttons. During a curation
+// (windowMode set): the chosen row stays, the window arrives beneath its rule, and — in the entry placement
+// — the unchosen row recedes then collapses (in the board placement there is no unchosen row; the stale
+// board fades instead). Iterating roles in order places the window directly after the chosen row, so the
+// chosen row's rule is the window's top edge in both cases (CFO: unchosen collapses below; CRO: above,
+// lifting the rule up — the §6.2 "sweeps and travels" bonus).
+function RoleComposition({ role, windowMode, onEnter, placement }) {
+  return (<div className="entry">
+    <div className="entry-mark">⟡ CALIPER</div>
+    <div className="entry-sub">
+      <p className="entry-line">Caliper Systems — a synthetic ~$40M ARR vertical SaaS; the engine has computed the quarter.</p>
+      <p className="entry-line">Enter as a role; the board leads with what you're accountable for, from one set of findings.</p>
+    </div>
+    <div className="entry-roles">
+      {!windowMode
+        ? Object.entries(ROLES).map(([k, r]) => (<button key={k} className="role" onClick={() => onEnter(k)}><span className="role-k">{k}</span><span className="role-f">{r.focus}</span></button>))
+        : Object.keys(ROLES).map((k) => k === role
+            ? <React.Fragment key={k}>
+                <div className="role role-chosen"><span className="role-k">{k}</span><span className="role-f">{ROLES[k].focus}</span></div>
+                <CurationWindow mode={windowMode} />
+              </React.Fragment>
+            : (placement === "entry"
+                ? <div key={k} className="role role-collapsing" aria-hidden="true"><span className="role-k">{k}</span><span className="role-f">{ROLES[k].focus}</span></div>
+                : null))}
+    </div>
+  </div>);
+}
+// The entry screen — a fixed composition; the FIRST curation renders the window in the role-row slot via
+// RoleComposition, and the wordmark/statement/footer persist (the page does not jump).
+function EntryScreen({ onEnter, windowMode, role }) {
   let quarters = 0, rows = 0;
   try { quarters = E.QUARTERS.length; } catch {}
   try { rows = BASE_DS ? BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length : 0; } catch {}
   return (<div className="entry-shell">
-    <div className="entry">
-      <div className="entry-mark">⟡ CALIPER</div>
-      <div className="entry-sub">
-        <p className="entry-line">Caliper Systems — a synthetic ~$40M ARR vertical SaaS; the engine has computed the quarter.</p>
-        <p className="entry-line">Enter as a role; the board leads with what you're accountable for, from one set of findings.</p>
-      </div>
-      <div className="entry-roles">
-        {Object.entries(ROLES).map(([k, r]) => (<button key={k} className="role" onClick={() => onEnter(k)}>
-          <span className="role-k">{k}</span>
-          <span className="role-f">{r.focus}</span>
-        </button>))}
-      </div>
-    </div>
+    <RoleComposition role={role} windowMode={windowMode} onEnter={onEnter} placement="entry" />
     <footer className="rail-foot">
       <div className="foot-status"><span className="foot-src">⟡</span> {quarters} quarters · <b>{rows.toLocaleString()}</b> source rows · deterministic engine core</div>
     </footer>
@@ -1172,20 +1227,53 @@ function AppInner() {
       return { loading: false, curation: null, spec: FALLBACK[roleKey], source: "fallback", rejected: 0, framingRejected: 0, err: String(e).slice(0, 120), debug: null };
     }
   }
+  // Tuning 5 — the curation window's terminal transitions. A LIVE curation shows at once (success). A
+  // FALLBACK shows the FAILURE state first — the strongest claim the artifact makes, delivered unprompted
+  // at the moment of failure — then resolves to the fallback board on a ~3s timer. Self-guided beats a
+  // click on an error path; ~3s is long enough to read and short enough not to feel like a wait, and a
+  // repeat visitor (perturb) is not burdened by it, so the same duration/copy holds on repeat. We do NOT
+  // render the deterministic board and swap it: the reflow would make the deterministic arrangement read
+  // as a failure that got corrected, rather than as the legitimate one it is.
+  const CURTAIN_MS = 3000;
+  const BOARD_FADE_MS = 180;   // §6 re-curation: the stale board fades (invalidation) as the window arrives
+  const curtainTimer = React.useRef(null);
+  const fadeTimer = React.useRef(null);
+  const clearCurtain = () => { if (curtainTimer.current) { clearTimeout(curtainTimer.current); curtainTimer.current = null; } };
+  useEffect(() => () => { clearCurtain(); if (fadeTimer.current) clearTimeout(fadeTimer.current); }, []);
+  // 5a — has a board ever been on screen this session? Decides the window's PLACEMENT: false → the FIRST
+  // curation (entry composition); true → RE-curation (the board region). Set the moment any resolved board
+  // commits; never reset (once a board has been shown, no later window can go back to the entry screen).
+  const hadBoard = React.useRef(false);
+  const lastResolved = React.useRef(null);   // the board still on screen when a re-curation begins — fades out
+  const roleRef = React.useRef(role); roleRef.current = role;   // latest committed role, for the fading-board snapshot
+  const [boardFading, setBoardFading] = useState(false);
+  const showBoard = (next) => { hadBoard.current = true; lastResolved.current = { ...next, _role: roleRef.current }; setState(next); };
+  // §6: on re-curation, the stale board fades (~180ms) as the window arrives in the sweep's wake. Only when
+  // a board is actually on screen (hadBoard) — the first curation has no board to fade.
+  const startBoardFade = () => { if (!hadBoard.current) return; setBoardFading(true); if (fadeTimer.current) clearTimeout(fadeTimer.current); fadeTimer.current = setTimeout(() => { fadeTimer.current = null; setBoardFading(false); }, BOARD_FADE_MS); };
+  function resolveInto(next, cacheKey) {
+    clearCurtain();
+    if (cacheKey) cache.current[cacheKey] = next;
+    if (next.source === "live") { showBoard(next); return; }
+    setState({ loading: false, failing: true, curation: null, spec: null, stats: null, source: next.source, rejected: 0, framingRejected: 0, err: next.err, debug: next.debug });
+    curtainTimer.current = setTimeout(() => { curtainTimer.current = null; showBoard(next); }, CURTAIN_MS);
+  }
   async function enter(roleKey) {
-    setRole(roleKey); setPicked(null);
-    if (cache.current[roleKey]) { setState(cache.current[roleKey]); return; }
-    setState({ loading: true, curation: null, spec: null, source: null, rejected: 0, framingRejected: 0, err: null, debug: null });
+    setRole(roleKey); setPicked(null); clearCurtain();
+    if (cache.current[roleKey]) { showBoard(cache.current[roleKey]); return; }
+    startBoardFade();   // re-curation from an existing board → fade it (no-op on the first curation)
+    setState({ loading: true, failing: false, curation: null, spec: null, source: null, rejected: 0, framingRejected: 0, err: null, debug: null });
     const next = await buildCuratedState(roleKey, null);
-    cache.current[roleKey] = next; setState(next);
+    resolveInto(next, roleKey);
   }
   // Query-driven re-orientation to a chosen discovered finding — transient (not cached; role tabs
   // remain the "home" top-finding view). The user drives; the finding is always a real ranked one.
+  // Same window/state machine as enter (a failed re-orient shows the failure state, then the fallback).
   async function recurate(targetFinding) {
-    setPicked(null); setShowQuery(false);
-    setState((s) => ({ ...s, loading: true }));
+    setPicked(null); setShowQuery(false); clearCurtain(); startBoardFade();
+    setState((s) => ({ ...s, loading: true, failing: false }));
     const next = await buildCuratedState(role, targetFinding);
-    setState(next);
+    resolveInto(next, null);
   }
   // Perturbation: swap the engine to run on transformed data, then let salience + curation
   // recompute from scratch. The effect re-curates whenever the perturbation changes.
@@ -1241,12 +1329,26 @@ function AppInner() {
     return () => window.removeEventListener("resize", measure);
   }, [picked, showQuery]);
 
-  if (!role) return (<div className="caliper"><EntryScreen onEnter={enter} /></div>);
+  // 5a — the window's placement. The FIRST curation (no board shown yet) takes over the entry
+  // composition, in the role-row slot; every later window (re-curation) fills the board region instead.
+  const windowActive = state.loading || state.failing;
+  const windowMode = state.failing ? "failed" : "waiting";
+  const firstCuration = windowActive && !hadBoard.current;
+  if (!role || firstCuration) return (<div className="caliper"><EntryScreen onEnter={enter} windowMode={firstCuration ? windowMode : null} role={role} /></div>);
 
   // Proxy footnote lifted to the footer band (was a line inside the scorecard). Resolve the same
   // scorecard set the Scorecard renders, and pull the one proxy metric's disclosure note.
   const scSet = (state.curation && state.curation.scorecardKeys && state.curation.scorecardKeys.length) ? state.curation.scorecardKeys : (KPI_SET[role] || KPI_SET.CFO);
-  const footNote = state.loading ? null : scSet.map((m) => resolveKpi(m)).filter(Boolean).find((r) => r.mv.epistemic === "proxy" && r.mv.note);
+  // the proxy note references a KPI cell — pending while the strip is (window + failure curtain).
+  const footNote = windowActive ? null : scSet.map((m) => resolveKpi(m)).filter(Boolean).find((r) => r.mv.epistemic === "proxy" && r.mv.note);
+  // Tuning 5 — the footer's three groups, treated separately: (1) engine-known facts (row count ·
+  // quarters · segments) present from the shell's first frame; (2) the static route to the governing
+  // contract; (3) the model-dependent counts, which render ONLY once curation resolves — a count not yet
+  // known is unknown, not zero, so nothing model-derived shows during the window.
+  const quarters = (() => { try { return E.QUARTERS.length; } catch { return 0; } })();
+  const segments = (() => { try { return E.SEGMENTS.length; } catch { return 0; } })();
+  const rows = (() => { try { return BASE_DS ? BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length : 0; } catch { return 0; } })();
+  const resolved = !state.loading && !state.failing;
   // The proxy note splits: the CAVEAT (why it's a proxy) stays in the footer; the FORMULA moves into the
   // Trust panel's data-contract section, where a proxy's construction belongs. mv.note is "<formula>;
   // <caveat>" — split on the ";" (engine string is not touched; this is a presentation split).
@@ -1277,29 +1379,46 @@ function AppInner() {
       </nav>
 
       <div className="frame-main">
+        {/* the perturb banner states engine-known, already-true state (like the footer's engine facts), so
+            it PERSISTS through the re-curation window in its normal position (renders at click, not resolve)
+            and does not move when the board arrives. */}
         {perturbation && <div className="perturb-banner"><span className="pb-tag">DATA PERTURBED</span><span className="pb-lbl">{PERTURBATIONS[perturbation].label}</span><span className="pb-note">{PERTURBATIONS[perturbation].note} The engine recomputed salience from the changed data — the finding you see below re-derived on its own, no code change.</span><button className="pb-reset" onClick={resetPerturbation}>reset data ›</button></div>}
 
         {showDebug && <div className="brief-overlay"><DebugPanel d={state.debug} onClose={() => setShowDebug(false)} /></div>}
 
-        <div className={`workarea ${picked ? "drawer-open" : ""}`}>
+        {/* §6 RE-curation: the window mirrors the entry composition (measure, centring, block, vertical
+            position) — the two states differ only by the rail and the footer's contents. The stale board
+            fades (invalidation) as the window arrives in the sweep's wake. */}
+        {windowActive ? <div className="recuration">
+          {boardFading && lastResolved.current && <main className="stage board-fading" aria-hidden="true">
+            <Scorecard role={lastResolved.current._role} scorecardKeys={lastResolved.current.curation && lastResolved.current.curation.scorecardKeys} onPick={() => {}} />
+            <TemplateBoard spec={lastResolved.current.spec} role={lastResolved.current._role} catalog={catalog} onPick={() => {}} finding={lastResolved.current.curation && lastResolved.current.curation.finding} source={lastResolved.current.source} curation={lastResolved.current.curation} />
+          </main>}
+          <RoleComposition role={role} windowMode={windowMode} placement="board" />
+        </div> : <div className={`workarea ${picked ? "drawer-open" : ""}`}>
           <main className="stage">
-            {state.loading ? <div className="loading">…</div> : <><Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} /><TemplateBoard key={`${role}|${perturbation}|${(state.curation && state.curation.finding && state.curation.finding.label) || ""}`} spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} curation={state.curation} /></>}
+            <Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} />
+            <TemplateBoard key={`${role}|${perturbation}|${(state.curation && state.curation.finding && state.curation.finding.label) || ""}`} spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} curation={state.curation} />
           </main>
           <TraceDrawer picked={picked} source={state.source} floating={showQuery || showTrust || showDebug} onClose={() => setPicked(null)} />
-        </div>
+        </div>}
       </div>
 
-      {/* footer band — the curation status string (was top rail) + the proxy footnote (was in the body) */}
+      {/* footer band — three groups, treated separately (Tuning 5, §1). */}
       <footer className="rail-foot">
-        {/* the claim about how this board was arranged routes to the contract that governs it — the same
-            dye/label ▸ treatment as a value's trace affordance (dye routes to provenance; here, to the
-            arrangement's governing contract). Opens the Trust panel, which now holds the curation log. */}
-        <button className={`foot-status ${state.source}`} onClick={() => setShowTrust(true)} title="the trust contract — what each layer may and may not do">
-          <span className="foot-claim">
-          {state.loading ? <span><span className="live-dot" /> curating the {role} dashboard — the model is arranging the engine's findings…</span>
-            : state.source === "live" ? <span><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · overall #1: {state.disclosure.label} → {state.disclosure.owner.role} view</em>}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected · <b>{state.stats.rows.toLocaleString()}</b> rows traceable</>}</span>
-            : <span>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>}</span>}
-          </span>
+        {/* group 1 — what the engine already knows: row count · quarters · segments. No model dependency,
+            so it is present from the board shell's first frame, all through the curation window. */}
+        <span className="foot-facts"><span className="foot-src">⟡</span> {quarters} quarters · <b>{rows.toLocaleString()}</b> source rows · {segments} segments</span>
+        {/* groups 3 + 2 — the model-dependent claim (model chose N of M · N evidence · N rejected) and the
+            static route to the governing contract. The claim renders ONLY once curation resolves (a count
+            not yet known is unknown, not zero → nothing during the window); the ▸ contract route is always
+            present. Both open the Trust panel — the arrangement's claim, and the contract that governs it. */}
+        <button className={`foot-status ${state.source || ""}`} onClick={() => setShowTrust(true)} title="the trust contract — what each layer may and may not do">
+          {resolved && <span className="foot-claim">
+            {state.source === "live"
+              ? <><span className="live-dot" /> Curated live for the {role}{state.disclosure && <em className="disclose"> · overall #1: {state.disclosure.label} → {state.disclosure.owner.role} view</em>}{state.stats && <> · model chose <b>{state.stats.selected} of {state.stats.candidates}</b> panels · <b>{state.stats.evidence}</b> evidence · <b>{state.stats.rejected}</b> rejected</>}</>
+              : <>Model unavailable — captured {role} arrangement. Numbers still live from the engine.{state.err && <em> · {state.err}</em>}</>}
+          </span>}
           <span className="foot-trace">▸ the contract</span>
         </button>
         {proxy && <button className="foot-note" onClick={() => setShowTrust(true)} title="the trust contract — how this proxy is constructed"><sup className="proxy">a</sup> {proxy.label} is a proxy — {proxy.caveat}</button>}

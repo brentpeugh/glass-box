@@ -173,8 +173,11 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
     const cssUsers = rules.filter((r) => new RegExp(`animation(?:-name)?:[^;}]*\\b${name}\\b`).test(r.body));
     const inlineUsed = new RegExp(`animation[^;}"'\`]*\\b${name}\\b`).test(inlineAnim);
     if (cssUsers.length === 0 && !inlineUsed) { bad.push(`${name} (dead — defined, never applied)`); continue; }
+    // guarded iff one of the user's classes has `animation:none` within its own RM rule. `[^}]*` spans the
+    // rule's opening brace and body but stops at its closing brace (so the match can't leak into a sibling
+    // rule) — `[^{}]*` could never match, since a real rule always has a `{` between the class and the decl.
     for (const c of cssUsers)
-      if (!classesOf(c.prelude).some((cl) => new RegExp(`\\.${cl}\\b[^{}]*animation\\s*:\\s*none`).test(rmText))) bad.push(`${name} on ${c.prelude} (unguarded)`);
+      if (!classesOf(c.prelude).some((cl) => new RegExp(`\\.${cl}\\b[^}]*animation\\s*:\\s*none`).test(rmText))) bad.push(`${name} on ${c.prelude} (unguarded)`);
   }
   ok("every @keyframes is applied and guarded under prefers-reduced-motion (no dead keyframes)", bad.length === 0, bad.join(" · "));
 }
@@ -305,7 +308,7 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
 // other selector mono is decorative. TEETH: post-2b put mono on kcell-v, dt-num, chart-title, the KPI
 // labels … → trips.
 {
-  const NOTE_MACHINE = new Set(["src-note", "co-note", "foot-note", "foot-status", "ev-trace", "brief-viol", "node-op", "node-desc", "dbg-meta", "proxy", "rows-recon", "err-msg", "rows-stat", "rows-cap", "rows-tbl", "anno", "dbg-pre", "mono", "t-note", "t-machine"]);
+  const NOTE_MACHINE = new Set(["src-note", "co-note", "foot-note", "foot-status", "foot-facts", "ev-trace", "brief-viol", "node-op", "node-desc", "dbg-meta", "proxy", "rows-recon", "err-msg", "rows-stat", "rows-cap", "rows-tbl", "anno", "dbg-pre", "mono", "t-note", "t-machine"]);
   const bad: string[] = [];
   for (const r of rules) {
     if (r === tokenBlock) continue;
@@ -440,6 +443,29 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
   if (!whyP || !/<Substitute\b/.test(whyP[1])) bad.push("lede-why not rendered via <Substitute>");
   if (/\{\s*curation\.(thesis|whyRole)\s*\}/.test(jsx)) bad.push("raw model prose interpolated — curation.thesis/whyRole reaches the DOM unengineered");
   ok("lede model prose reaches the DOM only through <Substitute> (no raw digit path)", bad.length === 0, bad.join(" · "));
+}
+
+// ── 20 · the curation window renders no model-derived value (§5, Tuning 5) ─────────────────────────
+// During the window (waiting + failure), the engine has finished but the model has not chosen. Those
+// states must render ONLY engine-known facts — never a curation output — else a model value would reach
+// the screen before the model has run. STATIC: the CurationWindow component's body must not reference
+// `curation`. TEETH (fixture "window-model-value"): a `{curation}` reference injected into the window
+// trips it. This is the 22nd assertion — the brief's "#22" (assertions numbered by count; the
+// header-comment sequence makes it 20). Deliberately NOT folded into #17: #17 governs the identical
+// skeleton across AUTHORSHIP states (model-authored vs deterministic); waiting/failure are LIFECYCLE
+// states on a different axis, and folding them in would weaken an assertion that means something precise.
+{
+  const jsx = stripAll(appTsx);
+  const start = jsx.indexOf("function CurationWindow");
+  const bad: string[] = [];
+  if (start < 0) bad.push("CurationWindow component not found");
+  else {
+    const after = jsx.slice(start + 1);
+    const nextFn = after.indexOf("\nfunction ");
+    const body = nextFn >= 0 ? after.slice(0, nextFn) : after;
+    if (/\bcuration\b/.test(body)) bad.push("CurationWindow references `curation` — a model value in the waiting/failure state");
+  }
+  ok("the curation window renders no model-derived value (waiting/failure)", bad.length === 0, bad.join(" · "));
 }
 
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — register surface: ${pass}/${pass + fail} assertions`);

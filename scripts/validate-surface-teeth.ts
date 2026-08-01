@@ -78,6 +78,11 @@ const fixtures: Fixture[] = [
     note: "current tree with the --plane ground channel REVIVED (token re-added + painted on .lede-prose) — witness for the label-only authorship rule, which no other fixture reaches (the pre-register tree had no lede/plane at all, and removing --plane made it unrepresentable except by reviving it)",
     build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace("--field:#edeff0;", "--field:#edeff0; --plane:#e4e7e9;") + "\n.lede-prose.plane{ background:var(--plane); }\n"; return writeTree(f, "planeground"); },
   },
+  {
+    name: "window-model-value",
+    note: "current tree with a `{curation}` reference injected into the curation window — witness for the Tuning-5 rule that the waiting/failure states render ONLY engine-known facts, never a model output (a value reaching the screen before the model has run)",
+    build: () => { const f = curFiles(); f["App.tsx"] = f["App.tsx"].replace('<p className="lede-window-prose">', '<p className="lede-window-prose">{curation}'); return writeTree(f, "windowval"); },
+  },
 ];
 
 console.log("TEETH PROOF — validate-surface (structural: assertions enumerated from the validator)\n");

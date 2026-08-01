@@ -332,6 +332,8 @@ button.dt-num:hover{ color:var(--dye); }
    band, so no heavy L where it used to meet the rail at the bottom-left. It carries body text
    (status + proxy note) in ink/ink-2; the proxy key + disclose keep their default dye on the field. */
 .rail-foot{ grid-column:2; grid-row:2; height:var(--bar); background:var(--field); border-top:var(--w-hair) solid var(--scribe-strong); display:flex; align-items:center; gap:24px; padding:0 var(--pad); overflow:hidden; }
+.foot-facts{ flex:0 0 auto; display:flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:var(--t-1); color:var(--ink-2); white-space:nowrap; }   /* note — engine-known facts (group 1); always present, no model dependency */
+.foot-facts b{ color:var(--ink); font-weight:700; }
 .foot-status{ flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:10px; background:none; border:none; padding:0; text-align:left; cursor:pointer; font-family:var(--font-mono); font-size:var(--t-1); color:var(--ink-2); }   /* note — source/status line; routes to the contract */
 .foot-claim{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .foot-trace{ flex:0 0 auto; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--dye); white-space:nowrap; }   /* label — trace affordance, same form as ▸ trace; routes to the contract */
@@ -369,6 +371,43 @@ button.dt-num:hover{ color:var(--dye); }
    2×2 card block stretches to fill, so the cards run tall with internal air. */
 .board-band{ flex:1 1 0; min-height:0; border-bottom:var(--w-hair) solid var(--scribe-strong); }
 .board-band .lede, .board-band .lede-prose, .board-band .lede-figures{ height:100%; }
+/* Tuning 6 — the curation window BLOCK (rule · label · prose). Rendered inside .entry-roles (both
+   placements), so it inherits the entry's measure + centring — the entry and board windows mirror. Its
+   top edge is the rule beneath the chosen row (role-row padding, so it aligns with the rows); the label +
+   prose arrive in the sweep's wake. The prose figures are engine-known, dye-free plain text. */
+.lede-window{ position:relative; display:flex; flex-direction:column; gap:var(--in-2); border-top:var(--w-hair) solid var(--scribe-strong); padding:18px 4px; }
+.lede-window-prose{ font-family:var(--font-sans); font-size:var(--t-3b); font-weight:400; line-height:1.5; color:var(--ink); margin:0; max-width:60ch; }
+/* §6.1 the connective gesture — a hairline --ink segment travels the window's top rule left→right. First
+   pass ~400ms (marks the state change, delivers the window); then a slow ~2s loop (duration indicator)
+   until the window unmounts on resolve. Not a bar: a thin segment, and the window's arrival is keyed to
+   the pass completing (React), not masked behind the sweep's position. */
+.sweep{ position:absolute; left:0; right:0; top:0; height:2px; overflow:hidden; pointer-events:none; }
+.sweep-seg{ position:absolute; top:0; left:0; height:100%; width:22%; background:var(--ink); animation: sweep 2000ms linear infinite; }
+.sweep-seg.first{ animation-duration:400ms; animation-iteration-count:1; }
+@keyframes sweep{ from{ transform:translateX(-100%); } to{ transform:translateX(455%); } }
+/* §6.2 the unchosen row recedes (text → --scribe) then collapses (height + its own rule to 0). Receding
+   then collapsing reads as deselected; fading out would read as deleted. Its top rule goes transparent so
+   no double hairline remains. */
+.role-collapsing{ overflow:hidden; border-top-color:transparent; pointer-events:none; animation: role-collapse 180ms ease-in forwards; }
+.role-collapsing .role-f{ color:inherit; }
+@keyframes role-collapse{ 0%{ max-height:100px; color:var(--ink-2); } 35%{ max-height:100px; color:var(--scribe); } 100%{ max-height:0; color:var(--scribe); } }
+/* §6.4 re-curation: the stale board fades (invalidation, not deselection) as the window arrives; it
+   overlays the arriving composition and fades out. */
+.recuration{ position:relative; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+.board-fading{ position:absolute; inset:0; z-index:2; pointer-events:none; animation: board-fade 180ms ease forwards; }
+@keyframes board-fade{ from{ opacity:1; } to{ opacity:0; } }
+/* §6.3 resolve: the board arrives whole — a short opacity settle, nothing staggered, no per-panel or
+   value motion. */
+.workarea .stage{ animation: board-arrive 200ms ease; }
+@keyframes board-arrive{ from{ opacity:0; } to{ opacity:1; } }
+/* §6.5 guards — every @keyframes disabled under reduced motion, resolving to the end state (no motion). */
+@media (prefers-reduced-motion: reduce){
+  .sweep-seg{ animation:none; }
+  .sweep{ display:none; }
+  .role-collapsing{ animation:none; max-height:0; border-top-color:transparent; }
+  .board-fading{ animation:none; display:none; }
+  .workarea .stage{ animation:none; }
+}
 
 /* ===== Stage C/2f — the lede: model prose left (2/3), its evidence figures right (1/3) =====
    Column split is 2fr/1fr so the figures' left edge lands on the THIRD chart panel's left edge
