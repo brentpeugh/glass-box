@@ -35,7 +35,7 @@
   --num:tabular-nums lining-nums;   /* uniform-width lining digits without a monospace face */
   --in-1:4px; --in-2:8px; --in-3:16px; --out:32px;
   --w-hair:1px; --w-series:1.75px; --mk:6px;
-  --drawer-w:32%;   /* the open detail-drawer's flex-basis — ONE source for the resting rule AND the board-compress/collapse keyframes, so the animated width can't desync from the resting width (a 6c regression: the keyframe held a stale 26% while the resting rule was 32%, crushing the node tree) */
+  --drawer-w:32%;   /* the open detail-drawer's flex-basis (its resting width). The drawer's slide is now a translateX transform (relative to its own width), not a flex-basis keyframe, so nothing else references this — no width can desync from it. */
 }
 .caliper{ font-family:var(--font-sans);color:var(--ink);background:var(--field);min-height:100vh;padding:0 0 48px;background-attachment:fixed;}
 .caliper *{box-sizing:border-box;}
@@ -420,26 +420,18 @@ button.dt-num:hover{ color:var(--dye); }
    value motion. */
 .workarea .stage{ animation: board-arrive var(--dur-fast) var(--ease); }
 @keyframes board-arrive{ from{ opacity:0; } to{ opacity:1; } }
-/* Strata kinetic — the detail drawer opening compresses the board on the house curve (--ease). The
-   non-floating drawer grows its flex-basis 0→--drawer-w and the stage (flex:1) compresses to fit, over
-   --dur-normal (Strata normal). The floating drawer (over a modal) does not compress. */
-.drawer:not(.floating){ animation: board-compress var(--dur-normal) var(--ease) both; }
-@keyframes board-compress{ from{ flex-basis:0; } to{ flex-basis:var(--drawer-w); } }
-/* Symmetric close — the drawer no longer vanishes instantly. It keeps its `.closing` class and collapses
-   flex-basis back 26%→0 on the SAME curve/duration as the open (mirrored), the stage reclaiming the space,
-   then unmounts on animationend (board-collapse). Its contents are PINNED to the open width (--close-w,
-   measured at close-start) and the drawer clips them (overflow:hidden, already on .drawer) so the provenance
-   tree does not rewrap as the width animates down — a per-frame reflow reads worse than the old snap. */
-.drawer:not(.floating).closing{ animation: board-collapse var(--dur-normal) var(--ease) both; }
-.drawer.closing > *{ width: var(--close-w); flex-shrink:0; }
-@keyframes board-collapse{ from{ flex-basis:var(--drawer-w); } to{ flex-basis:0; } }
-/* The settle fade — the six charts are pixel-drawn, so throttling their re-render would read as 4–5
-   discrete jumps; instead measurement is SUSPENDED and one re-render lands at true size after the
-   compression, and the CHART panels dim while it runs so that pop happens under a fade. Only .cpanel
-   (chart panels) dims — tables (.tpanel) reflow via CSS and never dim, and the origin box-shadow lives
-   in the .tb-panel padding (outside .cpanel) so the mark holds full strength while its chart dims. */
-.cpanel{ transition: opacity var(--dur-fast) var(--ease); }
-.compressing .cpanel{ opacity: 0.4; }
+/* Motion DECOUPLED from layout — the drawer's slide no longer drives the board's width. The board takes its
+   final width in ONE reflow the instant the drawer mounts (flex: 0 0 --drawer-w): one measure, one re-render,
+   no per-frame flex-basis animation, so there is no measurement storm to suspend and no chart pop to dim. The
+   drawer then TRANSLATES into that already-reserved space — a compositor transform, no layout — entering from
+   the right. The floating drawer (over a modal) does not slide. */
+.drawer:not(.floating){ animation: drawer-in var(--dur-normal) var(--ease); }
+@keyframes drawer-in{ from{ transform: translateX(100%); } to{ transform: translateX(0); } }
+/* Close mirrors the open as a TRANSITION (unmounts on transitionend): the drawer slides back out on the same
+   curve while KEEPING its width — a transform, so the board never reflows during the slide and the provenance
+   tree never rewraps (no --close-w pin needed). It unmounts at transitionend; the board then reclaims the
+   space in one reflow. animation:none cancels an in-flight open so a fast close hands off to the transition. */
+.drawer:not(.floating).closing{ animation: none; transform: translateX(100%); transition: transform var(--dur-normal) var(--ease); }
 /* §6.5 guards — every @keyframes disabled under reduced motion, resolving to the end state (no motion). */
 @media (prefers-reduced-motion: reduce){
   .sweep-seg{ animation:none; }
@@ -450,7 +442,7 @@ button.dt-num:hover{ color:var(--dye); }
   .board-fading{ animation:none; display:none; }
   .workarea .stage{ animation:none; }
   .drawer{ animation:none; }
-  .drawer:not(.floating).closing{ animation:none; }   /* close never animates under RM (JS also skips the .closing state); guard at matching specificity so it can't win over the open rule */
+  .drawer:not(.floating).closing{ animation:none; transition:none; }   /* close never animates under RM (JS also skips the .closing state); guard at matching specificity so it can't win over the open rule */
 }
 
 /* ===== Stage C/2f — the lede: model prose left (2/3), its evidence figures right (1/3) =====

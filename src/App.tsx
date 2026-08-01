@@ -279,13 +279,10 @@ function ChartHeader({ title, tag, tagTone, onTrace }) {
 // Charts fill their panel: measure the container, render the SVG to its exact box (both
 // dimensions). The chart is a tenant of a fixed-size panel, not the other way around —
 // this is what makes heights align across a row and is the basis for the template system.
-// Chart measurement is SUSPENDABLE. The drawer's board-compress animates flex-basis, which reflows the
-// board every frame; unsuspended, each chart's ResizeObserver would fire every frame and re-render its SVG
-// (layout thrash — the drawer-open jank). While suspended, RO callbacks are ignored; on resume, every chart
-// re-measures ONCE. A flag + one re-measure, not a timer inside the hook.
-const measureBus = { suspended: false, remeasure: new Set() };
-function suspendMeasure() { measureBus.suspended = true; }
-function resumeMeasure() { measureBus.suspended = false; measureBus.remeasure.forEach((fn) => fn()); }
+// Chart measurement. The drawer's slide is a compositor transform now (it does not reflow the board), so
+// opening/closing a drawer changes the board's width in exactly ONE reflow — the ResizeObserver fires once
+// and the chart re-renders once. No suspend/resume machinery is needed (it existed only to tame the old
+// per-frame flex-basis compression).
 function useSize() {
   const ref = useRef(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -293,13 +290,11 @@ function useSize() {
     const el = ref.current; if (!el) return;
     // Synchronous first measure (before paint) so the chart renders at its real size on the first
     // frame — no first-paint flash, and no dependence on the ResizeObserver's first async delivery.
-    // The ResizeObserver only tracks subsequent resizes. A guard, not a timer.
     const measure = () => { const r = el.getBoundingClientRect(); setSize({ w: Math.round(r.width), h: Math.round(r.height) }); };
     measure();
-    const ro = new ResizeObserver(() => { if (!measureBus.suspended) measure(); });   // ignored while a board-compress is animating
+    const ro = new ResizeObserver(() => measure());
     ro.observe(el);
-    measureBus.remeasure.add(measure);   // re-measured once when measurement resumes
-    return () => { ro.disconnect(); measureBus.remeasure.delete(measure); };
+    return () => { ro.disconnect(); };
   }, []);
   return [ref, size];
 }
@@ -1326,61 +1321,37 @@ function AppInner() {
     prevAnyModal.current = anyModal;
   }, [anyModal, picked]);
 
-  // Suspend chart measurement while the drawer's board-compress runs — the flex reflow would fire every
-  // chart's ResizeObserver each frame (per-frame SVG re-render = the drawer-open jank). Resume + re-measure
-  // once when the compression ENDS — keyed to the board-compress `animationend` (bubbles to .workarea),
-  // not a timer. Only on the closed→open transition (a re-trace while open causes no compression). Under
-  // reduced motion there is no animation (and no storm), so we skip. The cleanup resumes on close/interrupt
-  // (the board expands in a single reflow — one re-measure, not a per-frame storm; see the §close report).
-  // …and dim the chart panels (.compressing) for the same window, so the one true-size re-render pops UNDER
-  // a fade: dim as the compression starts, resume + un-dim (opacity returns over --dur-fast) on animationend.
-  const measureWasOpen = useRef(false);
-  const [compressing, setCompressing] = useState(false);
-  useEffect(() => {
-    const wasOpen = measureWasOpen.current;
-    measureWasOpen.current = !!picked;
-    if (!picked || wasOpen) return;
-    if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    suspendMeasure(); setCompressing(true);
-    const wa = document.querySelector(".workarea");
-    const onEnd = (e) => { if (e.animationName === "board-compress") { resumeMeasure(); setCompressing(false); } };
-    if (wa) wa.addEventListener("animationend", onEnd);
-    return () => { if (wa) wa.removeEventListener("animationend", onEnd); resumeMeasure(); setCompressing(false); };
-  }, [picked]);
+  // The drawer's slide is a compositor TRANSFORM (see index.css), decoupled from the board's layout: opening
+  // or closing changes the board width in exactly ONE reflow, so the old measure-suspend + dim machinery is
+  // gone (it existed only to tame the per-frame flex-basis compression). No effect runs on open.
 
-  // The deliberate CLOSE (§symmetric close). The drawer no longer vanishes on ✕: `requestClose` keeps it
-  // mounted (picked held) and sets `.closing`, which collapses its flex-basis 26%→0 on the house curve —
-  // the MIRROR of the open. Across the collapse the stage reclaims the space frame by frame — the SAME
-  // reflow storm as the open, in reverse — so measurement is SUSPENDED and the chart panels DIM, exactly
-  // as on open. The board-collapse `animationend` (bubbles to .workarea) is the trigger: resume, un-dim,
-  // and UNMOUNT (picked→null). A timeout FALLBACK, longer than the collapse, guards a stuck drawer — it
-  // fires ONLY if animationend never arrives; in normal operation animationend fires first and its cleanup
-  // clears the fallback. Reduced motion, a FLOATING drawer (over a modal — the board never compressed), and
-  // a drawer with no board element all skip the animation and unmount immediately (see requestClose).
-  const CLOSE_FALLBACK_MS = 600;   // 2× the --dur-normal (300ms) collapse — the safety net, never the trigger in normal operation
+  // The deliberate CLOSE. `requestClose` keeps the drawer mounted (picked held) and sets `.closing`, which
+  // transitions its transform back to translateX(100%) — the MIRROR of the open slide, KEEPING its width (a
+  // transform, so no reflow and no content rewrap). The transform `transitionend` is the trigger: UNMOUNT
+  // (picked→null); the board then reclaims the space in one reflow. A timeout FALLBACK, longer than the
+  // slide, guards a stuck drawer — it fires ONLY if transitionend never arrives; in normal operation
+  // transitionend fires first and its cleanup clears the fallback. Reduced motion and a FLOATING drawer (over
+  // a modal — no slide) unmount immediately (see requestClose).
+  const CLOSE_FALLBACK_MS = 600;   // 2× the --dur-normal (300ms) slide — the safety net, never the trigger in normal operation
   const requestClose = () => {
     if (!picked) return;
     const floating = showQuery || showTrust || showDebug;
     const reduced = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const el = document.querySelector(".drawer:not(.floating)");
-    if (floating || reduced || !el) { setPicked(null); setClosing(false); return; }
-    el.style.setProperty("--close-w", el.clientWidth + "px");   // pin the contents to the open width so the tree doesn't rewrap as flex-basis shrinks
+    if (floating || reduced) { setPicked(null); setClosing(false); return; }
     setClosing(true);
   };
   useEffect(() => {
     if (!closing) return;
-    suspendMeasure(); setCompressing(true);
-    const wa = document.querySelector(".workarea");
+    const el = document.querySelector(".drawer:not(.floating)");
     let done = false;
-    const finish = () => { if (done) return; done = true; setPicked(null); setClosing(false); resumeMeasure(); setCompressing(false); };
-    const onEnd = (e) => { if (e.animationName === "board-collapse") finish(); };
-    if (wa) wa.addEventListener("animationend", onEnd);
+    const finish = () => { if (done) return; done = true; setPicked(null); setClosing(false); };
+    const onEnd = (e) => { if (e.propertyName === "transform") finish(); };
+    if (el) el.addEventListener("transitionend", onEnd);
     const fallback = setTimeout(finish, CLOSE_FALLBACK_MS);
-    return () => { if (wa) wa.removeEventListener("animationend", onEnd); clearTimeout(fallback); };
+    return () => { if (el) el.removeEventListener("transitionend", onEnd); clearTimeout(fallback); };
   }, [closing]);
-  // A fresh pick DURING the collapse cancels the close — the drawer stays open on the new origin rather
-  // than closing out from under it. (requestClose holds `picked` steady, so this fires only on a real
-  // pick change, not at close-start.)
+  // A fresh pick DURING the close cancels it — the drawer stays open on the new origin rather than closing
+  // out from under it. (requestClose holds `picked` steady, so this fires only on a real pick change.)
   useEffect(() => { setClosing(false); }, [picked]);
 
   // §4 — the drawer (the sole INSPECTION surface) marks its ORIGIN by a 2px --dye stroke on the element's
@@ -1488,7 +1459,7 @@ function AppInner() {
             <TemplateBoard spec={lastResolved.current.spec} role={lastResolved.current._role} catalog={catalog} onPick={() => {}} finding={lastResolved.current.curation && lastResolved.current.curation.finding} source={lastResolved.current.source} curation={lastResolved.current.curation} />
           </main>}
           <RoleComposition role={role} windowMode={windowMode} placement="board" />
-        </div> : <div className={`workarea ${picked ? "drawer-open" : ""} ${compressing ? "compressing" : ""}`}>
+        </div> : <div className={`workarea ${picked ? "drawer-open" : ""}`}>
           <main className="stage">
             <Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} />
             <TemplateBoard key={`${role}|${perturbation}|${(state.curation && state.curation.finding && state.curation.finding.label) || ""}`} spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} curation={state.curation} />
