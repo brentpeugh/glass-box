@@ -379,19 +379,25 @@ button.dt-num:hover{ color:var(--dye); }
    --field, there is no --plane channel. The prose is the one unbounded cell, so it is the one that
    scrolls: min-height:0 + overflow-y:auto establish a scroll context (a grid child won't shrink below
    its content without min-height:0 — that is how a long thesis overflowed the row into the charts). */
-/* T4l: differential spacing — three groups (label+thesis · why-eyebrow+paragraph · tests-eyebrow+rows).
-   WITHIN a group: --in-1 (the flex gap; an eyebrow sits tight to what it labels). BETWEEN groups: --out,
-   applied as margin-top on each group-starting eyebrow (gap --in-1 + this margin = --out total above it). */
-.lede-prose{ padding:10px 16px 12px; display:flex; flex-direction:column; gap:var(--in-1); min-width:0; min-height:0; overflow-y:auto; background:var(--field); }
+/* T4l/T4m: differential spacing — three groups (label+thesis · why-eyebrow+paragraph · tests-eyebrow+
+   rows). WITHIN a group: --in-1 (the flex gap; an eyebrow sits tight to what it labels). BETWEEN groups,
+   ASYMMETRIC (margin-top on the group-starting eyebrow, + the gap = the total): thesis→WHY = --in-3 (the
+   size/weight change already separates them); paragraph→WHAT-WOULD-CHANGE = --out (the boundary that ran
+   together). T4m: the column itself does NOT scroll — the fixed blocks (label/thesis/why) are always
+   visible; only the falsifier block takes the remaining height and scrolls inside itself. */
+.lede-prose{ padding:10px 16px 12px; display:flex; flex-direction:column; gap:var(--in-1); min-width:0; min-height:0; overflow:hidden; background:var(--field); }
+.lede-prose > *{ flex-shrink:0; }   /* the fixed blocks stay full-size + visible; the falsifier block (below) is the only flexible/scrolling child */
 .lede-ground{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); }   /* label — authorship mark */
 .lede-sentence{ font-family:var(--font-sans); font-size:var(--t-4); font-weight:600; line-height:1.24; color:var(--ink); margin:0; }   /* heading — the finding sentence (lede retired into heading, T4g; matches the drawer title) */
-.lede-why-lbl, .lede-tests-lbl{ display:block; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); margin-top:calc(var(--out) - var(--in-1)); }   /* label — eyebrow; margin-top + the flex gap = --out between groups (T4l) */
+.lede-why-lbl, .lede-tests-lbl{ display:block; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); }   /* label — eyebrow (why + falsifier share the treatment); between-group margin set per-eyebrow below */
+.lede-why-lbl{ margin-top:calc(var(--in-3) - var(--in-1)); }   /* thesis→WHY gutter = --in-3 (16); the size/weight change already separates them */
+.lede-tests-lbl{ margin-top:calc(var(--out) - var(--in-1)); }   /* paragraph→WHAT-WOULD-CHANGE gutter = --out (32); the boundary that was running together */
 .lede-why{ font-family:var(--font-sans); font-size:var(--t-3b); font-weight:400; line-height:1.5; color:var(--ink); margin:0; }   /* prose — why it matters (fills the cell width) */
 /* Stage B (T4): falsifiers at the foot of the prose column — separated by the eyebrow (.lede-tests-lbl)
    ALONE, like the two blocks above; no hairline rule (a label + a rule would be doubled separation, the
    only place carrying both). Each question is a clickable proposition (action); running it replaces the
    question IN PLACE with its verdict, no reflow of the thesis/why above. */
-.lede-tests{ display:flex; flex-direction:column; }
+.lede-tests{ display:flex; flex-direction:column; flex:1 1 0; min-height:0; overflow-y:auto; }   /* T4m: takes the remaining column height and scrolls inside itself — the fixed blocks above stay visible */
 /* the whole row is the target (a <button>); the run affordance is the discoverability signal, right-
    aligned to the panel edge. On run the row becomes a statement (answer, prose) + a finding (verdict,
    value 20/700) in the affordance's slot — proposition+button reads as statement+finding. */
