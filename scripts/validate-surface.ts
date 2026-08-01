@@ -468,30 +468,39 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
   ok("the curation window renders no model-derived value (waiting/failure)", bad.length === 0, bad.join(" · "));
 }
 
-// ── 23 · origin marking intensifies each type's own affordance — no quiet outline ──────────────────
-// The trace-origin mark INTENSIFIES the origin element's existing traceable affordance, CSS-positioned on
-// the element itself (no fixed overlay). It NEVER draws a boundary the element does not already have: no
-// `.is-origin` rule may set `outline` or a raw `border`. A RULED region (lattice cell / fallback panel)
-// intensifies its enclosing rule with a 2px --dye box-shadow — allowed ONLY on those selectors; any other
-// element must intensify in place (text-decoration-thickness · font-weight · fill · color), so a future
-// element cannot quietly acquire a box. TEETH (fixture "origin-outline": an outline on an .is-origin rule).
+// ── 23 · origin marking marks the element's own geometry — no quiet outline ─────────────────────────
+// The trace-origin mark is a 2px --dye mark on the origin element's OWN geometry, CSS-positioned on the
+// element itself (no fixed overlay). It NEVER draws a boundary the element does not already have: no
+// `.is-origin` rule may set `outline` or a raw `border` (both add a box around the element). Legitimate
+// marks intensify what the element already is:
+//   • a RULED region (lattice cell / fallback panel) → a 2px --dye box-SHADOW (its own box edge) — allowed
+//     ONLY on those selectors, so a future element cannot quietly acquire a box.
+//   • any other element → in place: text-decoration-thickness · font-weight · fill · color · STROKE. An SVG
+//     `stroke` paints the shape's OWN path edge (intrinsic to the shape) — it is a mark, not an added box,
+//     which is why it is accepted here and `outline`/`border` are not.
+// A pure divider-SUPPRESSION rule (border-*-color:transparent, and nothing else) removes a rule the doubled
+// edge would show; it is not a mark and is exempt. TEETH (fixture "origin-outline": an outline on an
+// .is-origin rule).
 {
-  const RULED = new Set(["ev-card", "kcell", "mx-cell", "dt-num", "callout", "tb-panel", "cpanel", "tpanel"]);
+  const RULED = new Set(["ev-card", "kcell", "callout", "tb-panel", "cpanel", "tpanel"]);
   const bad: string[] = [];
   const isOriginRules = rules.filter((r) => /\.is-origin\b/.test(r.prelude));
   if (isOriginRules.length === 0) bad.push("no .is-origin rules — per-type origin marking absent");
   for (const r of isOriginRules) {
+    // a pure divider-suppression rule removes a border (transparent), never draws one — not a mark, exempt.
+    if (/^border-[a-z-]+-color\s*:\s*transparent\s*;?$/.test(r.body.trim())) continue;
     if (/(?:^|[;{\s])outline\s*:/.test(r.body) || /(?:^|[;{\s])border(?:-[a-z]+)?\s*:/.test(r.body)) { bad.push(`${r.prelude} draws outline/border — origin marking must intensify the existing affordance, not add a box`); continue; }
     const onRuled = classesOf(r.prelude).some((c) => RULED.has(c));
     const hasBox = /box-shadow\s*:/.test(r.body);
-    const hasIntensify = /(text-decoration-thickness|font-weight|fill|color)\s*:/.test(r.body);
+    // an SVG stroke marks the shape's own edge; `stroke:` (the paint) counts, `stroke-width` alone does not.
+    const hasIntensify = /(text-decoration-thickness|font-weight|fill|color|stroke)\s*:/.test(r.body);
     if (onRuled) { if (!hasBox) bad.push(`${r.prelude}: ruled cell must intensify its rule (box-shadow)`); }
     else {
       if (hasBox) bad.push(`${r.prelude}: box-shadow on a non-ruled element (a quiet outline)`);
-      if (!hasIntensify) bad.push(`${r.prelude}: sets no intensification (text-decoration-thickness/font-weight/fill/color)`);
+      if (!hasIntensify) bad.push(`${r.prelude}: sets no intensification (text-decoration-thickness/font-weight/fill/color/stroke)`);
     }
   }
-  ok("origin marking intensifies each type's own affordance (no quiet outline)", bad.length === 0, bad.join(" · "));
+  ok("origin marking marks the element's own geometry (no quiet outline)", bad.length === 0, bad.join(" · "));
 }
 
 // ── 24 · every transition/animation timing function AND duration is a token ────────────────────────

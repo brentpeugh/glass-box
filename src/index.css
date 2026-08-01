@@ -689,22 +689,30 @@ body.modal-open{ overflow:hidden; }
    right strip) so both stay on screen; the modal must not collapse. The origin mark is a fixed 2px
    --dye outline over the element that opened the drawer — a board cell/caption/value, or the modal's own. */
 .brief-overlay.aside, .qmodal-bg.aside{ right:34%; }
-/* origin marking, per type — each INTENSIFIES the element's OWN affordance in place, CSS-positioned on the
-   element (no fixed overlay, no rAF measurement — it moves with the element as the board compresses). A
-   ruled region (lattice cell, or the fallback panel) intensifies its enclosing rule with a 2px --dye box
-   (inset box-shadow, so the partition's overflow:hidden never clips it). See App.tsx for the enumeration. */
-.ev-card.is-origin, .kcell.is-origin, .mx-cell.is-origin, .dt-num.is-origin, .callout.is-origin, .tb-panel.is-origin, .cpanel.is-origin, .tpanel.is-origin{ box-shadow: inset 0 0 0 2px var(--dye); }
-/* Collapse the doubled edge: a marked cell's inset 2px --dye band otherwise sits flush against the shared
-   1px --scribe divider (each cell's border-left). Suppress the marked cell's own left divider AND the next
-   cell's left divider (the marked cell's right divider) so the --dye reads as ONE edge, not a band beside a
-   rule — the same pattern the anchor cell already uses. Transient (only while .is-origin); nothing else
-   loses a divider. (border-*-color:transparent removes a rule; it never draws one — see #23.) */
-.is-origin{ border-left-color: transparent; }
-.is-origin + *{ border-left-color: transparent; }
-.dye-scribe.is-origin{ text-decoration-thickness:2px; }              /* inline figure: its underline 1px → 2px */
+/* origin marking, per type — a 2px --dye stroke on the element's OWN geometry (never a fill: filling an area
+   reads as a data encoding, not a mark). CSS-positioned on the element (no fixed overlay, no rAF — it moves
+   with the element as the board compresses). A lattice cell/card strokes its box (inset box-shadow, so the
+   partition's overflow:hidden never clips it); a figure takes --dye text + a 2px --dye underline; an SVG
+   shape strokes its own rect/path. See App.tsx for the routing + fallback. */
+.ev-card.is-origin, .kcell.is-origin, .callout.is-origin, .tb-panel.is-origin, .cpanel.is-origin, .tpanel.is-origin{ box-shadow: inset 0 0 0 2px var(--dye); }
+/* Collapse the doubled edge on the KPI strip (the only lattice with shared border-left dividers): a marked
+   kcell's inset 2px --dye band otherwise sits flush against the shared 1px --scribe divider. Suppress the
+   marked cell's own left divider AND the next cell's left divider (the marked cell's right divider) so the
+   --dye reads as ONE edge. Scoped to .kcell so it can't suppress a divider on a non-adjacent grid cell
+   (DOM order ≠ visual order off the KPI row). Transient (only while .is-origin); border-*-color:transparent
+   removes a rule, it never draws one — see #23. */
+.kcell.is-origin{ border-left-color: transparent; }
+.kcell.is-origin + *{ border-left-color: transparent; }
+.mx-cell.v.is-origin, .dt-num.is-origin{ color:var(--dye); text-decoration:underline; text-decoration-color:var(--dye); text-decoration-thickness:2px; text-underline-offset:2px; }   /* table figure: --dye text + 2px --dye underline (a figure, not a box) */
+.dye-scribe.is-origin{ text-decoration-thickness:2px; font-weight:700; }   /* inline figure: already --dye with a 1px dye underline, so a second channel — underline 1px→2px AND weight up one step (the thesis dye-scribe is 600 → 700; a why-context 400 dye-scribe jumps further, only clearer) */
 .chart-title.is-origin .chart-trace{ font-weight:600; }              /* ▸ TRACE label: weight 400 → 600 */
-.ln-pt.is-origin .cx-dot, .ln-pt.is-origin .scat-dot, .ln-pt.is-origin .par-cum-dot{ fill:var(--dye); }   /* in-chart terminal value: marker → --dye */
-.ln-pt.is-origin .cx-dlab, .ln-pt.is-origin .dlab{ fill:var(--dye); }   /* in-chart terminal value: its value label → --dye */
+/* SVG chart shapes — a 2px --dye stroke on the shape's OWN geometry (stroke, not fill; non-scaling so it
+   reads as 2px regardless of the chart's viewBox scale). Bars/tiles/cells/bands, and the filled terminal
+   marker rects (grouped/indexed/small-multiples). */
+.co-bar.is-origin, .area.is-origin, rect.ln-pt.is-origin,
+.ln-pt.is-origin .par-bar, .ln-pt.is-origin .hm-cell, .ln-pt.is-origin .tm-tile, .ln-pt.is-origin .bullet-bar{ stroke:var(--dye); stroke-width:2px; vector-effect:non-scaling-stroke; }
+.ln-pt.is-origin .cx-dot, .ln-pt.is-origin .scat-dot, .ln-pt.is-origin .par-cum-dot{ fill:var(--dye); }   /* point marker → --dye recolor (a point is not an area) */
+.ln-pt.is-origin .cx-dlab, .ln-pt.is-origin .dlab{ fill:var(--dye); }   /* value label → --dye recolor */
 .brief{ background:var(--field); border:1px solid var(--ink); max-width:820px; width:100%; max-height:90vh; overflow-y:auto; padding:0; box-shadow:none; }
 .brief-head{ position:sticky; top:0; z-index:1; }   /* head holds while the body scrolls */
 .brief-head{ display:flex; align-items:center; gap:12px; padding:14px 22px; border-bottom:2px solid var(--ink); }

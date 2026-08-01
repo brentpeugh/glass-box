@@ -442,7 +442,7 @@ function Treemap({ items, fmt, onPick, w = 420, h = 200 }) {
   let x0 = 0; const shades = ["var(--ink)", "var(--ink-2)", "var(--scribe-strong)", "var(--scribe)"];
   return (<svg viewBox={`0 0 ${W} ${H}`} className="ln">
     {sorted.map((it, i) => { const ww = (it.value / total) * W; const rect = (<g key={i} className="ln-pt" onClick={() => it.mv && onPick(it.mv)}>
-      <rect x={x0 + pad} y={pad} width={Math.max(ww - pad * 2, 1)} height={H - pad * 2} fill={shades[i % shades.length]} />
+      <rect x={x0 + pad} y={pad} width={Math.max(ww - pad * 2, 1)} height={H - pad * 2} fill={shades[i % shades.length]} className="tm-tile" />
       <text x={x0 + ww / 2} y={H / 2 - 4} className="tm-lab" textAnchor="middle">{it.label}</text>
       <text x={x0 + ww / 2} y={H / 2 + 12} className="tm-val" textAnchor="middle">{((it.value / total) * 100).toFixed(0)}%</text>
     </g>); x0 += ww; return rect; })}
@@ -1383,36 +1383,39 @@ function AppInner() {
   // pick change, not at close-start.)
   useEffect(() => { setClosing(false); }, [picked]);
 
-  // §4 — the drawer (the sole INSPECTION surface) marks its ORIGIN by INTENSIFYING that element's own
-  // traceable affordance — it never draws a boundary the element does not already have. The mark is
-  // CSS-POSITIONED via an `.is-origin` class on the origin element itself (no fixed overlay, no rAF, no
-  // getBoundingClientRect) — so it moves WITH the element as the board compresses, and it survives
-  // re-renders and works inside a modal. Per type: a LATTICE cell (evidence/KPI/table/callout) and the
-  // fallback PANEL intensify their enclosing rule with a 2px --dye box (CSS box-shadow); a dye-scribed
-  // figure thickens its underline; a ▸ TRACE label goes 600; an in-chart mark takes --dye. ONE marker at a
-  // time: if the origin IS the lede anchor, its 2px --ink border is suppressed (.origin-anchor root class)
-  // so only the --dye box shows. FALLBACK: a chart mark that cannot carry a legible --dye recolor (a per-
-  // series inline style={{fill}} beats the CSS — indexed/small_multiples/treemap/grouped/stacked_area — or
-  // a non-terminal invisible hit-target) marks its smallest enclosing ruled region: the chart panel's box.
+  // §4 — the drawer (the sole INSPECTION surface) marks its ORIGIN by a 2px --dye stroke on the element's
+  // OWN geometry — never a fill (filling an area reads as a data encoding, not a mark). The mark is a CSS
+  // `.is-origin` class on the origin element itself (no fixed overlay, no rAF) — so it moves WITH the element
+  // as the board compresses, survives re-renders, and works inside a modal. Per type, all decided in CSS:
+  //   • lattice cell/card (ev-card/kcell/callout) → 2px --dye stroke on its box (inset box-shadow)
+  //   • table figure (mx-cell/dt-num) → --dye text + 2px --dye underline (a figure, not a box)
+  //   • inline dye-scribe figure → underline to 2px + weight up one step (already --dye, so two channels)
+  //   • ▸ TRACE label → weight 400 → 600
+  //   • chart shape — bar/tile/cell/band → 2px --dye stroke on its own rect/path (co-bar, area, par-bar,
+  //     hm-cell, tm-tile, bullet-bar, and terminal marker rects); a point marker/label → --dye recolor
+  // ONE marker at a time: if the origin IS the lede anchor, its 2px --ink border is suppressed (.origin-anchor
+  // root class) so only the --dye stroke shows. FALLBACK to the enclosing PANEL box ONLY when the origin has
+  // NO visible geometry to stroke — an invisible hit-target (a fill:transparent non-terminal point) or a
+  // whole-svg pick (lorenz). Anything with geometry marks that geometry, never its chart.
   const originRef = useRef(null);
   const [originIsAnchor, setOriginIsAnchor] = useState(false);
-  const LATTICE_ORIGIN = ["ev-card", "kcell", "mx-cell", "dt-num", "callout"];
-  const RECOLORABLE_MARK = ["cx-dot", "scat-dot", "par-cum-dot", "cx-dlab", "dlab"];   // marks the .ln-pt.is-origin --dye recolor reaches
+  const SELF_MARK = ["ev-card", "kcell", "mx-cell", "dt-num", "callout", "dye-scribe", "chart-title"];   // HTML elements that mark themselves (CSS decides box vs underline vs weight)
+  const STROKE_SHAPE = ".co-bar,.area,.par-bar,.hm-cell,.tm-tile,.bullet-bar";   // area shapes (self, or inside the .ln-pt group) → 2px --dye stroke
+  const POINT_MARK = ".cx-dot,.scat-dot,.par-cum-dot,.cx-dlab,.dlab";            // point markers/value labels → --dye recolor
   const recordOrigin = (e) => { const t = e.target && e.target.closest ? (e.target.closest("button, .ln-pt") || e.target) : null; if (t && t.getBoundingClientRect) originRef.current = t; };
   useLayoutEffect(() => {
     if (!picked) { setOriginIsAnchor(false); return; }
     const el = originRef.current;
     if (!el || !el.classList) { setOriginIsAnchor(false); return; }
-    // decide which element carries the mark: a lattice cell marks itself; a chart mark that can't take a
-    // legible dye recolor marks its enclosing panel; everything else marks itself.
+    // an HTML element marks itself; a chart origin marks its OWN geometry (a shape to stroke, a point to
+    // recolor, or a filled terminal marker rect) — only an origin with NO visible geometry falls back to the
+    // enclosing panel box.
     let target = el, anchor = false;
-    if (LATTICE_ORIGIN.some((c) => el.classList.contains(c))) { anchor = el.classList.contains("anchor"); }
+    if (SELF_MARK.some((c) => el.classList.contains(c))) { anchor = el.classList.contains("anchor"); }
     else {
-      const isAffordance = el.classList.contains("dye-scribe") || el.classList.contains("chart-title");
-      const recolorable = RECOLORABLE_MARK.some((c) => el.classList.contains(c) || (el.querySelector && el.querySelector("." + c)));
-      // the smallest enclosing RULED region is the board lattice cell (.tb-panel); fall back to the chart
-      // container (.cpanel/.tpanel) only when there is no lattice cell (a chart inside a modal).
-      if (!isAffordance && !recolorable) target = (el.closest && (el.closest(".tb-panel") || el.closest(".cpanel, .tpanel"))) || null;
+      const hasGeometry = (el.matches && (el.matches(STROKE_SHAPE) || el.matches(POINT_MARK) || el.matches("rect.ln-pt")))
+        || (el.querySelector && (el.querySelector(STROKE_SHAPE) || el.querySelector(POINT_MARK)));
+      if (!hasGeometry) target = (el.closest && (el.closest(".tb-panel") || el.closest(".cpanel, .tpanel"))) || null;
     }
     setOriginIsAnchor(anchor);
     if (!target || !target.classList) return;

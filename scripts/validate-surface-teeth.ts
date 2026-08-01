@@ -101,7 +101,7 @@ const fixtures: Fixture[] = [
   {
     name: "origin-outline",
     note: "current tree with an .is-origin rule that draws an OUTLINE (the universal-boundary pattern the per-type rule replaces) instead of intensifying the element's own affordance — witness for the origin-marking assertion",
-    build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace(".dye-scribe.is-origin{ text-decoration-thickness:2px; }", ".dye-scribe.is-origin{ outline:2px solid var(--dye); }"); return writeTree(f, "originoutline"); },
+    build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace(".dye-scribe.is-origin{ text-decoration-thickness:2px; font-weight:700; }", ".dye-scribe.is-origin{ text-decoration-thickness:2px; font-weight:700; outline:2px solid var(--dye); }"); return writeTree(f, "originoutline"); },
   },
 ];
 
