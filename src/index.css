@@ -665,9 +665,11 @@ body.modal-open{ overflow:hidden; }
    right strip) so both stay on screen; the modal must not collapse. The origin mark is a fixed 2px
    --dye outline over the element that opened the drawer — a board cell/caption/value, or the modal's own. */
 .brief-overlay.aside, .qmodal-bg.aside{ right:34%; }
-.trace-origin-mark{ position:fixed; pointer-events:none; z-index:80; outline:2px solid var(--dye); outline-offset:0; }   /* the ONE sanctioned enclosing-rule box — lattice cells only (gated in JS: LATTICE_ORIGIN) */
-/* origin marking, per type — each intensifies the element's OWN affordance in place; never a box. (Lattice
-   cells use the .trace-origin-mark overlay above.) See App.tsx for the origin-type enumeration. */
+/* origin marking, per type — each INTENSIFIES the element's OWN affordance in place, CSS-positioned on the
+   element (no fixed overlay, no rAF measurement — it moves with the element as the board compresses). A
+   ruled region (lattice cell, or the fallback panel) intensifies its enclosing rule with a 2px --dye box
+   (inset box-shadow, so the partition's overflow:hidden never clips it). See App.tsx for the enumeration. */
+.ev-card.is-origin, .kcell.is-origin, .mx-cell.is-origin, .dt-num.is-origin, .callout.is-origin, .tb-panel.is-origin, .cpanel.is-origin, .tpanel.is-origin{ box-shadow: inset 0 0 0 2px var(--dye); }
 .dye-scribe.is-origin{ text-decoration-thickness:2px; }              /* inline figure: its underline 1px → 2px */
 .chart-title.is-origin .chart-trace{ font-weight:600; }              /* ▸ TRACE label: weight 400 → 600 */
 .ln-pt.is-origin .cx-dot, .ln-pt.is-origin .scat-dot, .ln-pt.is-origin .par-cum-dot{ fill:var(--dye); }   /* in-chart terminal value: marker → --dye */

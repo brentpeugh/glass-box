@@ -102,7 +102,7 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
     // interactive source-routes
     "node-glyph", "proxy", "chart-title", "chart-trace",
     "dt-num", "mx-cell", "kcell-v", "ev-trace", "test-run", "bridge-trace", "chip", "recur-rank",
-    "pb-reset", "dbg-cap", "asked", "asked-h", "disclose", "foot-src", "foot-trace", "dye-scribe", "lede-figures", "audit-toggle", "trace-origin-mark", "is-origin",
+    "pb-reset", "dbg-cap", "asked", "asked-h", "disclose", "foot-src", "foot-trace", "dye-scribe", "lede-figures", "audit-toggle", "is-origin",
     // structural accent that frames the traceable field
     "sec-n", "card", "role", "frame-tick", "brief-head", "dbg-h",
     "rail",
@@ -469,23 +469,28 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
 }
 
 // ── 23 · origin marking intensifies each type's own affordance — no quiet outline ──────────────────
-// The trace-origin mark INTENSIFIES the origin element's existing traceable affordance; it never draws a
-// boundary the element does not already have. So: (a) every `.is-origin` rule sets an intensification
-// property (text-decoration-thickness · font-weight · fill · color) and NEVER `outline` or a `border`
-// (the universal-outline pattern this replaces); (b) the ONE sanctioned enclosing-rule box —
-// `.trace-origin-mark`, for lattice cells only — carries --dye. A future element cannot quietly get an
-// outline: giving `.X.is-origin{ outline }` trips this. TEETH (fixture "origin-outline").
+// The trace-origin mark INTENSIFIES the origin element's existing traceable affordance, CSS-positioned on
+// the element itself (no fixed overlay). It NEVER draws a boundary the element does not already have: no
+// `.is-origin` rule may set `outline` or a raw `border`. A RULED region (lattice cell / fallback panel)
+// intensifies its enclosing rule with a 2px --dye box-shadow — allowed ONLY on those selectors; any other
+// element must intensify in place (text-decoration-thickness · font-weight · fill · color), so a future
+// element cannot quietly acquire a box. TEETH (fixture "origin-outline": an outline on an .is-origin rule).
 {
+  const RULED = new Set(["ev-card", "kcell", "mx-cell", "dt-num", "callout", "tb-panel", "cpanel", "tpanel"]);
   const bad: string[] = [];
   const isOriginRules = rules.filter((r) => /\.is-origin\b/.test(r.prelude));
   if (isOriginRules.length === 0) bad.push("no .is-origin rules — per-type origin marking absent");
   for (const r of isOriginRules) {
-    if (/(?:^|[;{\s])outline\s*:/.test(r.body) || /(?:^|[;{\s])border(?:-[a-z]+)?\s*:/.test(r.body)) bad.push(`${r.prelude} draws a boundary (outline/border) — origin marking must intensify the existing affordance, not add a box`);
-    if (!/(text-decoration-thickness|font-weight|fill|color)\s*:/.test(r.body)) bad.push(`${r.prelude} sets no intensification (text-decoration-thickness/font-weight/fill/color)`);
+    if (/(?:^|[;{\s])outline\s*:/.test(r.body) || /(?:^|[;{\s])border(?:-[a-z]+)?\s*:/.test(r.body)) { bad.push(`${r.prelude} draws outline/border — origin marking must intensify the existing affordance, not add a box`); continue; }
+    const onRuled = classesOf(r.prelude).some((c) => RULED.has(c));
+    const hasBox = /box-shadow\s*:/.test(r.body);
+    const hasIntensify = /(text-decoration-thickness|font-weight|fill|color)\s*:/.test(r.body);
+    if (onRuled) { if (!hasBox) bad.push(`${r.prelude}: ruled cell must intensify its rule (box-shadow)`); }
+    else {
+      if (hasBox) bad.push(`${r.prelude}: box-shadow on a non-ruled element (a quiet outline)`);
+      if (!hasIntensify) bad.push(`${r.prelude}: sets no intensification (text-decoration-thickness/font-weight/fill/color)`);
+    }
   }
-  const mark = rules.find((r) => classesOf(r.prelude).includes("trace-origin-mark"));
-  if (!mark) bad.push(".trace-origin-mark (the lattice enclosing-rule box) absent");
-  else if (!/var\(--dye\)/.test(mark.body)) bad.push(".trace-origin-mark is not --dye");
   ok("origin marking intensifies each type's own affordance (no quiet outline)", bad.length === 0, bad.join(" · "));
 }
 

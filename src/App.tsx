@@ -279,6 +279,13 @@ function ChartHeader({ title, tag, tagTone, onTrace }) {
 // Charts fill their panel: measure the container, render the SVG to its exact box (both
 // dimensions). The chart is a tenant of a fixed-size panel, not the other way around —
 // this is what makes heights align across a row and is the basis for the template system.
+// Chart measurement is SUSPENDABLE. The drawer's board-compress animates flex-basis, which reflows the
+// board every frame; unsuspended, each chart's ResizeObserver would fire every frame and re-render its SVG
+// (layout thrash — the drawer-open jank). While suspended, RO callbacks are ignored; on resume, every chart
+// re-measures ONCE. A flag + one re-measure, not a timer inside the hook.
+const measureBus = { suspended: false, remeasure: new Set() };
+function suspendMeasure() { measureBus.suspended = true; }
+function resumeMeasure() { measureBus.suspended = false; measureBus.remeasure.forEach((fn) => fn()); }
 function useSize() {
   const ref = useRef(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -289,15 +296,17 @@ function useSize() {
     // The ResizeObserver only tracks subsequent resizes. A guard, not a timer.
     const measure = () => { const r = el.getBoundingClientRect(); setSize({ w: Math.round(r.width), h: Math.round(r.height) }); };
     measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el); return () => ro.disconnect();
+    const ro = new ResizeObserver(() => { if (!measureBus.suspended) measure(); });   // ignored while a board-compress is animating
+    ro.observe(el);
+    measureBus.remeasure.add(measure);   // re-measured once when measurement resumes
+    return () => { ro.disconnect(); measureBus.remeasure.delete(measure); };
   }, []);
   return [ref, size];
 }
 function Fill({ render }) {
   const [ref, { w, h }] = useSize();
-  // Guard: render nothing until measured (both dims > 0). Below that the plot geometry
-  // (width − padding) goes negative and the SVG emits negative-<rect> errors.
+  // Guard (not a timer): render nothing until measured (both dims > 0). Below that the plot geometry
+  // (width − padding) goes negative and the SVG emits negative-<rect> errors. Present since 720bb72.
   return <div ref={ref} className="cfill">{w > 0 && h > 0 ? render(w, h) : null}</div>;
 }
 
@@ -1316,59 +1325,51 @@ function AppInner() {
     prevAnyModal.current = anyModal;
   }, [anyModal, picked]);
 
-  // §4 — the drawer (the sole INSPECTION surface) marks its ORIGIN. A capture-phase click records the
-  // element that opened the drawer — a board cell/caption/value, or, when opened from a modal, the
-  // modal's own element. While the drawer is open a 2px --dye outline is drawn over that element as a
-  // fixed overlay box (decoupled from React's className, so it survives re-renders and works on the
-  // board and inside a modal alike). ONE marker at a time: if the origin IS the lede anchor, its own
-  // 2px --ink border is suppressed (via the .origin-anchor root class) so only the --dye outline shows.
-  // Origin marking INTENSIFIES the origin element's own traceable affordance — it never draws a boundary
-  // the element does not already have. LATTICE cells (evidence/KPI/table/callout) already read as ruled
-  // cells, so their mark IS an enclosing-rule box (the .trace-origin-mark overlay, 2px --dye) — the one
-  // sanctioned box. Every other type intensifies IN PLACE via an .is-origin class (per-type CSS): a dye-
-  // scribed figure thickens its underline, a ▸ TRACE label goes 600, an in-chart mark takes --dye. The
-  // element cannot carry a legible mark at its size → its smallest enclosing ruled region marks (the box).
+  // Suspend chart measurement while the drawer's board-compress runs — the flex reflow would fire every
+  // chart's ResizeObserver each frame (per-frame SVG re-render = the drawer-open jank). Resume + re-measure
+  // once after the compression (~300ms + buffer); the cleanup also resumes on close (the board expands).
+  useEffect(() => {
+    if (!picked) return;
+    suspendMeasure();
+    const t = setTimeout(resumeMeasure, 340);
+    return () => { clearTimeout(t); resumeMeasure(); };
+  }, [picked]);
+
+  // §4 — the drawer (the sole INSPECTION surface) marks its ORIGIN by INTENSIFYING that element's own
+  // traceable affordance — it never draws a boundary the element does not already have. The mark is
+  // CSS-POSITIONED via an `.is-origin` class on the origin element itself (no fixed overlay, no rAF, no
+  // getBoundingClientRect) — so it moves WITH the element as the board compresses, and it survives
+  // re-renders and works inside a modal. Per type: a LATTICE cell (evidence/KPI/table/callout) and the
+  // fallback PANEL intensify their enclosing rule with a 2px --dye box (CSS box-shadow); a dye-scribed
+  // figure thickens its underline; a ▸ TRACE label goes 600; an in-chart mark takes --dye. ONE marker at a
+  // time: if the origin IS the lede anchor, its 2px --ink border is suppressed (.origin-anchor root class)
+  // so only the --dye box shows. FALLBACK: a chart mark that cannot carry a legible --dye recolor (a per-
+  // series inline style={{fill}} beats the CSS — indexed/small_multiples/treemap/grouped/stacked_area — or
+  // a non-terminal invisible hit-target) marks its smallest enclosing ruled region: the chart panel's box.
   const originRef = useRef(null);
-  const [originBox, setOriginBox] = useState(null);
   const [originIsAnchor, setOriginIsAnchor] = useState(false);
   const LATTICE_ORIGIN = ["ev-card", "kcell", "mx-cell", "dt-num", "callout"];
-  // the CSS-filled marks the .is-origin --dye recolor actually reaches (see the .ln-pt.is-origin rules).
-  // A chart mark that carries NONE of these cannot take a legible dye mark — a per-series inline style={{fill}}
-  // beats the CSS (indexed/small_multiples/treemap/grouped/stacked_area), or it is a non-terminal invisible
-  // hit-target — so it FALLS BACK to its smallest enclosing ruled region: the chart panel's box.
-  const RECOLORABLE_MARK = ["cx-dot", "scat-dot", "par-cum-dot", "cx-dlab", "dlab"];
+  const RECOLORABLE_MARK = ["cx-dot", "scat-dot", "par-cum-dot", "cx-dlab", "dlab"];   // marks the .ln-pt.is-origin --dye recolor reaches
   const recordOrigin = (e) => { const t = e.target && e.target.closest ? (e.target.closest("button, .ln-pt") || e.target) : null; if (t && t.getBoundingClientRect) originRef.current = t; };
   useLayoutEffect(() => {
-    if (!picked) { setOriginBox(null); setOriginIsAnchor(false); return; }
+    if (!picked) { setOriginIsAnchor(false); return; }
     const el = originRef.current;
-    if (!el || !el.classList) { setOriginBox(null); setOriginIsAnchor(false); return; }
-    // the sanctioned enclosing-rule box (overlay), for a ruled region — a lattice cell, or (fallback) a panel.
-    // The drawer opening compresses the board (an eased ~300ms flex reflow), so a board origin slides while
-    // the box is up; a one-shot measure would leave it stale. Track it with a BOUNDED rAF (~360ms, the
-    // compression + buffer) then settle to a resize listener — no perpetual loop while the drawer sits open.
-    const boxOf = (target, isAnchor) => {
-      setOriginIsAnchor(isAnchor);
-      const measure = () => { if (!target.getBoundingClientRect) return setOriginBox(null); const r = target.getBoundingClientRect(); setOriginBox(r.width && r.height ? { left: r.left, top: r.top, width: r.width, height: r.height } : null); };
-      let raf = 0; const t0 = performance.now();
-      const tick = () => { measure(); if (performance.now() - t0 < 360) raf = requestAnimationFrame(tick); };
-      tick();
-      window.addEventListener("resize", measure);
-      return () => { if (raf) cancelAnimationFrame(raf); window.removeEventListener("resize", measure); };
-    };
-    // lattice cell: box it (anchor ev-card suppresses its --ink border so only --dye shows)
-    if (LATTICE_ORIGIN.some((c) => el.classList.contains(c))) return boxOf(el, el.classList.contains("anchor"));
-    // a chart mark that cannot carry a legible --dye recolor → fall back to the enclosing chart-panel box
-    const isAffordance = el.classList.contains("dye-scribe") || el.classList.contains("chart-title");
-    const recolorable = RECOLORABLE_MARK.some((c) => el.classList.contains(c) || (el.querySelector && el.querySelector("." + c)));
-    if (!isAffordance && !recolorable) {
-      const panel = el.closest && el.closest(".tb-panel, .cpanel, .tpanel");
-      if (panel) return boxOf(panel, false);
-      setOriginBox(null); setOriginIsAnchor(false); return;
+    if (!el || !el.classList) { setOriginIsAnchor(false); return; }
+    // decide which element carries the mark: a lattice cell marks itself; a chart mark that can't take a
+    // legible dye recolor marks its enclosing panel; everything else marks itself.
+    let target = el, anchor = false;
+    if (LATTICE_ORIGIN.some((c) => el.classList.contains(c))) { anchor = el.classList.contains("anchor"); }
+    else {
+      const isAffordance = el.classList.contains("dye-scribe") || el.classList.contains("chart-title");
+      const recolorable = RECOLORABLE_MARK.some((c) => el.classList.contains(c) || (el.querySelector && el.querySelector("." + c)));
+      // the smallest enclosing RULED region is the board lattice cell (.tb-panel); fall back to the chart
+      // container (.cpanel/.tpanel) only when there is no lattice cell (a chart inside a modal).
+      if (!isAffordance && !recolorable) target = (el.closest && (el.closest(".tb-panel") || el.closest(".cpanel, .tpanel"))) || null;
     }
-    // else — intensify the element's own affordance in place, no box
-    setOriginBox(null); setOriginIsAnchor(false);
-    el.classList.add("is-origin");
-    return () => el.classList.remove("is-origin");
+    setOriginIsAnchor(anchor);
+    if (!target || !target.classList) return;
+    target.classList.add("is-origin");
+    return () => target.classList.remove("is-origin");
   }, [picked, showQuery]);
 
   // 5a — the window's placement. The FIRST curation (no board shown yet) takes over the entry
@@ -1400,7 +1401,6 @@ function AppInner() {
     <div className={`caliper has-rail ${originIsAnchor ? "origin-anchor" : ""}`} onClickCapture={recordOrigin}>
       {/* one scrim at the app root — only while a MODAL is open (a board-origin drawer keeps the board lit) */}
       {(showQuery || showTrust || showDebug) && <div className="scrim" />}
-      {originBox && <div className="trace-origin-mark" style={{ left: originBox.left, top: originBox.top, width: originBox.width, height: originBox.height }} />}
 
       {/* full-height left rail — Strata grammar: primary at the top, secondary at the bottom, empty between */}
       <nav className="rail">
