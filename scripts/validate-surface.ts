@@ -489,5 +489,27 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
   ok("origin marking intensifies each type's own affordance (no quiet outline)", bad.length === 0, bad.join(" · "));
 }
 
+// ── 24 · every transition/animation timing function is a token (--ease | linear) ──────────────────
+// The one house curve is Strata's --ease (cubic-bezier, declared once in :root); the sweep's steady
+// duration-loop keeps `linear`. No transition or animation may declare a raw timing function — a bare
+// ease/ease-in/ease-out/ease-in-out keyword, or a raw cubic-bezier()/steps() — nor omit the timing (an
+// implicit `ease`). Each transition/animation value must be `none` or carry a token (var(--ease)|linear).
+// TEETH (fixture "timing-function-raw"): a raw ease-out on a keyframe trips it; pre-register raw `ease`
+// transitions trip it too.
+{
+  const bad: string[] = [];
+  for (const r of rules) {
+    for (const m of r.body.matchAll(/(?:transition|animation)(?:-timing-function)?\s*:\s*([^;}]+)/g)) {
+      const val = m[1].trim();
+      if (val === "none" || val === "inherit" || val === "initial" || val === "unset") continue;
+      const stripped = val.replace(/var\(--ease\)/g, "");
+      const raw = stripped.match(/cubic-bezier\([^)]*\)|steps\([^)]*\)|\b(?:ease-in-out|ease-in|ease-out|ease|step-start|step-end)\b/g);
+      if (raw) { bad.push(`${r.prelude}: ${[...new Set(raw)].join(",")}`); continue; }
+      if (!/var\(--ease\)|\blinear\b/.test(val)) bad.push(`${r.prelude}: no timing token (implicit ease) in "${val.slice(0, 40)}"`);
+    }
+  }
+  ok("every transition/animation timing function is a token (--ease | linear)", bad.length === 0, bad.join(" · "));
+}
+
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — register surface: ${pass}/${pass + fail} assertions`);
 if (fail > 0) process.exit(1);

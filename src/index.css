@@ -15,6 +15,7 @@
   --scribe:#ccd0d3; --scribe-strong:#a5abb1;
   --frame-ink:#d8dbdd; --frame-mute:#8b939b;
   --dye:#1f539f; --pos:#2f6b4a; --neg:#9c3a2c;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);   /* Strata EASING.mechanical — fast start, precise stop; the one house curve (linear stays for the sweep's steady duration-loop). Durations stay register-derived. */
   --scrim: rgba(21,24,27,.34);                                  /* fallback for engines without color-mix */
   --scrim: color-mix(in srgb, var(--ink) 34%, transparent);    /* both declarations stay in the token block */
   --t-1:10px; --t-2:11px; --t-3:14px; --t-3b:16px; --t-4:20px; --t-5:26px;   /* hero+lede share 26 (differ by weight); --t-6/40 retired — see 2j */
@@ -63,7 +64,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .sec-s{font-size:14px;color:var(--ink-2);font-style:italic;}
 .card{background:var(--field);border:1px solid var(--scribe);border-top:2px solid var(--dye);border-radius:0;padding:24px 24px 8px;}
 .readout{font-size:14px;line-height:1.6;max-width:62ch;color:var(--ink);margin:22px 0 14px;}
-.trace{max-height:0;overflow:hidden;transition:max-height .4s ease;} .trace.open{max-height:2400px;}
+.trace{max-height:0;overflow:hidden;transition:max-height 400ms var(--ease);} .trace.open{max-height:2400px;}
 .trace-inner{border-top:1px solid var(--scribe);padding:14px 0 18px;}
 /* T4e drawer hierarchy: the leaf note is a TERMINAL-EXTRACTION annotation (engine output about the
    rows), not reading prose — it was mis-tiered at prose 16, out-ranking the node subject (name 14) and
@@ -111,7 +112,7 @@ button,input,select,textarea,pre,code{ font-family:inherit; }
 .ln-pt{cursor:pointer;} .ln-dot{fill:var(--ink);}
 .ln-pt:hover .ln-dot{r:7;}
 .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px;}
-.callout{background:var(--field);border:1px solid var(--scribe);border-top:3px solid;padding:16px;cursor:pointer;text-align:left;font-family:inherit;display:flex;flex-direction:column;gap:4px;transition:transform .12s;}
+.callout{background:var(--field);border:1px solid var(--scribe);border-top:3px solid;padding:16px;cursor:pointer;text-align:left;font-family:inherit;display:flex;flex-direction:column;gap:4px;transition:transform 120ms var(--ease);}
 .callout:hover{transform:translateY(-2px);} .callout.bad, .callout.good{border-top-color:var(--scribe);}
 .co-v{font-family:var(--font-sans);font-variant-numeric:var(--num);font-weight:700;font-size:var(--t-4);letter-spacing:-.01em;color:var(--ink);}   /* value */
 .co-l{font-size:14px;color:var(--ink);font-weight:400;} .co-basis{font-family:var(--font-sans);font-size:11px;color:var(--ink-2);}
@@ -375,8 +376,8 @@ button.dt-num:hover{ color:var(--dye); }
    placements), so it inherits the entry's measure + centring — the entry and board windows mirror. Its
    top edge is the rule beneath the chosen row (role-row padding, so it aligns with the rows); the label +
    prose arrive in the sweep's wake. The prose figures are engine-known, dye-free plain text. */
-.lede-window{ position:relative; display:grid; grid-template-rows:1fr; border-top:var(--w-hair) solid var(--scribe-strong); animation: win-h-in 220ms ease-in-out both; }
-.lede-window-body{ overflow:hidden; padding:18px 4px; display:flex; flex-direction:column; gap:var(--in-2); animation: win-o-in 150ms ease-out 132ms both; }
+.lede-window{ position:relative; display:grid; grid-template-rows:1fr; border-top:var(--w-hair) solid var(--scribe-strong); animation: win-h-in 220ms var(--ease) both; }
+.lede-window-body{ overflow:hidden; padding:18px 4px; display:flex; flex-direction:column; gap:var(--in-2); animation: win-o-in 150ms var(--ease) 132ms both; }
 @keyframes win-h-in{ from{ grid-template-rows:0fr; } to{ grid-template-rows:1fr; } }
 @keyframes win-o-in{ from{ opacity:0; } to{ opacity:1; } }
 .lede-window-prose{ font-family:var(--font-sans); font-size:var(--t-3b); font-weight:400; line-height:1.5; color:var(--ink); margin:0; max-width:60ch; }
@@ -388,7 +389,7 @@ button.dt-num:hover{ color:var(--dye); }
    hairline itself (height = --w-hair, not a bar). */
 .sweep{ position:absolute; left:0; right:0; top:0; height:var(--w-hair); overflow:hidden; pointer-events:none; }
 .sweep-seg{ position:absolute; top:0; left:0; height:100%; width:0; background:var(--ink); animation: ink-loop 2000ms linear infinite; }
-.sweep-seg.first{ animation: ink-draw 400ms ease-out forwards; }
+.sweep-seg.first{ animation: ink-draw 400ms var(--ease) forwards; }
 @keyframes ink-draw{ from{ left:0; width:0; } to{ left:0; width:100%; } }
 @keyframes ink-loop{ 0%{ left:0; width:100%; } 48%{ left:100%; width:0; } 50%{ left:0; width:0; } 100%{ left:0; width:100%; } }
 /* §6.2 (revised) — collapse + arrival are a CROSSFADE, not a swap: the exiting row and the arriving window
@@ -398,19 +399,24 @@ button.dt-num:hover{ color:var(--dye); }
    arriving), and the window's fade starts at ~60% of the row's exit (132/220ms) so there is no gap. The
    recede-to-scribe step is dropped. The row's top rule goes transparent so no double hairline remains; it
    unmounts (React) only after the animation ends. */
-.role-exiting{ display:grid; grid-template-rows:1fr; padding:0; border-top-color:transparent; pointer-events:none; animation: row-h-out 220ms ease-in-out forwards, row-o-out 220ms ease-in forwards; }
+.role-exiting{ display:grid; grid-template-rows:1fr; padding:0; border-top-color:transparent; pointer-events:none; animation: row-h-out 220ms var(--ease) forwards, row-o-out 220ms var(--ease) forwards; }
 .role-exiting .role-inner{ overflow:hidden; display:flex; flex-direction:column; align-items:flex-start; gap:5px; padding:18px 4px; }
 @keyframes row-h-out{ from{ grid-template-rows:1fr; } to{ grid-template-rows:0fr; } }
 @keyframes row-o-out{ from{ opacity:1; } to{ opacity:0; } }
 /* §6.4 re-curation: the stale board fades (invalidation, not deselection) as the window arrives; it
    overlays the arriving composition and fades out. */
 .recuration{ position:relative; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
-.board-fading{ position:absolute; inset:0; z-index:2; pointer-events:none; animation: board-fade 180ms ease forwards; }
+.board-fading{ position:absolute; inset:0; z-index:2; pointer-events:none; animation: board-fade 180ms var(--ease) forwards; }
 @keyframes board-fade{ from{ opacity:1; } to{ opacity:0; } }
 /* §6.3 resolve: the board arrives whole — a short opacity settle, nothing staggered, no per-panel or
    value motion. */
-.workarea .stage{ animation: board-arrive 200ms ease; }
+.workarea .stage{ animation: board-arrive 200ms var(--ease); }
 @keyframes board-arrive{ from{ opacity:0; } to{ opacity:1; } }
+/* Strata kinetic — the detail drawer opening compresses the board on the house curve (--ease). The
+   non-floating drawer grows its flex-basis 0→26% and the stage (flex:1) compresses to fit; 300ms is
+   register-derived (coincides with Strata normal). The floating drawer (over a modal) does not compress. */
+.drawer:not(.floating){ animation: board-compress 300ms var(--ease) both; }
+@keyframes board-compress{ from{ flex-basis:0; } to{ flex-basis:26%; } }
 /* §6.5 guards — every @keyframes disabled under reduced motion, resolving to the end state (no motion). */
 @media (prefers-reduced-motion: reduce){
   .sweep-seg{ animation:none; }
@@ -420,6 +426,7 @@ button.dt-num:hover{ color:var(--dye); }
   .lede-window-body{ animation:none; opacity:1; }
   .board-fading{ animation:none; display:none; }
   .workarea .stage{ animation:none; }
+  .drawer{ animation:none; }
 }
 
 /* ===== Stage C/2f — the lede: model prose left (2/3), its evidence figures right (1/3) =====
@@ -673,7 +680,7 @@ body.modal-open{ overflow:hidden; }
 .brief-lbl{ display:block; font-family:var(--font-sans); font-size:var(--t-2); font-weight:600; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); margin-bottom:9px; }   /* title — section caption */
 .brief-sec{ padding:16px 22px; border-top:1px solid var(--scribe); }
 .brief-ev{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
-.ev-card{ text-align:left; min-width:0; background:var(--field); border:1px solid var(--scribe); padding:12px; cursor:pointer; transition:border-color .12s; }
+.ev-card{ text-align:left; min-width:0; background:var(--field); border:1px solid var(--scribe); padding:12px; cursor:pointer; transition:border-color 120ms var(--ease); }
 .ev-card:hover{ border-color:var(--ink-2); }
 .ev-top{ display:flex; align-items:baseline; gap:8px; margin-bottom:6px; }
 .ev-val{ font-family:var(--font-sans); font-variant-numeric:var(--num); font-size:var(--t-4); font-weight:700; color:var(--ink); }   /* value */

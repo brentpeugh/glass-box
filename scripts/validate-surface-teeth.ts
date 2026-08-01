@@ -79,6 +79,11 @@ const fixtures: Fixture[] = [
     build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace("--field:#edeff0;", "--field:#edeff0; --plane:#e4e7e9;") + "\n.lede-prose.plane{ background:var(--plane); }\n"; return writeTree(f, "planeground"); },
   },
   {
+    name: "timing-function-raw",
+    note: "current tree with one animation's timing function set to a raw ease-out instead of the --ease token — witness for the token-set rule (no off-token curve outside var(--ease)|linear)",
+    build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace("board-arrive 200ms var(--ease)", "board-arrive 200ms ease-out"); return writeTree(f, "timingraw"); },
+  },
+  {
     name: "window-model-value",
     note: "current tree with a `{curation}` reference injected into the curation window — witness for the Tuning-5 rule that the waiting/failure states render ONLY engine-known facts, never a model output (a value reaching the screen before the model has run)",
     build: () => { const f = curFiles(); f["App.tsx"] = f["App.tsx"].replace('<p className="lede-window-prose">', '<p className="lede-window-prose">{curation}'); return writeTree(f, "windowval"); },

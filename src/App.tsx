@@ -1332,21 +1332,40 @@ function AppInner() {
   const [originBox, setOriginBox] = useState(null);
   const [originIsAnchor, setOriginIsAnchor] = useState(false);
   const LATTICE_ORIGIN = ["ev-card", "kcell", "mx-cell", "dt-num", "callout"];
+  // the CSS-filled marks the .is-origin --dye recolor actually reaches (see the .ln-pt.is-origin rules).
+  // A chart mark that carries NONE of these cannot take a legible dye mark — a per-series inline style={{fill}}
+  // beats the CSS (indexed/small_multiples/treemap/grouped/stacked_area), or it is a non-terminal invisible
+  // hit-target — so it FALLS BACK to its smallest enclosing ruled region: the chart panel's box.
+  const RECOLORABLE_MARK = ["cx-dot", "scat-dot", "par-cum-dot", "cx-dlab", "dlab"];
   const recordOrigin = (e) => { const t = e.target && e.target.closest ? (e.target.closest("button, .ln-pt") || e.target) : null; if (t && t.getBoundingClientRect) originRef.current = t; };
   useLayoutEffect(() => {
     if (!picked) { setOriginBox(null); setOriginIsAnchor(false); return; }
     const el = originRef.current;
     if (!el || !el.classList) { setOriginBox(null); setOriginIsAnchor(false); return; }
-    const isLattice = LATTICE_ORIGIN.some((c) => el.classList.contains(c));
-    if (isLattice) {
-      // enclosing-rule box (the sanctioned overlay). Anchor ev-card: suppress its --ink border so only --dye shows.
-      setOriginIsAnchor(el.classList.contains("anchor"));
-      const measure = () => { if (!el.getBoundingClientRect) return setOriginBox(null); const r = el.getBoundingClientRect(); setOriginBox(r.width && r.height ? { left: r.left, top: r.top, width: r.width, height: r.height } : null); };
-      measure();
+    // the sanctioned enclosing-rule box (overlay), for a ruled region — a lattice cell, or (fallback) a panel.
+    // The drawer opening compresses the board (an eased ~300ms flex reflow), so a board origin slides while
+    // the box is up; a one-shot measure would leave it stale. Track it with a BOUNDED rAF (~360ms, the
+    // compression + buffer) then settle to a resize listener — no perpetual loop while the drawer sits open.
+    const boxOf = (target, isAnchor) => {
+      setOriginIsAnchor(isAnchor);
+      const measure = () => { if (!target.getBoundingClientRect) return setOriginBox(null); const r = target.getBoundingClientRect(); setOriginBox(r.width && r.height ? { left: r.left, top: r.top, width: r.width, height: r.height } : null); };
+      let raf = 0; const t0 = performance.now();
+      const tick = () => { measure(); if (performance.now() - t0 < 360) raf = requestAnimationFrame(tick); };
+      tick();
       window.addEventListener("resize", measure);
-      return () => window.removeEventListener("resize", measure);
+      return () => { if (raf) cancelAnimationFrame(raf); window.removeEventListener("resize", measure); };
+    };
+    // lattice cell: box it (anchor ev-card suppresses its --ink border so only --dye shows)
+    if (LATTICE_ORIGIN.some((c) => el.classList.contains(c))) return boxOf(el, el.classList.contains("anchor"));
+    // a chart mark that cannot carry a legible --dye recolor → fall back to the enclosing chart-panel box
+    const isAffordance = el.classList.contains("dye-scribe") || el.classList.contains("chart-title");
+    const recolorable = RECOLORABLE_MARK.some((c) => el.classList.contains(c) || (el.querySelector && el.querySelector("." + c)));
+    if (!isAffordance && !recolorable) {
+      const panel = el.closest && el.closest(".tb-panel, .cpanel, .tpanel");
+      if (panel) return boxOf(panel, false);
+      setOriginBox(null); setOriginIsAnchor(false); return;
     }
-    // per-type intensification of the element's own affordance — no box
+    // else — intensify the element's own affordance in place, no box
     setOriginBox(null); setOriginIsAnchor(false);
     el.classList.add("is-origin");
     return () => el.classList.remove("is-origin");
