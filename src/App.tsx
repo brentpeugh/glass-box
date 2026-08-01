@@ -814,6 +814,7 @@ function Lede({ finding, source, curation, role, onPick }) {
       <p className="lede-sentence"><Substitute template={thesisTemplate} tokens={tokens} onPick={onPick} /></p>
       <span className="lede-why-lbl">Why it matters for the {role}</span>
       <p className="lede-why"><Substitute template={why} tokens={tokens} onPick={onPick} /></p>
+      {tests.length > 0 && <span className="lede-tests-lbl">What would change this read — model-proposed, engine-run</span>}
       {tests.length > 0 && <div className="lede-tests">
         {tests.map((t) => {
           const r = verdicts[t.id];

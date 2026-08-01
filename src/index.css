@@ -382,12 +382,13 @@ button.dt-num:hover{ color:var(--dye); }
 .lede-prose{ padding:10px 16px 12px; display:flex; flex-direction:column; gap:var(--in-1); min-width:0; min-height:0; overflow-y:auto; background:var(--field); }   /* T4g: uniform --in-1 between blocks (was gap 5 + ad-hoc margins) — the column has room now the falsifier block shrank */
 .lede-ground{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); }   /* label — authorship mark */
 .lede-sentence{ font-family:var(--font-sans); font-size:var(--t-4); font-weight:600; line-height:1.24; color:var(--ink); margin:0; }   /* heading — the finding sentence (lede retired into heading, T4g; matches the drawer title) */
-.lede-why-lbl{ display:block; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); }   /* label — eyebrow */
+.lede-why-lbl, .lede-tests-lbl{ display:block; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2); }   /* label — eyebrow (why + falsifier block share the treatment) */
 .lede-why{ font-family:var(--font-sans); font-size:var(--t-3b); font-weight:400; line-height:1.5; color:var(--ink); margin:0; }   /* prose — why it matters (fills the cell width) */
-/* Stage B (T4): falsifiers at the foot of the prose column — a hairline rule, not an eyebrow (the column
-   already carries two tracked-caps eyebrows). Each question is a clickable proposition (action); running
-   it replaces the question IN PLACE with its verdict, no reflow of the thesis/why above. */
-.lede-tests{ margin-top:var(--in-1); padding-top:10px; border-top:var(--w-hair) solid var(--scribe); display:flex; flex-direction:column; }
+/* Stage B (T4): falsifiers at the foot of the prose column — separated by the eyebrow (.lede-tests-lbl)
+   ALONE, like the two blocks above; no hairline rule (a label + a rule would be doubled separation, the
+   only place carrying both). Each question is a clickable proposition (action); running it replaces the
+   question IN PLACE with its verdict, no reflow of the thesis/why above. */
+.lede-tests{ display:flex; flex-direction:column; }
 /* the whole row is the target (a <button>); the run affordance is the discoverability signal, right-
    aligned to the panel edge. On run the row becomes a statement (answer, prose) + a finding (verdict,
    value 20/700) in the affordance's slot — proposition+button reads as statement+finding. */
