@@ -156,8 +156,8 @@ function TraceDrawer({ picked, source, onClose, floating }) {
   // says "Model unavailable — captured arrangement"), so the drawer must not claim one did. Say the
   // DIFFERENT thing in each state (not a form vacuously true in both), mirroring the read modal.
   const arranged = source === "live"
-    ? "The model arranged this board — it did not produce these numbers."
-    : "No model ran — this is the captured deterministic arrangement, and the engine produced these numbers.";
+    ? "The model arranged this board — not its numbers."
+    : "No model ran — the engine produced these numbers.";
   // The header IS the root node: eyebrow (badge) on its own line, heading title beneath with the root
   // value right-aligned on the title line. The tree then begins at the root's derivation line and its
   // inputs — no duplicate root row.
@@ -170,7 +170,7 @@ function TraceDrawer({ picked, source, onClose, floating }) {
         <div className="drawer-title-row"><span className="drawer-t">{node.label}</span><span className="drawer-rootval">{rootVal}</span></div>
       </div>
       <div className="drawer-body">
-        <div className="anno anno-top">Every value decomposes into extracted or calculated values, all the way to the source rows. {arranged}</div>
+        <div className="anno anno-top">{arranged}</div>
         <div className="ptree">
           {node.provenance?.description && <div className="node-desc node-desc-root">{node.provenance.description}{node.note ? ` — ${node.note}` : ""}</div>}
           {inputs.map((inp, i) => inp.kind === "metric" ? <TraceNode key={i} node={E.store.get(inp.id)} depth={0} /> : <RowsLeaf key={i} leaf={inp} parentVal={node} depth={0} />)}

@@ -245,9 +245,9 @@ console.log(`REGISTER-SURFACE PROOF  (src: ${path.relative(root, srcDir) || "src
   ok("type on an ink ground uses --frame-ink/--frame-mute, never --ink/--ink-2", bad.length === 0, bad.join(" · "));
 }
 
-// ── 11 · the thirteen text classes (§2c) ──────────────────────────────────────────────────────────
+// ── 11 · the twelve text classes (§2c; lede retired into heading, T4g) ─────────────────────────────
 // Every type-defining rule (sets BOTH font-size and font-weight) resolves to exactly one of the
-// thirteen (family, size, weight, tracking) tuples — no ad-hoc combinations. The class is decided by what the
+// twelve (family, size, weight, tracking) tuples — no ad-hoc combinations. The class is decided by what the
 // text does; a chart title and a modal title are the same class. TEETH: post-2b chart titles are
 // (mono,11,400) — mono is legal only at 10/12 — so they are NOT a class and trip here.
 const SIZE: Record<string, number> = { "--t-1": 10, "--t-2": 11, "--t-3": 14, "--t-3b": 16, "--t-4": 20, "--t-5": 26, "--t-tab": 12, "10px": 10, "11px": 11, "12px": 12, "14px": 14, "16px": 16, "20px": 20, "26px": 26 };
@@ -260,7 +260,7 @@ const declTrackEm = (body: string): number | null | undefined => { const v = dec
 // three caps roles: title/label/note); null where the role isn't tracked-caps and its letter-spacing
 // is unconstrained. One value per role: adding tracking here is what makes a .14em label a violation.
 const CLASSES: Record<string, [string, number, number, number | null]> = {
-  hero: ["sans", 26, 700, null], lede: ["sans", 26, 600, null], value: ["sans", 20, 700, null], heading: ["sans", 20, 600, null], prose: ["sans", 16, 400, null],
+  hero: ["sans", 26, 700, null], value: ["sans", 20, 700, null], heading: ["sans", 20, 600, null], prose: ["sans", 16, 400, null],
   name: ["sans", 14, 400, null], action: ["sans", 14, 600, null], datum: ["sans", 12, 700, null], title: ["sans", 11, 600, 0.10],
   label: ["sans", 11, 400, 0.10], scaffold: ["sans", 10, 400, null], note: ["mono", 10, 400, 0.10], machine: ["mono", 12, 400, null],
 };
@@ -281,7 +281,7 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
   const bad: string[] = [];
   for (const r of rules) {
     if (r === tokenBlock || hasClassIn(r.prelude, MARKS)) continue;
-    if (/^\.t-(hero|lede|value|heading|prose|name|action|datum|title|label|scaffold|note|machine)$/.test(r.prelude.trim())) continue; // the canonical defs
+    if (/^\.t-(hero|value|heading|prose|name|action|datum|title|label|scaffold|note|machine)$/.test(r.prelude.trim())) continue; // the canonical defs
     const size = declVal(r.body, "font-size"), weight = declVal(r.body, "font-weight");
     if (!size || !weight || size === "inherit") continue;   // only rules that define both
     const px = sizePx(size); if (px == null) continue;       // bad sizes are #9's job
@@ -297,7 +297,7 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
       if (t !== undefined && (t == null || Math.abs(t - spec) > 1e-9)) bad.push(`${r.prelude} → ${cls} tracking ${t == null ? "non-em" : t + "em"} ≠ ${spec}em`);
     }
   }
-  ok("every type rule resolves to one of the 13 classes — (family, size, weight, tracking)", bad.length === 0, bad.join(" · "));
+  ok("every type rule resolves to one of the 12 classes — (family, size, weight, tracking)", bad.length === 0, bad.join(" · "));
 }
 
 // ── 12 · mono marks raw machine output only ───────────────────────────────────────────────────────
