@@ -1327,12 +1327,21 @@ function AppInner() {
 
   // Suspend chart measurement while the drawer's board-compress runs — the flex reflow would fire every
   // chart's ResizeObserver each frame (per-frame SVG re-render = the drawer-open jank). Resume + re-measure
-  // once after the compression (~300ms + buffer); the cleanup also resumes on close (the board expands).
+  // once when the compression ENDS — keyed to the board-compress `animationend` (bubbles to .workarea),
+  // not a timer. Only on the closed→open transition (a re-trace while open causes no compression). Under
+  // reduced motion there is no animation (and no storm), so we skip. The cleanup resumes on close/interrupt
+  // (the board expands in a single reflow — one re-measure, not a per-frame storm; see the §close report).
+  const measureWasOpen = useRef(false);
   useEffect(() => {
-    if (!picked) return;
+    const wasOpen = measureWasOpen.current;
+    measureWasOpen.current = !!picked;
+    if (!picked || wasOpen) return;
+    if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     suspendMeasure();
-    const t = setTimeout(resumeMeasure, 340);
-    return () => { clearTimeout(t); resumeMeasure(); };
+    const wa = document.querySelector(".workarea");
+    const onEnd = (e) => { if (e.animationName === "board-compress") resumeMeasure(); };
+    if (wa) wa.addEventListener("animationend", onEnd);
+    return () => { if (wa) wa.removeEventListener("animationend", onEnd); resumeMeasure(); };
   }, [picked]);
 
   // §4 — the drawer (the sole INSPECTION surface) marks its ORIGIN by INTENSIFYING that element's own
