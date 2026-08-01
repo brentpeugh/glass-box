@@ -494,26 +494,41 @@ const TRACK_EXEMPT = new Set(["railbtn"]);
   ok("origin marking intensifies each type's own affordance (no quiet outline)", bad.length === 0, bad.join(" · "));
 }
 
-// ── 24 · every transition/animation timing function is a token (--ease | linear) ──────────────────
-// The one house curve is Strata's --ease (cubic-bezier, declared once in :root); the sweep's steady
-// duration-loop keeps `linear`. No transition or animation may declare a raw timing function — a bare
-// ease/ease-in/ease-out/ease-in-out keyword, or a raw cubic-bezier()/steps() — nor omit the timing (an
-// implicit `ease`). Each transition/animation value must be `none` or carry a token (var(--ease)|linear).
-// TEETH (fixture "timing-function-raw"): a raw ease-out on a keyframe trips it; pre-register raw `ease`
-// transitions trip it too.
+// ── 24 · every transition/animation timing function AND duration is a token ────────────────────────
+// TIMING: the one house curve is Strata's --ease (cubic-bezier, declared once in :root). No transition
+// or animation may declare a raw timing function — a bare ease/ease-in/ease-out/ease-in-out keyword, or a
+// raw cubic-bezier()/steps() — nor omit the timing (an implicit `ease`). `linear` is permitted ONLY on an
+// infinite (animation-iteration-count:infinite) animation — the sweep's steady duration-loop; a FINITE
+// transition/animation declaring linear is an off-token curve and trips.
+// DURATION: Strata's fast/normal/slow scale is tokenized in :root (--dur-*). Every transition/animation
+// duration (and delay) must resolve to a --dur token — no raw <n>ms/<n>s time literal may appear in a
+// transition/animation value (a delay may be calc(var(--dur-*) * k)).
+// TEETH: "timing-function-raw" (raw ease-out) trips the timing branch · "linear-finite" (linear on a
+// finite transition) trips the linear rule · "duration-raw" (a raw 200ms) trips the duration branch.
 {
   const bad: string[] = [];
   for (const r of rules) {
+    // timing function
     for (const m of r.body.matchAll(/(?:transition|animation)(?:-timing-function)?\s*:\s*([^;}]+)/g)) {
       const val = m[1].trim();
       if (val === "none" || val === "inherit" || val === "initial" || val === "unset") continue;
       const stripped = val.replace(/var\(--ease\)/g, "");
       const raw = stripped.match(/cubic-bezier\([^)]*\)|steps\([^)]*\)|\b(?:ease-in-out|ease-in|ease-out|ease|step-start|step-end)\b/g);
       if (raw) { bad.push(`${r.prelude}: ${[...new Set(raw)].join(",")}`); continue; }
-      if (!/var\(--ease\)|\blinear\b/.test(val)) bad.push(`${r.prelude}: no timing token (implicit ease) in "${val.slice(0, 40)}"`);
+      const hasLinear = /\blinear\b/.test(val);
+      const isInfinite = /\binfinite\b/.test(val) || /animation-iteration-count\s*:\s*infinite/.test(r.body);
+      if (hasLinear && !isInfinite) { bad.push(`${r.prelude}: linear on a finite transition/animation`); continue; }
+      if (!/var\(--ease\)/.test(val) && !(hasLinear && isInfinite)) bad.push(`${r.prelude}: no timing token (implicit ease) in "${val.slice(0, 40)}"`);
+    }
+    // duration + delay: no raw time literal — every duration resolves to a --dur token
+    for (const m of r.body.matchAll(/(?:transition|animation)(?:-(?:duration|delay))?\s*:\s*([^;}]+)/g)) {
+      const val = m[1].trim();
+      if (val === "none" || val === "inherit" || val === "initial" || val === "unset") continue;
+      const lit = val.match(/\d+\.?\d*\s?m?s(?![a-zA-Z])/g);
+      if (lit) bad.push(`${r.prelude}: raw duration ${[...new Set(lit)].join(",")} (not a --dur token)`);
     }
   }
-  ok("every transition/animation timing function is a token (--ease | linear)", bad.length === 0, bad.join(" · "));
+  ok("every transition/animation timing function and duration is a token", bad.length === 0, bad.join(" · "));
 }
 
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — register surface: ${pass}/${pass + fail} assertions`);

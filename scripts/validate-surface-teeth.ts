@@ -80,8 +80,18 @@ const fixtures: Fixture[] = [
   },
   {
     name: "timing-function-raw",
-    note: "current tree with one animation's timing function set to a raw ease-out instead of the --ease token — witness for the token-set rule (no off-token curve outside var(--ease)|linear)",
-    build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace("board-arrive 200ms var(--ease)", "board-arrive 200ms ease-out"); return writeTree(f, "timingraw"); },
+    note: "current tree with one animation's timing function set to a raw ease-out instead of the --ease token — witness for the token-set rule (no off-token curve outside var(--ease)|infinite-linear)",
+    build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace("board-arrive var(--dur-fast) var(--ease)", "board-arrive var(--dur-fast) ease-out"); return writeTree(f, "timingraw"); },
+  },
+  {
+    name: "linear-finite",
+    note: "current tree with a FINITE transition's curve set to `linear` (the .trace disclosure) — witness for #24's rule that linear is permitted only on an infinite duration-loop, never on a finite transition",
+    build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace("transition:max-height var(--dur-slow) var(--ease)", "transition:max-height var(--dur-slow) linear"); return writeTree(f, "linearfinite"); },
+  },
+  {
+    name: "duration-raw",
+    note: "current tree with one animation's duration set to a raw 200ms literal instead of the --dur-fast token — witness for #24's duration rule (every transition/animation duration resolves to a --dur token)",
+    build: () => { const f = curFiles(); f["index.css"] = f["index.css"].replace("board-arrive var(--dur-fast) var(--ease)", "board-arrive 200ms var(--ease)"); return writeTree(f, "durationraw"); },
   },
   {
     name: "window-model-value",

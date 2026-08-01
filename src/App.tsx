@@ -148,7 +148,7 @@ function TrustPanel({ audit, debug, proxy, onClose }) {
     </div>
   </div>);
 }
-function TraceDrawer({ picked, source, onClose, floating }) {
+function TraceDrawer({ picked, source, onClose, floating, closing }) {
   if (!picked) return null;
   const node = picked.node;
   const ptype = picked.isFinding ? "FINDING" : node.epistemic === "proxy" ? "MODELED" : (node.provenance?.inputs || []).some((i) => i.kind === "metric") ? "CALCULATED" : "EXTRACTED";
@@ -164,7 +164,7 @@ function TraceDrawer({ picked, source, onClose, floating }) {
   const rootVal = picked.isFinding ? `${node.value.toFixed(0)} pp` : fmtMV(node);
   const inputs = node.provenance?.inputs || [];
   return (
-    <aside className={`drawer ${floating ? "floating" : ""}`}>
+    <aside className={`drawer ${floating ? "floating" : ""} ${closing ? "closing" : ""}`}>
       <div className="drawer-head">
         <div className="drawer-eyebrow"><span className={`ptype ${ptype.toLowerCase()}`}>{ptype}</span><button className="drawer-x" onClick={onClose}>✕</button></div>
         <div className="drawer-title-row"><span className="drawer-t">{node.label}</span><span className="drawer-rootval">{rootVal}</span></div>
@@ -1173,6 +1173,7 @@ function AppInner() {
   const [role, setRole] = useState(null);
   const [state, setState] = useState({ loading: false, spec: null, source: null, rejected: 0, err: null, debug: null });
   const [picked, setPicked] = useState(null);
+  const [closing, setClosing] = useState(false);   // the drawer stays mounted with `.closing` while it collapses; unmounts on animationend (§symmetric close)
   const [showDebug, setShowDebug] = useState(false);
   const [queries, setQueries] = useState([]);
   const cache = React.useRef({});
@@ -1347,6 +1348,41 @@ function AppInner() {
     return () => { if (wa) wa.removeEventListener("animationend", onEnd); resumeMeasure(); setCompressing(false); };
   }, [picked]);
 
+  // The deliberate CLOSE (§symmetric close). The drawer no longer vanishes on ✕: `requestClose` keeps it
+  // mounted (picked held) and sets `.closing`, which collapses its flex-basis 26%→0 on the house curve —
+  // the MIRROR of the open. Across the collapse the stage reclaims the space frame by frame — the SAME
+  // reflow storm as the open, in reverse — so measurement is SUSPENDED and the chart panels DIM, exactly
+  // as on open. The board-collapse `animationend` (bubbles to .workarea) is the trigger: resume, un-dim,
+  // and UNMOUNT (picked→null). A timeout FALLBACK, longer than the collapse, guards a stuck drawer — it
+  // fires ONLY if animationend never arrives; in normal operation animationend fires first and its cleanup
+  // clears the fallback. Reduced motion, a FLOATING drawer (over a modal — the board never compressed), and
+  // a drawer with no board element all skip the animation and unmount immediately (see requestClose).
+  const CLOSE_FALLBACK_MS = 600;   // 2× the --dur-normal (300ms) collapse — the safety net, never the trigger in normal operation
+  const requestClose = () => {
+    if (!picked) return;
+    const floating = showQuery || showTrust || showDebug;
+    const reduced = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const el = document.querySelector(".drawer:not(.floating)");
+    if (floating || reduced || !el) { setPicked(null); setClosing(false); return; }
+    el.style.setProperty("--close-w", el.clientWidth + "px");   // pin the contents to the open width so the tree doesn't rewrap as flex-basis shrinks
+    setClosing(true);
+  };
+  useEffect(() => {
+    if (!closing) return;
+    suspendMeasure(); setCompressing(true);
+    const wa = document.querySelector(".workarea");
+    let done = false;
+    const finish = () => { if (done) return; done = true; setPicked(null); setClosing(false); resumeMeasure(); setCompressing(false); };
+    const onEnd = (e) => { if (e.animationName === "board-collapse") finish(); };
+    if (wa) wa.addEventListener("animationend", onEnd);
+    const fallback = setTimeout(finish, CLOSE_FALLBACK_MS);
+    return () => { if (wa) wa.removeEventListener("animationend", onEnd); clearTimeout(fallback); };
+  }, [closing]);
+  // A fresh pick DURING the collapse cancels the close — the drawer stays open on the new origin rather
+  // than closing out from under it. (requestClose holds `picked` steady, so this fires only on a real
+  // pick change, not at close-start.)
+  useEffect(() => { setClosing(false); }, [picked]);
+
   // §4 — the drawer (the sole INSPECTION surface) marks its ORIGIN by INTENSIFYING that element's own
   // traceable affordance — it never draws a boundary the element does not already have. The mark is
   // CSS-POSITIONED via an `.is-origin` class on the origin element itself (no fixed overlay, no rAF, no
@@ -1454,7 +1490,7 @@ function AppInner() {
             <Scorecard role={role} scorecardKeys={state.curation && state.curation.scorecardKeys} onPick={setPicked} />
             <TemplateBoard key={`${role}|${perturbation}|${(state.curation && state.curation.finding && state.curation.finding.label) || ""}`} spec={state.spec} role={role} catalog={catalog} onPick={setPicked} finding={state.curation && state.curation.finding} source={state.source} curation={state.curation} />
           </main>
-          <TraceDrawer picked={picked} source={state.source} floating={showQuery || showTrust || showDebug} onClose={() => setPicked(null)} />
+          <TraceDrawer picked={picked} source={state.source} floating={showQuery || showTrust || showDebug} closing={closing} onClose={requestClose} />
         </div>}
       </div>
 
