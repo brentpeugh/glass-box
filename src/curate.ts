@@ -57,6 +57,20 @@ const joinList = (a: string[]) => a.length <= 1 ? (a[0] || "") : a.length === 2 
 // slug an engine label into a stable token name (lowercase; runs of non-alphanumerics → "_"). A digit
 // in a NAME is fine — it is part of an engine-supplied name (Rule of 40 → rule_of_40), never a value.
 export const slugToken = (label: any) => String(label || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+// The finding's SEMANTIC anchor metric — the thesis subject and the framed evidence card. NOT the
+// positional finding.mvs[0]: a dispersion/concentration finding builds its mvs in SEGMENTS order, so
+// mvs[0] is merely the first segment (e.g. SMB ARR), not what the finding is about. The anchor is: a
+// benchmarked member of the finding's own evidence (efficiency → CAC Payback), else the SHARE metric
+// that names a concentration in one number (concentration → Enterprise ARR Share), else the dominant
+// component by value. Used by the lede frame, the prompt (thesis + evidence caps), and reporting.
+export function findingAnchorId(finding: any): string | null {
+  const mvs = ((finding && finding.mvs) || []).filter(Boolean);
+  const benched = mvs.find((m: any) => m && m.basis);
+  if (benched) return benched.id;
+  try { const nb = E.findingNeighborhood(finding); const share = (nb.metricIds || []).find((id: string) => { try { return /_share$/.test(E.store.get(id).metric); } catch { return false; } }); if (share) return share; } catch {}
+  const dom = mvs.slice().sort((a: any, b: any) => b.value - a.value)[0];
+  return dom ? dom.id : (mvs[0] ? mvs[0].id : null);
+}
 // The TOKEN VOCABULARY for a finding — the SINGLE source for the prompt (what the model may write), the
 // validator (what it admits), and the renderer (what it substitutes + dye-scribes). One token per
 // evidence metric, named by the slug of its label, rendering the value WITH ITS UNIT; plus a
@@ -151,11 +165,22 @@ function validateCuration(cur, finding, catalog) {
   // digits, e.g. "Rule of 40") are references, not authored values, so they're whitelisted.
   const evidenceLabels = (nb.metricIds || []).map((id: string) => { try { return E.store.get(id)?.label; } catch { return null; } }).filter(Boolean);
   const validTokens = Object.keys(ledeTokens(finding));   // the finding's token vocabulary — an unknown token rejects the curation
-  return validateCurationCore(cur, nb, catalog, WIDGET_DOMAIN, evidenceLabels, validTokens);
+  // the thesis states ONE metric — the anchor (+ its benchmark). Any other figure-token in the thesis
+  // rejects the read (it composes to the cap; it is not truncated afterward).
+  const anchorId = findingAnchorId(finding);
+  const anchorSlug = (() => { try { return anchorId ? slugToken(E.store.get(anchorId).label) : null; } catch { return null; } })();
+  const anchorTokens = anchorSlug ? [anchorSlug, `${anchorSlug}_benchmark`] : [];
+  return validateCurationCore(cur, nb, catalog, WIDGET_DOMAIN, evidenceLabels, validTokens, anchorTokens);
 }
 function buildCurationPrompt(focus, finding, nb, catalog) {
   const metricMenu = nb.metricIds.map((id) => ({ id, label: E.store.get(id).label }));
-  const tokenMenu = Object.entries(ledeTokens(finding)).map(([name, t]: [string, any]) => ({ token: `{${name}}`, of: t.label, rendersAs: t.value }));   // give the LITERAL rendered string (e.g. "12-month"), so the model can build grammar around it
+  const toks = ledeTokens(finding);
+  const tokenMenu = Object.entries(toks).map(([name, t]: [string, any]) => ({ token: `{${name}}`, of: t.label, rendersAs: t.value }));   // give the LITERAL rendered string (e.g. "12-month"), so the model can build grammar around it
+  // the finding's SEMANTIC anchor — the ONE metric the thesis states and the frame marks
+  const anchorId = findingAnchorId(finding);
+  const anchorMv = (() => { try { return anchorId ? E.store.get(anchorId) : null; } catch { return null; } })();
+  const anchorSlug = anchorMv ? slugToken(anchorMv.label) : null;
+  const anchorTokens = anchorSlug ? [`{${anchorSlug}}`].concat(toks[`${anchorSlug}_benchmark`] ? [`{${anchorSlug}_benchmark}`] : []) : [];
   const testMenu = nb.testIds.map((id) => { const t = E.TEST_MENU.find((x) => x.id === id); return { id, question: t.label, falsifier: nb.falsifierIds.includes(id) }; });
   const widgetMenu = offeredWidgets(nb, catalog).map((id) => ({ id, label: catalog[id].title || id }));
   const headlineMenu = HEADLINE_KEYS;
@@ -174,7 +199,8 @@ An engine has DETECTED this finding (you did not compute it; you may foreground 
 Form the decision-relevant READ for the ${focus.role}. The engine surfaced this top statistical fact from a neutral scan; its finding neighborhood (the menus below) defines what is legible. Do NOT assume the issue is retention, growth, efficiency, or concentration — let the neighborhood and the evidence decide. Choose the framing and widgets most decision-relevant FOR THE ${focus.role}: a CFO (durability, forecast, capital allocation) and a CRO (conversion, motion, segment mix) should NOT surface the same board. Compose a COMPLETE board: select the set of widgets that give a full analytical view of this finding from complementary angles (e.g. the trend over time, the segment/component breakdown, the composition or share, a comparison against benchmark) — exactly 3 panels, ordered most important first. Choose the three most decision-relevant complementary angles; select fewer only if the finding genuinely cannot support three.${domainHint} Select ONLY from the menus below — you may not invent metrics, tests, or widgets.
 
 Your prose must contain NO DIGITS and NO UNITS. Every figure is a TOKEN from the TOKENS list, written in curly braces exactly as listed (e.g. {cac_payback}). Each token in the list shows what it renders as (its "rendersAs") so you can build grammar around it — but you write the TOKEN, never the rendered text: "{cac_payback}", NOT "{cac_payback} months" (double unit) and NEVER a bare number. You may use ONLY tokens from the list; an unknown token rejects the whole read.
-The THESIS carries the figures (as {tokens}). The WHY-IT-MATTERS is the argument: it must NOT restate any figure that the evidence column already shows — use NO tokens in whyRole; name a metric by its name if the argument needs it, but do not quote a value against its benchmark. Do NOT open the thesis or whyRole with the role name — the board's eyebrow already states the role.
+The THESIS states ONE metric — the ANCHOR — and only it: use ONLY the anchor token(s) ${JSON.stringify(anchorTokens)} and NO other {tokens}. A headline states one thing; several metrics against their benchmarks is the paragraph's job. The WHY-IT-MATTERS is that argument, but carries NO figures: use NO tokens in whyRole; name a metric by its name if the argument needs it, but do not quote a value against its benchmark (the values are already on screen in the evidence column). Do NOT open the thesis or whyRole with the role name — the board's eyebrow already states the role.
+EVIDENCE — pick EXACTLY 4 ids: the FIRST must be the ANCHOR metric (id ${JSON.stringify(anchorId)}); the other three must be DIFFERENT metrics your thesis does NOT name. Exactly one evidence card (the anchor) restates the thesis metric; the other three carry metrics the thesis does not.
 
 EVIDENCE (metric ids you may cite): ${JSON.stringify(metricMenu)}
 TOKENS (the ONLY figures you may write in prose — each renders value+unit and links to source): ${JSON.stringify(tokenMenu)}
@@ -183,7 +209,7 @@ WIDGETS (charts you may select, prioritized): ${JSON.stringify(widgetMenu)}
 HEADLINE (metric keys for the vital-signs strip — pick 6 that matter to the ${focus.role} for THIS finding): ${JSON.stringify(headlineMenu)}
 
 Return ONLY this JSON, nothing around it:
-{"thesis":"ONE sentence, NO terminal punctuation — a HEADLINE; figures ONLY as {tokens}, no digits, no units; do not open with the role name","whyRole":"at most 280 CHARACTERS, ending with a full stop — why this finding bears on the role's decisions; NO {tokens} and NO figures (the values are already in the evidence column), name a metric by name if needed; do not open with the role name","evidenceIds":["EXACTLY 4 ids from EVIDENCE — the lede shows four"],"testIds":["EXACTLY 3 ids from TESTS, including >=1 falsifier — the lede shows three"],"widgetIds":["exactly 3 ids from WIDGETS composing the board — complementary views, most important first"],"scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
+{"thesis":"ONE sentence, NO terminal punctuation — a HEADLINE; figures ONLY as the ANCHOR token(s) above, no other tokens, no digits, no units; do not open with the role name","whyRole":"at most 280 CHARACTERS, ending with a full stop — why this finding bears on the role's decisions; NO {tokens} and NO figures (the values are already in the evidence column), name a metric by name if needed; do not open with the role name","evidenceIds":["EXACTLY 4 ids from EVIDENCE — the ANCHOR id first, then three metrics the thesis does not name"],"testIds":["EXACTLY 3 ids from TESTS, including >=1 falsifier — the lede shows three"],"widgetIds":["exactly 3 ids from WIDGETS composing the board — complementary views, most important first"],"scorecardKeys":["6 role-aware headline metric keys from HEADLINE, foregrounding the ones the finding implicates"],"rationaleTags":["short non-numeric tags"]}`;
 }
 // callModel is an INJECTED dependency (docs/briefs/extraction.md §4): the default is byte-identical
 // to the shipped seam, so the app is unchanged; a Node harness can inject a direct API call or a

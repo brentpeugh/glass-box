@@ -4,7 +4,7 @@ import { WIDGET_DOMAIN, guardFraming, guardDirection, engineHeadline } from "./c
 import { E, initEngine, setBaseDS, BASE_DS } from "./engine";
 import { buildCatalog } from "./catalog";
 import { composeBoard } from "./layout";
-import { curate, callModel, FALLBACK, ledeFacts, ledeTokens, offeredWidgets } from "./curate";
+import { curate, callModel, FALLBACK, ledeFacts, ledeTokens, findingAnchorId, offeredWidgets } from "./curate";
 import { PERTURBATIONS, perturbedDataset } from "./perturbations";
 
 
@@ -797,8 +797,10 @@ function Lede({ finding, source, curation, role, onPick }) {
   // template via fallbackCuration); the same Substitute layer renders + dye-scribes either.
   const thesisTemplate = (curation && curation.thesis) || (facts && facts.template) || finding.label;
   const why = (curation && curation.whyRole) || (facts && facts.enumeration) || "";
-  // anchor first, so its evidence card carries the hero figure; then the read's other values
-  const anchorId = finding.mvs && finding.mvs[0] ? finding.mvs[0].id : null;
+  // anchor first (the frame marks it), so its evidence card carries the hero figure; then the read's
+  // other values. The anchor is the finding's SEMANTIC subject (findingAnchorId), not the positional
+  // finding.mvs[0] — for a concentration finding that is the share metric, not the first segment.
+  const anchorId = findingAnchorId(finding);
   const rawIds = curation && curation.evidenceIds && curation.evidenceIds.length ? curation.evidenceIds : (finding.mvs || []).map((m) => m.id);
   const evIds = [anchorId, ...rawIds.filter((id) => id !== anchorId)].filter(Boolean);
   const evidence = evIds.map((id) => { try { return E.store.get(id); } catch { return null; } }).filter(Boolean).slice(0, 4);

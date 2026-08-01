@@ -89,15 +89,21 @@ export function engineHeadline(grounding: any) {
 // The coherence validator. Pure: it takes the finding's neighborhood (from the engine),
 // the catalog, and the widget-domain map — no renderer state. This is the function the app
 // runs live AND the function the discovery-path test proves.
-export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDomain: Record<string, string> = WIDGET_DOMAIN, allowedLabels: string[] = [], validTokens: string[] = []) {
+export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDomain: Record<string, string> = WIDGET_DOMAIN, allowedLabels: string[] = [], validTokens: string[] = [], anchorTokens: string[] = []) {
   const mSet = new Set(nb.metricIds), tSet = new Set(nb.testIds), fSet = new Set(nb.falsifierIds);
   const rel = admissibleLenses(nb);
   const violations: string[] = [];
   // token vocabulary: every {token} in the prose must be one the engine supplied for this finding.
   // An invented/unknown token has no substitution — it must reject the read, never reach the screen.
   const tokenVocab = new Set(validTokens);
-  const unknownTokens = [...usedTokens(cur.thesis), ...usedTokens(cur.whyRole)].filter((t) => !tokenVocab.has(t));
+  const thesisTokens = usedTokens(cur.thesis), whyTokens = usedTokens(cur.whyRole);
+  const unknownTokens = [...thesisTokens, ...whyTokens].filter((t) => !tokenVocab.has(t));
   if (unknownTokens.length) violations.push(`unknown token(s) {${[...new Set(unknownTokens)].join("}, {")}} — not in the finding's vocabulary`);
+  // the thesis states ONE metric — the anchor (+ its benchmark) — and only it; the why carries NO
+  // figures at all. Composed to the cap (rejected, not truncated) — like the panel/evidence/test caps.
+  const offAnchor = anchorTokens.length ? thesisTokens.filter((t) => !anchorTokens.includes(t)) : [];
+  if (offAnchor.length) violations.push(`thesis cites a non-anchor metric ({${[...new Set(offAnchor)].join("}, {")}}) — a headline states one metric`);
+  if (whyTokens.length) violations.push("why-it-matters restates figures — it must carry no tokens (the evidence column shows them)");
   // exactly 4 evidence values — the lede renders 4, so the count the footer reports must equal what
   // shows (same discipline as the 3-panel target). Off-neighborhood dropped first, then capped to 4.
   const evidenceIds = (cur.evidenceIds || []).filter((id: string) => mSet.has(id)).slice(0, 4);
@@ -116,6 +122,6 @@ export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDoma
   const tG = guardFraming(cur.thesis || "", allowedLabels), wG = guardFraming(cur.whyRole || "", allowedLabels);
   if (tG.violated || wG.violated) violations.push("authored numerals stripped from prose");
   const scorecardKeys = (cur.scorecardKeys || []).filter((k: string) => HEADLINE_KEYS.includes(k)).slice(0, 6);
-  const viable = evidenceIds.length > 0 && hasFalsifier && tG.text.length > 0 && unknownTokens.length === 0;
+  const viable = evidenceIds.length > 0 && hasFalsifier && tG.text.length > 0 && unknownTokens.length === 0 && offAnchor.length === 0 && whyTokens.length === 0;
   return { viable, violations, curation: viable ? { thesis: tG.text, whyRole: wG.text, evidenceIds, testIds, widgetIds, scorecardKeys, rationaleTags: cur.rationaleTags || [], source: "live" } : null };
 }
