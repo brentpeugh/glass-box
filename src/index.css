@@ -795,8 +795,8 @@ body.modal-open{ overflow:hidden; }
 /* a modeled proxy is a construction caveat — neutral hairline tag, same treatment as its answerable/refused siblings; the word carries it. */
 .tc-proxy{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }   /* label */
 .tc-yes, .tc-no, .tc-proxy{ grid-column:1; justify-self:start; }   /* marks: fixed col 1, natural width, left */
-.tc-audit{ border:1px solid var(--scribe); max-height:220px; overflow-y:auto; }
-.tc-row{ display:grid; grid-template-columns:var(--tc-class) minmax(0,1fr); column-gap:12px; align-items:baseline; padding:8px 12px 8px 0; border-bottom:1px solid var(--scribe); font-size:14px; }   /* left pad 0 so the col-1 kind aligns with §2/§3's classifiers (the box border supplies the hairline inset) */
+.tc-audit{ max-height:220px; overflow-y:auto; }   /* no box border — the log flows like §2/§3, so its classifier column sits at the same left edge; row dividers + the section header carry the structure, the scrollbar carries the overflow */
+.tc-row{ display:grid; grid-template-columns:var(--tc-class) minmax(0,1fr); column-gap:12px; align-items:baseline; padding:8px 0; border-bottom:1px solid var(--scribe); font-size:14px; }   /* no horizontal padding: the col-1 kind aligns exactly with §2/§3's classifiers (no box inset) */
 .tc-row:last-child{ border-bottom:none; }
 .tc-kind{ grid-column:1; justify-self:start; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink); border:1px solid transparent; padding:2px 7px; white-space:nowrap; }   /* label — kind leads the row, in the classifier column (col 1, left); same box geometry as the §2/§3 marks (transparent border) so the classifier text aligns with them, borderless by design */
 /* §4: audit-row kind is a label already spelled out in the row — ink, no dye/neg repeating it. */
