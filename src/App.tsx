@@ -973,7 +973,7 @@ async function narrate(q, desc) {
 function QueryBar({ onAsk, busy }) {
   const [v, setV] = useState("");
   const go = () => { if (v.trim() && !busy) { onAsk(v.trim()); setV(""); } };
-  return (<div className="qbar"><input className="qin" value={v} placeholder="Ask or explore — “how is efficiency?” (re-orient), “what’s SMB’s magic number?” (answer), or an ambiguous one gets both" onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") go(); }} /><button className="qbtn" disabled={busy || !v.trim()} onClick={go}>{busy ? "…" : "Map"}</button></div>);
+  return (<div className="qbar"><input className="qin" value={v} placeholder="Ask or explore — “how is efficiency?” or “what’s SMB’s magic number?”" onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") go(); }} /><button className="qbtn" disabled={busy || !v.trim()} onClick={go}>{busy ? "…" : "Map"}</button></div>);
 }
 function QueryWidget({ desc, onPick }) {
   if (desc.kind === "callout") return (<div className="brief-ev"><EvidenceCard mv={desc.data.mv} onPick={onPick} /></div>);   // the answer's value card is the read modal's evidence card, exactly — one form for a traced value
