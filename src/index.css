@@ -320,7 +320,7 @@ button.dt-num:hover{ color:var(--dye); }
    without wrapping, centred, frame-ink on ink. */
 .rail-mark{ font-family:'IBM Plex Sans',sans-serif; font-weight:400; font-size:var(--t-4); color:var(--frame-ink); text-align:center; line-height:1; padding:14px 4px; }
 .rail-grp{ display:flex; flex-direction:column; }
-.rail-bottom{ margin-top:auto; margin-bottom:var(--in-3); }   /* empty middle; secondary group lifted one step off the bottom edge */
+.rail-bottom{ margin-top:auto; margin-bottom:var(--bar); }   /* the group's BOTTOM sits --bar (56px) off the screen bottom = the footer's top rule, so its lower edge aligns with the footer scribe line (the line reads as continuing into the rail); the group extends upward, both buttons fully visible */
 .railbtn{ display:block; width:100%; background:none; border:none; border-top:1px solid transparent; border-bottom:2px solid transparent; color:var(--frame-mute); font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.08em; text-transform:uppercase; text-align:center; line-height:1.18; padding:10px 5px; cursor:pointer; overflow-wrap:normal; word-break:normal; hyphens:none; }
 .railbtn:hover{ color:var(--frame-ink); }
 .railbtn.on{ color:var(--frame-ink); border-bottom-color:var(--frame-ink); }   /* secondary group (perturb) active: 2px underline */
