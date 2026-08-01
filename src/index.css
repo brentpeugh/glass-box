@@ -384,8 +384,8 @@ button.dt-num:hover{ color:var(--dye); }
    placements), so it inherits the entry's measure + centring — the entry and board windows mirror. Its
    top edge is the rule beneath the chosen row (role-row padding, so it aligns with the rows); the label +
    prose arrive in the sweep's wake. The prose figures are engine-known, dye-free plain text. */
-.lede-window{ position:relative; display:grid; grid-template-rows:1fr; border-top:var(--w-hair) solid var(--scribe-strong); animation: win-h-in var(--dur-normal) var(--ease) both; }
-.lede-window-body{ overflow:hidden; padding:18px 4px; display:flex; flex-direction:column; gap:var(--in-2); animation: win-o-in var(--dur-fast) var(--ease) calc(var(--dur-normal) * 0.6) both; }
+.lede-window{ position:relative; display:grid; grid-template-rows:1fr; border-top:var(--w-hair) solid var(--scribe-strong); animation: win-h-in var(--dur-slow) var(--ease) both; }
+.lede-window-body{ overflow:hidden; padding:18px 4px; display:flex; flex-direction:column; gap:var(--in-2); animation: win-o-in var(--dur-fast) var(--ease) calc(var(--dur-slow) * 0.6) both; }
 @keyframes win-h-in{ from{ grid-template-rows:0fr; } to{ grid-template-rows:1fr; } }
 @keyframes win-o-in{ from{ opacity:0; } to{ opacity:1; } }
 .lede-window-prose{ font-family:var(--font-sans); font-size:var(--t-3b); font-weight:400; line-height:1.5; color:var(--ink); margin:0; max-width:60ch; }
@@ -402,12 +402,12 @@ button.dt-num:hover{ color:var(--dye); }
 @keyframes ink-loop{ 0%{ left:0; width:100%; } 48%{ left:100%; width:0; } 50%{ left:0; width:0; } 100%{ left:0; width:100%; } }
 /* §6.2 (revised) — collapse + arrival are a CROSSFADE, not a swap: the exiting row and the arriving window
    body are both in the DOM from click (neither conditionally rendered — that cannot animate an exit). The
-   two HEIGHTS (row→0, window 0→full) run simultaneously on the SAME token (--dur-normal, via grid 1fr/0fr)
+   two HEIGHTS (row→0, window 0→full) run simultaneously on the SAME token (--dur-slow, via grid 1fr/0fr)
    so the composition reflows ONCE; the opacities carry the direction (row ease-in leaving, window ease-out
-   arriving), and the window's fade starts at 60% of the reflow (calc(--dur-normal * 0.6) = 180ms) so there
+   arriving), and the window's fade starts at 60% of the reflow (calc(--dur-slow * 0.6) = 240ms) so there
    is no gap. The recede-to-scribe step is dropped. The row's top rule goes transparent so no double hairline
    remains; it unmounts (React) only after the animation ends. */
-.role-exiting{ display:grid; grid-template-rows:1fr; padding:0; border-top-color:transparent; pointer-events:none; animation: row-h-out var(--dur-normal) var(--ease) forwards, row-o-out var(--dur-normal) var(--ease) forwards; }
+.role-exiting{ display:grid; grid-template-rows:1fr; padding:0; border-top-color:transparent; pointer-events:none; animation: row-h-out var(--dur-slow) var(--ease) forwards, row-o-out var(--dur-slow) var(--ease) forwards; }
 .role-exiting .role-inner{ overflow:hidden; display:flex; flex-direction:column; align-items:flex-start; gap:5px; padding:18px 4px; }
 @keyframes row-h-out{ from{ grid-template-rows:1fr; } to{ grid-template-rows:0fr; } }
 @keyframes row-o-out{ from{ opacity:1; } to{ opacity:0; } }
