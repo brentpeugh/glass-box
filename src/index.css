@@ -780,12 +780,13 @@ body.modal-open{ overflow:hidden; }
 .tc-h.ok,.tc-h.no,.tc-h.eng{ color:var(--ink); }
 .tc-col ul{ margin:0; padding-left:16px; } .tc-col li{ font-size:14px; color:var(--ink); margin-bottom:6px; line-height:1.4; }
 .tc-contract{ display:flex; flex-direction:column; gap:8px; }
-/* Trust rows share ONE grid (like the provenance tree): a fixed MARK column (left), one flex column for
-   the claim + its description, and a fixed KIND column (right). Marks left-align down the page, kinds
-   right-align, and every description starts at the same offset (the flex column) instead of after its own
-   variable-width tag. --tc-mark / --tc-kind are shared so §2/§3 (mark-led) and §4 (kind-led, below) line up. */
-:root{ --tc-mark:104px; --tc-kind:100px; }
-.tc-line{ display:grid; grid-template-columns:var(--tc-mark) minmax(0,1fr) var(--tc-kind); column-gap:12px; align-items:baseline; font-size:14px; color:var(--ink); line-height:1.45; }
+/* Trust rows share ONE grid (like the provenance tree): a fixed CLASSIFIER column (left) and one flex
+   column for the claim + its description. Every section leads with its classifier — ANSWERABLE · REFUSED ·
+   PROXY (§2) · HOW · NOT (§3) · curation · query · perturbation (§4) — in a single left stack down the page,
+   and every description starts at the same offset (the flex column) instead of after its own variable-width
+   tag. --tc-class is shared so all sections line up. */
+:root{ --tc-class:116px; }
+.tc-line{ display:grid; grid-template-columns:var(--tc-class) minmax(0,1fr); column-gap:12px; align-items:baseline; font-size:14px; color:var(--ink); line-height:1.45; }
 .tc-line > *:not(.tc-yes):not(.tc-no):not(.tc-proxy){ grid-column:2; }   /* the claim+description flex column */
 /* §4: "answerable" is a status, not a route-to-source — neutral hairline tag like its .tc-no pair; the word carries it. */
 .tc-yes{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }   /* label */
@@ -795,9 +796,9 @@ body.modal-open{ overflow:hidden; }
 .tc-proxy{ font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink); border:1px solid var(--scribe); padding:2px 7px; white-space:nowrap; }   /* label */
 .tc-yes, .tc-no, .tc-proxy{ grid-column:1; justify-self:start; }   /* marks: fixed col 1, natural width, left */
 .tc-audit{ border:1px solid var(--scribe); max-height:220px; overflow-y:auto; }
-.tc-row{ display:grid; grid-template-columns:var(--tc-mark) minmax(0,1fr) var(--tc-kind); column-gap:12px; align-items:baseline; padding:8px 12px 8px 0; border-bottom:1px solid var(--scribe); font-size:14px; }   /* left pad 0: the empty mark column supplies the left inset, so the detail (col 2) aligns with §2/§3's text */
+.tc-row{ display:grid; grid-template-columns:var(--tc-class) minmax(0,1fr); column-gap:12px; align-items:baseline; padding:8px 12px 8px 0; border-bottom:1px solid var(--scribe); font-size:14px; }   /* left pad 0 so the col-1 kind aligns with §2/§3's classifiers (the box border supplies the hairline inset) */
 .tc-row:last-child{ border-bottom:none; }
-.tc-kind{ grid-column:3; justify-self:end; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; padding:2px 6px; white-space:nowrap; }   /* label — kind: fixed col 3, right */
+.tc-kind{ grid-column:1; justify-self:start; font-family:var(--font-sans); font-size:var(--t-2); font-weight:400; letter-spacing:.10em; text-transform:uppercase; color:var(--ink); border:1px solid transparent; padding:2px 7px; white-space:nowrap; }   /* label — kind leads the row, in the classifier column (col 1, left); same box geometry as the §2/§3 marks (transparent border) so the classifier text aligns with them, borderless by design */
 /* §4: audit-row kind is a label already spelled out in the row — ink, no dye/neg repeating it. */
 .tc-row.curation .tc-kind,.tc-row.query .tc-kind,.tc-row.perturbation .tc-kind{ background:transparent; color:var(--ink); }
 .tc-detail{ grid-column:2; color:var(--ink); line-height:1.4; }
