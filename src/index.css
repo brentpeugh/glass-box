@@ -35,6 +35,7 @@
   --num:tabular-nums lining-nums;   /* uniform-width lining digits without a monospace face */
   --in-1:4px; --in-2:8px; --in-3:16px; --out:32px;
   --w-hair:1px; --w-series:1.75px; --mk:6px;
+  --drawer-w:32%;   /* the open detail-drawer's flex-basis — ONE source for the resting rule AND the board-compress/collapse keyframes, so the animated width can't desync from the resting width (a 6c regression: the keyframe held a stale 26% while the resting rule was 32%, crushing the node tree) */
 }
 .caliper{ font-family:var(--font-sans);color:var(--ink);background:var(--field);min-height:100vh;padding:0 0 48px;background-attachment:fixed;}
 .caliper *{box-sizing:border-box;}
@@ -420,10 +421,10 @@ button.dt-num:hover{ color:var(--dye); }
 .workarea .stage{ animation: board-arrive var(--dur-fast) var(--ease); }
 @keyframes board-arrive{ from{ opacity:0; } to{ opacity:1; } }
 /* Strata kinetic — the detail drawer opening compresses the board on the house curve (--ease). The
-   non-floating drawer grows its flex-basis 0→26% and the stage (flex:1) compresses to fit, over
+   non-floating drawer grows its flex-basis 0→--drawer-w and the stage (flex:1) compresses to fit, over
    --dur-normal (Strata normal). The floating drawer (over a modal) does not compress. */
 .drawer:not(.floating){ animation: board-compress var(--dur-normal) var(--ease) both; }
-@keyframes board-compress{ from{ flex-basis:0; } to{ flex-basis:26%; } }
+@keyframes board-compress{ from{ flex-basis:0; } to{ flex-basis:var(--drawer-w); } }
 /* Symmetric close — the drawer no longer vanishes instantly. It keeps its `.closing` class and collapses
    flex-basis back 26%→0 on the SAME curve/duration as the open (mirrored), the stage reclaiming the space,
    then unmounts on animationend (board-collapse). Its contents are PINNED to the open width (--close-w,
@@ -431,7 +432,7 @@ button.dt-num:hover{ color:var(--dye); }
    tree does not rewrap as the width animates down — a per-frame reflow reads worse than the old snap. */
 .drawer:not(.floating).closing{ animation: board-collapse var(--dur-normal) var(--ease) both; }
 .drawer.closing > *{ width: var(--close-w); flex-shrink:0; }
-@keyframes board-collapse{ from{ flex-basis:26%; } to{ flex-basis:0; } }
+@keyframes board-collapse{ from{ flex-basis:var(--drawer-w); } to{ flex-basis:0; } }
 /* The settle fade — the six charts are pixel-drawn, so throttling their re-render would read as 4–5
    discrete jumps; instead measurement is SUSPENDED and one re-render lands at true size after the
    compression, and the CHART panels dim while it runs so that pop happens under a fade. Only .cpanel
@@ -623,7 +624,7 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 /* ===== provenance drawer: compresses the board (not overlay) ===== */
 .workarea{ flex:1 1 auto; min-height:0; display:flex; }
 .workarea > .stage{ flex:1 1 auto; min-width:0; }
-.drawer{ position:static; flex:0 0 26%; min-width:0; max-width:26%; border-left:2px solid var(--ink); background:var(--field); display:flex; flex-direction:column; overflow:hidden; box-shadow:none; }
+.drawer{ position:static; flex:0 0 var(--drawer-w); min-width:0; max-width:var(--drawer-w); border-left:2px solid var(--ink); background:var(--field); display:flex; flex-direction:column; overflow:hidden; box-shadow:none; }
 /* T3: the header IS the root node — eyebrow (badge) on its own line, heading title beneath with the
    root value right-aligned on the title line. The tree begins at the root's derivation line below. */
 .drawer-head{ flex:0 0 auto; padding:11px 14px 9px; border-bottom:1px solid var(--scribe); }
@@ -655,8 +656,8 @@ html,body,#root{ height:100%; overflow:hidden; margin:0; padding:0; background:v
 .drawer{ max-height:none; height:auto; align-self:stretch; z-index:auto; }
 .drawer-body{ max-width:none; margin:0; }
 
-/* drawer: wider + horizontal overflow contained (no side-clip) */
-.drawer{ flex:0 0 32%; max-width:32%; }
+/* drawer: horizontal overflow contained (no side-clip). Width is --drawer-w (set once, in :root). */
+.drawer{ flex:0 0 var(--drawer-w); max-width:var(--drawer-w); }
 .drawer-body{ overflow-x:hidden; }
 .node, .node-kids, .rows, .rows-stat, .rows-recon, .anno{ min-width:0; max-width:100%; }
 .node-head{ min-width:0; }
