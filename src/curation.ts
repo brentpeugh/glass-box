@@ -168,16 +168,20 @@ export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDoma
   if (offAnchor.length) violations.push(`thesis cites a non-anchor metric ({${[...new Set(offAnchor)].join("}, {")}}) — a headline states one metric`);
   if (whyTokens.length) violations.push("why-it-matters restates figures — it must carry no tokens (the evidence column shows them)");
   // exactly 4 evidence values — the lede renders 4, so the count the footer reports must equal what
-  // shows (same discipline as the 3-panel target). Off-neighborhood dropped first, then capped to 4.
-  const evidenceIds = (cur.evidenceIds || []).filter((id: string) => mSet.has(id)).slice(0, 4);
-  if (evidenceIds.length < (cur.evidenceIds || []).filter((id: string) => mSet.has(id)).length) violations.push("evidence beyond the four the lede shows — dropped");
-  else if (evidenceIds.length < (cur.evidenceIds || []).length) violations.push("evidence outside the finding neighborhood — dropped");
+  // shows (same discipline as the 3-panel target). Off-neighborhood dropped first, DEDUPED, then capped
+  // to 4. Dedup is BEFORE the cap: the model can repeat an id, both copies pass the neighborhood filter,
+  // and a repeat inside the slice would consume a slot and render a duplicate evidence card.
+  const evidenceInNb = [...new Set((cur.evidenceIds || []).filter((id: string) => mSet.has(id)))];
+  const evidenceIds = evidenceInNb.slice(0, 4);
+  if (evidenceIds.length < evidenceInNb.length) violations.push("evidence beyond the four the lede shows — dropped");
+  else if (evidenceInNb.length < (cur.evidenceIds || []).length) violations.push("evidence outside the finding neighborhood — dropped");
   // at most 3 tests — the lede foot shows three (same cap as the 3-panel / 4-evidence targets). Off-
-  // neighborhood dropped first, then capped to 3 (the falsifier check below runs on the capped set).
-  const inNbTests = (cur.testIds || []).filter((id: string) => tSet.has(id));
+  // neighborhood dropped first, DEDUPED (same reason as evidence — a repeated falsifier would render
+  // twice), then capped to 3 (the falsifier check below runs on the capped set).
+  const inNbTests = [...new Set((cur.testIds || []).filter((id: string) => tSet.has(id)))];
   const testIds = inNbTests.slice(0, 3);
   if (testIds.length < inNbTests.length) violations.push("tests beyond the three the lede shows — dropped");
-  else if (testIds.length < (cur.testIds || []).length) violations.push("unsupported test id(s) — dropped");
+  else if (inNbTests.length < (cur.testIds || []).length) violations.push("unsupported test id(s) — dropped");
   const inDomainWidgets = (cur.widgetIds || []).filter((id: string) => catalog[id] && rel.includes(widgetDomain[id]));
   if (inDomainWidgets.length < (cur.widgetIds || []).length) violations.push("off-domain widget(s) — dropped");
   // panel distinctness: each panel must add a metric or a form no other shows, and a metric with a
@@ -189,7 +193,11 @@ export function validateCurationCore(cur: any, nb: any, catalog: any, widgetDoma
   if (!hasFalsifier) violations.push("no falsifying test selected — a read must be able to fail");
   const tG = guardFraming(cur.thesis || "", allowedLabels), wG = guardFraming(cur.whyRole || "", allowedLabels);
   if (tG.violated || wG.violated) violations.push("authored numerals stripped from prose");
-  const scorecardKeys = (cur.scorecardKeys || []).filter((k: string) => HEADLINE_KEYS.includes(k)).slice(0, 6);
+  // scorecard keys — filtered to the headline vocabulary, DEDUPED, then capped to 6 (a repeated key
+  // would render a duplicate vital-signs tile). Panels are the fourth capped list; distinctPanels above
+  // already drops exact duplicates (a repeat adds no new metric and its kind is present), so all four
+  // capped lists are duplicate-free by construction — asserted in validate-curation.ts.
+  const scorecardKeys = [...new Set((cur.scorecardKeys || []).filter((k: string) => HEADLINE_KEYS.includes(k)))].slice(0, 6);
   const viable = evidenceIds.length > 0 && hasFalsifier && tG.text.length > 0 && unknownTokens.length === 0 && offAnchor.length === 0 && whyTokens.length === 0;
   return { viable, violations, curation: viable ? { thesis: tG.text, whyRole: wG.text, evidenceIds, testIds, widgetIds, scorecardKeys, rationaleTags: cur.rationaleTags || [], source: "live" } : null };
 }

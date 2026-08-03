@@ -180,5 +180,38 @@ await (async () => {
     offenders.length === 0, offenders.join(" | "));
 }
 
+// 10 — NO CAPPED LIST CONTAINS DUPLICATES. All four curation lists slice to a cap (evidence≤4,
+//      tests≤3, panels≤3, scorecard≤6); each must DEDUPE BEFORE the cap, or a repeated id consumes a
+//      slot and renders a duplicate row (a duplicate panel or evidence card being far more visible than
+//      a duplicate falsifier). A live duplicate originates in the MODEL's output — the engine's
+//      nb.testIds/metricIds are unique — so validateCurationCore is where it must be caught; the
+//      deterministic fallback is checked too. TEETH: the fixture curation repeats an id in every list
+//      (all survive the neighborhood/domain filter, so only the dedupe-under-test can shorten them);
+//      strip any of the four dedupes and this assertion fails.
+{
+  initEngine(base);
+  const cat = buildCatalog();
+  const anchor = roleScopedTopFinding("CFO");
+  const nb = E.findingNeighborhood(anchor);
+  const noDup = (a: string[]) => Array.isArray(a) && new Set(a).size === a.length;
+  const fals = nb.falsifierIds[0];
+  const tDup = [fals, fals, nb.testIds.find((t: string) => t !== fals)];                 // repeated falsifier
+  const mDup = [nb.metricIds[0], nb.metricIds[0], nb.metricIds[1], nb.metricIds[2], nb.metricIds[3]]; // repeat + >4 (also exercises the cap)
+  const onDomainW = Object.keys(cat).filter((id) => admissibleLenses(nb).includes(WIDGET_DOMAIN[id]));
+  const wDup = [onDomainW[0], onDomainW[0], onDomainW[1]];                                // repeated panel
+  const kDup = ["cac_payback", "cac_payback", "magic_number"];                           // repeated scorecard key (both in HEADLINE_KEYS)
+  const fixtureHasDups = ![tDup, mDup, wDup, kDup].every(noDup);                          // teeth: the input genuinely repeats ids
+  const r = validateCurationCore(
+    { thesis: "efficiency deteriorating", whyRole: "matters", evidenceIds: mDup, testIds: tDup, widgetIds: wDup, scorecardKeys: kDup, rationaleTags: [] },
+    nb, cat, WIDGET_DOMAIN);
+  const c = r.curation;
+  const modelClean = !!c && noDup(c.evidenceIds) && noDup(c.testIds) && noDup(c.widgetIds) && noDup(c.scorecardKeys);
+  const fb = fallbackCuration(anchor);
+  const fbClean = noDup(fb.evidenceIds) && noDup(fb.testIds) && noDup(fb.widgetIds) && noDup(fb.scorecardKeys);
+  ok(`no capped list contains duplicates — evidence/tests/panels/scorecard, model + fallback (teeth: dup-laden input deduped)`,
+    fixtureHasDups && modelClean && fbClean,
+    `fixtureHasDups=${fixtureHasDups} model=${c ? JSON.stringify({ e: c.evidenceIds, t: c.testIds, w: c.widgetIds, s: c.scorecardKeys }) : "NOT VIABLE"} fbClean=${fbClean}`);
+}
+
 console.log(`\n${fail === 0 ? "PASS" : "FAIL"} — curation modules: ${pass}/${pass + fail} assertions`);
 if (fail > 0) process.exit(1);

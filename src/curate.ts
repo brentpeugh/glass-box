@@ -165,7 +165,10 @@ export function fallbackCuration(fact) {
     // (whyRole) — dense, not interpretive. Do NOT imitate the model's voice; the difference is the point.
     thesis: facts ? facts.template : `${fact.label} is the top finding the engine surfaced from this quarter's data`,
     whyRole: facts ? facts.enumeration : "This is the largest deviation from benchmark the engine measured, so it most warrants scrutiny before decisions rest on the headline numbers.",
-    evidenceIds, testIds: nb.testIds.slice(0, 3), widgetIds,   // at most 3 — matches the lede foot; nb.testIds keeps a falsifier within the first 3
+    // testIds: DEDUPE before the cap (the same discipline validateCurationCore applies to the model's
+    // testIds). nb.testIds is engine-authored and already unique, so this is defensive — it guarantees no
+    // duplicate falsifier can reach the cap regardless of how the neighborhood is later constructed.
+    evidenceIds, testIds: [...new Set(nb.testIds)].slice(0, 3), widgetIds,   // at most 3 — matches the lede foot; nb.testIds keeps a falsifier within the first 3
     scorecardKeys: FALLBACK_SCORECARD[nb.domain] || FALLBACK_SCORECARD.efficiency,
     rationaleTags: ["top salient anomaly", nb.domain], source: "fallback",
   };
