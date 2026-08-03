@@ -887,8 +887,10 @@ body.modal-open{ overflow:hidden; }
 .msurface-trace{ margin-top:10px; }
 .msurface .drawer-title-row{ margin-bottom:8px; }
 .msurface-actions{ display:flex; flex-direction:column; align-items:flex-start; }
-.msurface-action{ display:block; width:100%; text-align:left; background:none; border:none; border-radius:0; padding:11px 0; cursor:pointer; text-decoration:none; font-family:inherit; }
-.msurface-action:hover .role-k{ color:var(--ink-2); }
+/* the links carry the register ACTION tuple (sans 14/600 ink) — a clickable proposition, not the
+   heading tuple; no dye (dye is the source/contract-routing accent; these do not route to provenance). */
+.msurface-action{ display:block; width:100%; text-align:left; background:none; border:none; border-radius:0; padding:11px 0; cursor:pointer; text-decoration:none; font-family:var(--font-sans); font-size:var(--t-3); font-weight:600; color:var(--ink); }
+.msurface-action:hover{ color:var(--ink-2); }
 /* scroll unlock — the board's fixed-viewport lock (html,body,#root{overflow:hidden;height:100%} and
    .caliper{height:100vh;max-height:100vh}) is global; the mobile surface content exceeds one screen, so
    it must scroll. MobileSurface toggles .m-scroll on <html> only while it is mounted (like body.modal-

@@ -1596,6 +1596,15 @@ function MobileSurface() {
             <p className="entry-line">Caliper Systems — a synthetic ~$40M ARR vertical SaaS; the engine has computed the quarter.</p>
             <p className="entry-line">What you see below is one number from that board, computed live on your phone and traceable to its source rows. The full interactive demo runs on desktop.</p>
           </div>
+          {/* actions ABOVE the trace — primary CTA above the fold on a ~2-screen page; the live trace
+              below then reads as proof-on-scroll. Links carry the register ACTION tuple (sans 14/600 ink)
+              via .msurface-action — a clickable proposition, not the heading tuple. No dye / no ▸: dye is
+              the register's source/contract-routing accent, and an external essay link + a copy utility
+              do not route to provenance (cf. .lede-verdict, which uses the action tuple in ink, no route). */}
+          <section className="msec msurface-actions">
+            <a className="msurface-action" href={ESSAY_URL} target="_blank" rel="noopener noreferrer">Read the essay</a>
+            <button className="msurface-action" onClick={copyLink}>{copied ? "Link copied" : "Copy link"}</button>
+          </section>
           <section className="msec">
             <div className="brief-lbl">A live trace</div>
             {cac ? (
@@ -1604,13 +1613,6 @@ function MobileSurface() {
                 {inputs.map((inp, i) => inp.kind === "metric" ? <TraceNode key={i} node={E.store.get(inp.id)} depth={0} /> : <RowsLeaf key={i} leaf={inp} parentVal={cac} depth={0} />)}
               </div>
             ) : <p className="entry-line">trace unavailable</p>}
-          </section>
-          {/* actions carry the entry heading class (.role-k) on full-width tap targets. NB: the mockup's
-              ▸ prefix is the dye disclosure glyph in this register (source-routing only), so the actions
-              carry no ▸. The hint is grouped with the actions (no rule above it), as in the mockup. */}
-          <section className="msec msurface-actions">
-            <a className="msurface-action" href={ESSAY_URL} target="_blank" rel="noopener noreferrer"><span className="role-k">Read the essay</span></a>
-            <button className="msurface-action" onClick={copyLink}><span className="role-k">{copied ? "Link copied" : "Copy link"}</span></button>
           </section>
         </div>
         <footer className="rail-foot msurface-foot">
