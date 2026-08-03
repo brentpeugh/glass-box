@@ -1575,6 +1575,11 @@ function MobileSurface() {
   const cac = useMemo(() => { try { return E.cacPayback(E.QUARTERS[E.QUARTERS.length - 1]); } catch { return null; } }, []);
   const [copied, setCopied] = useState(false);
   const copyLink = () => { try { navigator.clipboard.writeText(location.href).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }, () => {}); } catch {} };
+  // scroll unlock — the board's fixed-viewport lock (html/body/#root overflow:hidden) is GLOBAL; the
+  // mobile surface must scroll (its content exceeds one screen). Toggle .m-scroll on <html> while this
+  // surface is mounted (same idea as body.modal-open) and drop it on unmount. Desktop never carries the
+  // class, so the board and entry screen stay fixed-viewport — untouched.
+  useEffect(() => { const el = document.documentElement; el.classList.add("m-scroll"); return () => el.classList.remove("m-scroll"); }, []);
   let quarters = 0, rows = 0;
   try { quarters = E.QUARTERS.length; } catch {}
   try { rows = BASE_DS ? BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length : 0; } catch {}
@@ -1585,8 +1590,11 @@ function MobileSurface() {
         <div className="entry msurface-col">
           <div className="entry-mark">⟡ CALIPER</div>
           <div className="entry-sub">
+            {/* line 1 reused verbatim from the entry screen; line 2 is mobile-specific — the entry's
+                "enter as a role" is desktop-only (there is no board here), replaced by the slice framing
+                (which also carries the desktop pointer, so no separate hint below the actions). */}
             <p className="entry-line">Caliper Systems — a synthetic ~$40M ARR vertical SaaS; the engine has computed the quarter.</p>
-            <p className="entry-line">Enter as a role; the board leads with what you're accountable for, from one set of findings.</p>
+            <p className="entry-line">What you see below is one number from that board, computed live on your phone and traceable to its source rows. The full interactive demo runs on desktop.</p>
           </div>
           <section className="msec">
             <div className="brief-lbl">A live trace</div>
@@ -1603,7 +1611,6 @@ function MobileSurface() {
           <section className="msec msurface-actions">
             <a className="msurface-action" href={ESSAY_URL} target="_blank" rel="noopener noreferrer"><span className="role-k">Read the essay</span></a>
             <button className="msurface-action" onClick={copyLink}><span className="role-k">{copied ? "Link copied" : "Copy link"}</span></button>
-            <p className="entry-line msurface-hint">open on desktop for the live demo</p>
           </section>
         </div>
         <footer className="rail-foot msurface-foot">

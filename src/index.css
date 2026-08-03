@@ -889,7 +889,12 @@ body.modal-open{ overflow:hidden; }
 .msurface-actions{ display:flex; flex-direction:column; align-items:flex-start; }
 .msurface-action{ display:block; width:100%; text-align:left; background:none; border:none; border-radius:0; padding:11px 0; cursor:pointer; text-decoration:none; font-family:inherit; }
 .msurface-action:hover .role-k{ color:var(--ink-2); }
-.msurface-hint{ color:var(--ink-2); margin:10px 0 0; }   /* prose, not an affordance */
+/* scroll unlock — the board's fixed-viewport lock (html,body,#root{overflow:hidden;height:100%} and
+   .caliper{height:100vh;max-height:100vh}) is global; the mobile surface content exceeds one screen, so
+   it must scroll. MobileSurface toggles .m-scroll on <html> only while it is mounted (like body.modal-
+   open), so the board and entry screen — which never carry the class — stay fixed-viewport, untouched. */
+html.m-scroll, html.m-scroll body, html.m-scroll #root{ height:auto; min-height:100%; overflow:visible; }
+html.m-scroll .caliper{ height:auto; min-height:100vh; max-height:none; }
 /* the four-column node-head (badge · name · operator · value) cannot fit at phone width — 84+76+56px of
    fixed columns crush the name to ~0. Two-line arrangement: badge+name on row 1, operator+value on
    row 2 — the SAME four child classes, only the container grid changes. Scoped to .msurface so the
