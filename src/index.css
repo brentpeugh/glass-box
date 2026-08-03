@@ -877,3 +877,29 @@ body.modal-open{ overflow:hidden; }
    are right-aligned (their column gap is the RIGHT pad); the row label hugs within the panel's own
    padding. Setting the gap to --in-1 and the hug to 0 REDUCES horizontal padding uniformly. */
 .mx-cell,.mx-lab,.dt-num,.dt-seg,.rows-tbl td,.rows-tbl th{ padding-left:0; padding-right:var(--in-1); }   /* T4g: th joined td so the header aligns to its column (one table; the divergence was this density rule hitting td only) */
+
+/* ===== mobile surface (Stage B) — layout only. Composed from existing components/classes/tokens; no
+   new visual vocabulary (no new tokens, colours, or type tuples — text carries existing classes). The
+   gate (App.tsx MOBILE_GATE, 768px) mounts .msurface in place of the board below the breakpoint, so
+   these rules never touch the board. Section dividers are the SAME hairline the entry/role rows use. */
+.msurface-col{ max-width:640px; padding:7vh 20px 22px; }   /* the .entry column, tightened for phone */
+.msec{ border-top:var(--w-hair) solid var(--scribe-strong); margin-top:22px; padding-top:20px; }   /* a section divider — the entry/role hairline */
+.msurface-trace{ margin-top:10px; }
+.msurface .drawer-title-row{ margin-bottom:8px; }
+.msurface-actions{ display:flex; flex-direction:column; align-items:flex-start; }
+.msurface-action{ display:block; width:100%; text-align:left; background:none; border:none; border-radius:0; padding:11px 0; cursor:pointer; text-decoration:none; font-family:inherit; }
+.msurface-action:hover .role-k{ color:var(--ink-2); }
+.msurface-hint{ color:var(--ink-2); margin:10px 0 0; }   /* prose, not an affordance */
+/* the four-column node-head (badge · name · operator · value) cannot fit at phone width — 84+76+56px of
+   fixed columns crush the name to ~0. Two-line arrangement: badge+name on row 1, operator+value on
+   row 2 — the SAME four child classes, only the container grid changes. Scoped to .msurface so the
+   desktop drawer's grid is untouched (and .msurface exists only below the gate). */
+.msurface .node-head{ grid-template-columns:auto minmax(0,1fr); grid-template-areas:"badge name" "op val"; column-gap:8px; row-gap:1px; }
+.msurface .node-head > .ptype{ grid-area:badge; }
+.msurface .node-head > .node-name{ grid-area:name; }
+.msurface .node-head > .node-op{ grid-area:op; }
+.msurface .node-head > .node-val{ grid-area:val; }
+/* the footer facts line is nowrap on a fixed 56px bar (fine on the board); on a phone the string is
+   wider than the viewport, so on the mobile surface the footer grows to fit and the line wraps. */
+.msurface-foot{ display:block; height:auto; min-height:var(--bar); padding-top:11px; padding-bottom:11px; }
+.msurface-foot .foot-facts{ display:block; white-space:normal; line-height:1.5; }

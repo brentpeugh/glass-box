@@ -1540,9 +1540,84 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+// ================= mobile surface =================
+// The gate — MEASURED (not guessed): the board (three panels · a 2×2 evidence lattice · the rail)
+// renders cleanly to ~784px; below 768 the lede's thesis wraps taller than its fixed box and overflows
+// (panels never structurally clip — the SVG charts scale — and the lattice never collapses, it clips).
+// 1024 (iPad landscape) and 1100 (desktop) sit well above the gate and get the real board. matchMedia
+// so the gate is REACTIVE in both directions: narrowing a desktop window below it mid-session swaps in
+// the mobile surface; widening restores the app. One constant — move to 800/900 for more headroom.
+const MOBILE_GATE = "(max-width: 768px)";
+function useIsMobile() {
+  const read = () => typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(MOBILE_GATE).matches;
+  const [m, setM] = React.useState(read);
+  React.useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia(MOBILE_GATE);
+    const sync = () => setM(mq.matches);
+    mq.addEventListener("change", sync);        // the reactive gate — fires when the viewport crosses the breakpoint
+    window.addEventListener("resize", sync);    // fallback — re-reads the query on any resize (envs where `change` is unreliable)
+    sync();                                     // resync in case the width crossed between first render and this effect
+    return () => { mq.removeEventListener("change", sync); window.removeEventListener("resize", sync); };
+  }, []);
+  return m;
+}
+// The essay is off-app (the board's companion long-form). The primary action routes to it.
+const ESSAY_URL = "https://brentpeugh.io/writing/glass-box/";
+// The mobile surface (Stage B). NOT the board and NOT a fallback: the board cannot render below the
+// gate, so this carries the argument instead of apologising for its absence. Nothing here is a
+// screenshot — the live trace runs the deterministic engine CLIENT-SIDE (no model call, no key, no
+// failure path), so every value on screen decomposes to its source rows on load. Composed from existing
+// components/classes/tokens; the only surface-specific CSS is layout (.msurface*) and the node-head
+// two-line reflow (index.css, gated to the same breakpoint). The disclosure behaves as in the drawer:
+// derivation nodes expanded (TraceNode default), row tables collapsed with their count on the affordance.
+function MobileSurface() {
+  const cac = useMemo(() => { try { return E.cacPayback(E.QUARTERS[E.QUARTERS.length - 1]); } catch { return null; } }, []);
+  const [copied, setCopied] = useState(false);
+  const copyLink = () => { try { navigator.clipboard.writeText(location.href).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }, () => {}); } catch {} };
+  let quarters = 0, rows = 0;
+  try { quarters = E.QUARTERS.length; } catch {}
+  try { rows = BASE_DS ? BASE_DS.facts.customers.length + BASE_DS.facts.opex.length + BASE_DS.facts.opportunities.length : 0; } catch {}
+  const inputs = cac && cac.provenance ? cac.provenance.inputs : [];
+  return (
+    <div className="caliper">
+      <div className="entry-shell msurface">
+        <div className="entry msurface-col">
+          <div className="entry-mark">⟡ CALIPER</div>
+          <div className="entry-sub">
+            <p className="entry-line">Caliper Systems — a synthetic ~$40M ARR vertical SaaS; the engine has computed the quarter.</p>
+            <p className="entry-line">Enter as a role; the board leads with what you're accountable for, from one set of findings.</p>
+          </div>
+          <section className="msec">
+            <div className="brief-lbl">A live trace</div>
+            {cac ? (
+              <div className="ptree msurface-trace">
+                <div className="drawer-title-row"><span className="drawer-t">{cac.label}</span><span className="drawer-rootval">{fmtMV(cac)}</span></div>
+                {inputs.map((inp, i) => inp.kind === "metric" ? <TraceNode key={i} node={E.store.get(inp.id)} depth={0} /> : <RowsLeaf key={i} leaf={inp} parentVal={cac} depth={0} />)}
+              </div>
+            ) : <p className="entry-line">trace unavailable</p>}
+          </section>
+          {/* actions carry the entry heading class (.role-k) on full-width tap targets. NB: the mockup's
+              ▸ prefix is the dye disclosure glyph in this register (source-routing only), so the actions
+              carry no ▸. The hint is grouped with the actions (no rule above it), as in the mockup. */}
+          <section className="msec msurface-actions">
+            <a className="msurface-action" href={ESSAY_URL} target="_blank" rel="noopener noreferrer"><span className="role-k">Read the essay</span></a>
+            <button className="msurface-action" onClick={copyLink}><span className="role-k">{copied ? "Link copied" : "Copy link"}</span></button>
+            <p className="entry-line msurface-hint">open on desktop for the live demo</p>
+          </section>
+        </div>
+        <footer className="rail-foot msurface-foot">
+          <span className="foot-facts"><span className="foot-src">⟡</span> {quarters} quarters · <b>{rows.toLocaleString()}</b> source rows · deterministic engine core</span>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [ready, setReady] = React.useState(false);
   const [failed, setFailed] = React.useState(false);
+  const isMobile = useIsMobile();
   React.useEffect(() => {
     fetch(import.meta.env.BASE_URL + "caliper_dataset.json")
       .then((r) => r.json())
@@ -1551,5 +1626,10 @@ export default function App() {
   }, []);
   if (failed) return <div className="caliper"><div className="loading">could not load dataset</div></div>;
   if (!ready) return <div className="caliper"><div className="loading">…</div></div>;
+  // Below the gate the board CANNOT render, so the mobile surface REPLACES it (not a degraded board).
+  // Flipping the gate unmounts the other tree: narrowing discards in-flight board state (an open drawer,
+  // a running curation — its resolve lands on an unmounted tree and React drops the setState); widening
+  // remounts AppInner fresh at the entry screen. The mobile trace is deterministic, so it needs no state.
+  if (isMobile) return <ErrorBoundary><MobileSurface /></ErrorBoundary>;
   return <ErrorBoundary><AppInner /></ErrorBoundary>;
 }
