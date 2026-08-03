@@ -886,7 +886,7 @@ body.modal-open{ overflow:hidden; }
 .msec{ border-top:var(--w-hair) solid var(--scribe-strong); margin-top:22px; padding-top:20px; }   /* a section divider — the entry/role hairline */
 .msurface-trace{ margin-top:10px; }
 .msurface .drawer-title-row{ margin-bottom:8px; }
-.msurface-actions{ display:flex; flex-direction:column; align-items:flex-start; }
+.msurface-actions{ display:flex; flex-direction:column; align-items:flex-start; margin-top:14px; }   /* inside the framing block, below the text — no divider island */
 /* the links carry the register ACTION tuple (sans 14/600 ink) — a clickable proposition, not the
    heading tuple; no dye (dye is the source/contract-routing accent; these do not route to provenance). */
 .msurface-action{ display:block; width:100%; text-align:left; background:none; border:none; border-radius:0; padding:11px 0; cursor:pointer; text-decoration:none; font-family:var(--font-sans); font-size:var(--t-3); font-weight:600; color:var(--ink); }

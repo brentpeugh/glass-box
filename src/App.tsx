@@ -1590,21 +1590,17 @@ function MobileSurface() {
         <div className="entry msurface-col">
           <div className="entry-mark">⟡ CALIPER</div>
           <div className="entry-sub">
-            {/* line 1 reused verbatim from the entry screen; line 2 is mobile-specific — the entry's
-                "enter as a role" is desktop-only (there is no board here), replaced by the slice framing
-                (which also carries the desktop pointer, so no separate hint below the actions). */}
+            {/* line 1 verbatim; line 2 mobile framing. The actions live in THIS block (below the text, no
+                divider) so they aren't marooned on an island between two scribe lines. Links carry the
+                register ACTION tuple (sans 14/600 ink); the ▸ is INK — a plain forward affordance, not the
+                dye disclosure glyph, so dye stays reserved for source/contract routing. */}
             <p className="entry-line">Caliper Systems — a synthetic ~$40M ARR vertical SaaS; the engine has computed the quarter.</p>
             <p className="entry-line">What you see below is one number from that board, computed live on your phone and traceable to its source rows. The full interactive demo runs on desktop.</p>
+            <div className="msurface-actions">
+              <a className="msurface-action" href={ESSAY_URL} target="_blank" rel="noopener noreferrer">▸ Read the essay</a>
+              <button className="msurface-action" onClick={copyLink}>▸ {copied ? "Link copied" : "Copy link"}</button>
+            </div>
           </div>
-          {/* actions ABOVE the trace — primary CTA above the fold on a ~2-screen page; the live trace
-              below then reads as proof-on-scroll. Links carry the register ACTION tuple (sans 14/600 ink)
-              via .msurface-action — a clickable proposition, not the heading tuple. No dye / no ▸: dye is
-              the register's source/contract-routing accent, and an external essay link + a copy utility
-              do not route to provenance (cf. .lede-verdict, which uses the action tuple in ink, no route). */}
-          <section className="msec msurface-actions">
-            <a className="msurface-action" href={ESSAY_URL} target="_blank" rel="noopener noreferrer">Read the essay</a>
-            <button className="msurface-action" onClick={copyLink}>{copied ? "Link copied" : "Copy link"}</button>
-          </section>
           <section className="msec">
             <div className="brief-lbl">A live trace</div>
             {cac ? (
